@@ -3,6 +3,7 @@
 namespace App\Policies;
 
 use App\Models\Document;
+use App\Models\ProjectMember;
 use App\Models\ResearchProject;
 use App\Models\User;
 
@@ -50,6 +51,17 @@ class DocumentPolicy
     public function updateStatus(User $user, Document $document): bool
     {
         return $this->canManageProjectDocuments($user, $document->project);
+    }
+
+    public function createReviewLink(User $user, Document $document): bool
+    {
+        $project = $document->project;
+
+        return $project->owner_id === $user->getKey()
+            || $project->hasActiveMemberWithRole($user, [
+                ProjectMember::ROLE_SUPERVISOR,
+                ProjectMember::ROLE_CO_SUPERVISOR,
+            ]);
     }
 
     private function canViewProject(User $user, ResearchProject $project): bool

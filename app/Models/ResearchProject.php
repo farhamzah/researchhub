@@ -95,6 +95,11 @@ class ResearchProject extends Model
         return $this->hasMany(Document::class, 'project_id');
     }
 
+    public function reviewLinks(): HasMany
+    {
+        return $this->hasMany(ReviewLink::class, 'project_id');
+    }
+
     public function hasActiveMember(User $user): bool
     {
         return $this->activeMembers()

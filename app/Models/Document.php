@@ -130,6 +130,11 @@ class Document extends Model
         return $this->hasMany(DocumentApproval::class);
     }
 
+    public function reviewLinks(): HasMany
+    {
+        return $this->hasMany(ReviewLink::class);
+    }
+
     public function scopeVisibleTo(Builder $query, User $user): Builder
     {
         if ($user->hasRole('super_admin')) {

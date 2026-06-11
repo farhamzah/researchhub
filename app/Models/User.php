@@ -104,4 +104,9 @@ class User extends Authenticatable implements FilamentUser
     {
         return $this->hasMany(DocumentVersion::class, 'uploaded_by');
     }
+
+    public function createdReviewLinks(): HasMany
+    {
+        return $this->hasMany(ReviewLink::class, 'created_by');
+    }
 }

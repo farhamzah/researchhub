@@ -26,15 +26,16 @@
                         Responses
                     </a>
                 @endif
+                {{-- UX-S10-08: Export buttons grouped and labeled as drafts --}}
                 @if ($result)
                     <a href="{{ route('admin.analysis.export.csv', ['analysisResult' => $result]) }}" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50">
-                        Export CSV
+                        Export CSV Table Data
                     </a>
                     <a href="{{ route('admin.analysis.export.markdown', ['analysisResult' => $result]) }}" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50">
-                        Export Markdown
+                        Export Markdown Draft
                     </a>
                     <a href="{{ route('admin.analysis.export.docx', ['analysisResult' => $result]) }}" class="rounded-md border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800 shadow-sm hover:bg-emerald-100">
-                        Export DOCX Draft
+                        Export DOCX Descriptive Draft
                     </a>
                 @endif
                 <a href="{{ route('filament.admin.resources.surveys.index') }}" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50">
@@ -50,8 +51,16 @@
         @endif
 
         @if ($result)
-            <section class="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950">
-                DOCX yang dihasilkan adalah draf akademik deskriptif otomatis. Dokumen ini belum memuat kesimpulan inferensial dan wajib diverifikasi oleh peneliti/pembimbing sebelum digunakan dalam naskah resmi.
+            {{-- UX-S10-03: English notice replacing Indonesian disclaimer. Narrative content is still in Indonesian as intended for thesis writing. --}}
+            <section class="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4 shadow-sm">
+                <p class="text-sm font-semibold text-amber-900">Descriptive Draft Notice</p>
+                <p class="mt-1 text-sm leading-6 text-amber-800">
+                    All exports (CSV, Markdown, DOCX) are <strong>descriptive academic drafts generated automatically</strong>.
+                    They do not include inferential conclusions and must be reviewed by the researcher and supervisor before use in any official academic document.
+                </p>
+                <p class="mt-2 text-xs text-amber-700">
+                    Note: Academic narrative text is written in Indonesian as it is intended for thesis and research report writing in Indonesian academic institutions.
+                </p>
             </section>
 
             <section class="mb-6 grid gap-4 md:grid-cols-4">
@@ -64,11 +73,12 @@
                     <p class="mt-2 text-lg font-semibold">{{ $result->summary['response_count'] ?? 0 }}</p>
                 </div>
                 <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-                    <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Questions</p>
+                    <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Questions Analyzed</p>
                     <p class="mt-2 text-lg font-semibold">{{ $result->summary['analyzed_question_count'] ?? 0 }}</p>
                 </div>
+                {{-- UX-S10-05: Relabeled from 'Hidden Omitted' to clearer label --}}
                 <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-                    <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Hidden Omitted</p>
+                    <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Hidden Questions Excluded</p>
                     <p class="mt-2 text-lg font-semibold">{{ $result->summary['hidden_question_count'] ?? 0 }}</p>
                 </div>
             </section>
@@ -90,10 +100,10 @@
                         <p class="mt-2 whitespace-pre-line text-sm leading-6 text-emerald-950">{{ $narrative->narrative }}</p>
                     </div>
                     <div class="mt-4">
-                        <label for="copy_narrative_{{ $narrative->id }}" class="block text-sm font-semibold text-gray-700">Copy-ready narrative block</label>
+                        <label for="copy_narrative_{{ $narrative->id }}" class="block text-sm font-semibold text-gray-700">Copy-ready academic narrative - paste directly into thesis draft</label>
                         <textarea id="copy_narrative_{{ $narrative->id }}" readonly rows="7" class="mt-2 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm leading-6 text-gray-900 shadow-sm">{{ $narrative->narrative }}
 
-Dokumen ini merupakan draf akademik otomatis berbasis analisis deskriptif. Interpretasi akhir perlu diverifikasi oleh peneliti dan pembimbing sebelum digunakan dalam naskah resmi.</textarea>
+{{ \App\Modules\Analysis\Services\AcademicDraftBuilder::DISCLAIMER }}</textarea>
                     </div>
                 @endforeach
 

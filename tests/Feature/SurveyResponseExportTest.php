@@ -77,15 +77,16 @@ class SurveyResponseExportTest extends TestCase
         $this->actingAs($owner)
             ->get(route('admin.surveys.responses.index', ['survey' => $survey]))
             ->assertOk()
-            ->assertSee('Export CSV')
-            ->assertDontSee('Export CSV with identity');
+            ->assertSee('Export CSV Table Data')
+            ->assertDontSee('Export CSV with Respondent Identity');
 
         $owner->givePermissionTo('surveys.view_respondent_identity');
 
         $this->actingAs($owner)
             ->get(route('admin.surveys.responses.index', ['survey' => $survey]))
             ->assertOk()
-            ->assertSee('Export CSV with identity');
+            ->assertSee('Identity Export')
+            ->assertSee('Export CSV with Respondent Identity');
     }
 
     /**

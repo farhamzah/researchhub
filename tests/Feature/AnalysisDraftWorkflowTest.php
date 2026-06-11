@@ -57,11 +57,14 @@ class AnalysisDraftWorkflowTest extends TestCase
         $this->actingAs($owner)
             ->get(route('admin.analysis.results.show', ['analysisResult' => $result]))
             ->assertOk()
-            ->assertSee('Export CSV')
-            ->assertSee('Export Markdown')
-            ->assertSee('Export DOCX Draft')
-            ->assertSee('draf akademik deskriptif otomatis')
-            ->assertSee('Copy-ready narrative block')
+            ->assertSee('Export CSV Table Data')
+            ->assertSee('Export Markdown Draft')
+            ->assertSee('Export DOCX Descriptive Draft')
+            // UX-S10-03: English disclaimer section replaces Indonesian inline text
+            ->assertSee('Descriptive Draft Notice')
+            // UX-S10-03: Narrative textarea label updated
+            ->assertSee('Copy-ready academic narrative')
+            ->assertSee('descriptive academic drafts generated automatically')
             ->assertSee(AcademicDraftBuilder::DISCLAIMER);
     }
 

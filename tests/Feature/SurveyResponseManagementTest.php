@@ -33,7 +33,7 @@ class SurveyResponseManagementTest extends TestCase
             ->assertSee('fa****@example.test')
             ->assertDontSee('Farhan Respondent')
             ->assertDontSee('farhan@example.test')
-            ->assertSee('Export Row Preview')
+            ->assertSee('CSV Export Column Preview')
             ->assertDontSee('identity_email');
     }
 

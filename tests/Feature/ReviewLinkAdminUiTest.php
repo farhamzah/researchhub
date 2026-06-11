@@ -31,7 +31,7 @@ class ReviewLinkAdminUiTest extends TestCase
             ->assertOk()
             ->assertSee('Review Links')
             ->assertSee($document->title)
-            ->assertSee('Create Link')
+            ->assertSee('Create Review Link')  // UX-S10-09: section renamed for clarity
             ->assertSee('Existing Links');
     }
 

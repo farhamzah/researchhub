@@ -65,10 +65,22 @@
                 </section>
             @endforeach
 
-            @if ($survey->questions->isNotEmpty())
+            {{-- Questions inside pages render above. Only questions with no page assignment render here. --}}
+            @php $unpagedQuestions = $survey->questions->whereNull('page_id'); @endphp
+            @if ($survey->pages->isEmpty() && $survey->questions->isNotEmpty())
+                {{-- Survey has no pages at all: render all questions in a single section --}}
                 <section class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
                     <div class="space-y-5">
                         @foreach ($survey->questions as $question)
+                            @include('surveys.partials.question', ['question' => $question])
+                        @endforeach
+                    </div>
+                </section>
+            @elseif ($survey->pages->isNotEmpty() && $unpagedQuestions->isNotEmpty())
+                {{-- Survey has pages AND some questions with no page assignment --}}
+                <section class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+                    <div class="space-y-5">
+                        @foreach ($unpagedQuestions as $question)
                             @include('surveys.partials.question', ['question' => $question])
                         @endforeach
                     </div>

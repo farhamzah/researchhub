@@ -15,14 +15,10 @@
                 <p class="mt-2 text-sm text-gray-600">{{ $survey->title }}</p>
             </div>
             <div class="flex flex-wrap gap-2">
+                {{-- UX-S10-02: Default CSV export is primary, safe, and identity-free --}}
                 <a href="{{ route('admin.surveys.responses.export', ['survey' => $survey]) }}" class="rounded-md border border-emerald-700 bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-600">
-                    Export CSV
+                    Export CSV Table Data
                 </a>
-                @if ($privacyService->canViewFullIdentity(auth()->user(), $survey))
-                    <a href="{{ route('admin.surveys.responses.export', ['survey' => $survey, 'with_identity' => 1]) }}" class="rounded-md border border-amber-700 bg-white px-4 py-2 text-sm font-semibold text-amber-800 shadow-sm hover:bg-amber-50">
-                        Export CSV with identity
-                    </a>
-                @endif
                 @if ($survey->canReceiveResponses())
                     <a href="{{ route('survey.show', ['survey' => $survey->slug]) }}" target="_blank" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50">
                         Public Link
@@ -33,6 +29,25 @@
                 </a>
             </div>
         </div>
+
+        {{-- UX-S10-02: Identity export is separated into its own danger zone below main actions --}}
+        @if ($privacyService->canViewFullIdentity(auth()->user(), $survey))
+            <section class="mb-4 rounded-lg border border-red-200 bg-red-50 p-4">
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <p class="text-sm font-semibold text-red-900">Identity Export</p>
+                        <p class="mt-0.5 text-xs text-red-700">Contains decrypted respondent identity (name, email, identifier). Use only when authorized and ensure proper data handling.</p>
+                    </div>
+                    <a
+                        href="{{ route('admin.surveys.responses.export', ['survey' => $survey, 'with_identity' => 1]) }}"
+                        class="flex-shrink-0 rounded-md border border-red-400 bg-white px-4 py-2 text-sm font-semibold text-red-800 shadow-sm hover:bg-red-100"
+                        onclick="return confirm('Export with respondent identity?\n\nThis file will contain decrypted personal data (name, email, identifier).\n\nEnsure you are authorized to access this data and handle it according to your research ethics protocol.')"
+                    >
+                        Export CSV with Respondent Identity
+                    </a>
+                </div>
+            </section>
+        @endif
 
         <section class="mb-6 grid gap-4 sm:grid-cols-3">
             <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
@@ -74,7 +89,18 @@
                                 <td class="py-4 pr-4 font-medium">
                                     {{ $privacyService->display($response->respondent, $survey, auth()->user()) }}
                                 </td>
-                                <td class="py-4 pr-4">{{ $response->status }}</td>
+                                {{-- UX-S10-07: Response status badge --}}
+                                <td class="py-4 pr-4">
+                                    @if ($response->status === \App\Models\SurveyResponse::STATUS_SUBMITTED)
+                                        <span class="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-800">Submitted</span>
+                                    @elseif ($response->status === \App\Models\SurveyResponse::STATUS_STARTED)
+                                        <span class="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700">Started</span>
+                                    @elseif ($response->status === \App\Models\SurveyResponse::STATUS_VOID)
+                                        <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-600">Void</span>
+                                    @else
+                                        <span class="text-xs text-gray-500">{{ $response->status }}</span>
+                                    @endif
+                                </td>
                                 <td class="py-4 pr-4">{{ $response->submitted_at?->format('Y-m-d H:i') ?: 'Not submitted' }}</td>
                                 <td class="py-4 pr-4">{{ $response->answers->count() }}</td>
                                 <td class="py-4 pr-4">
@@ -97,9 +123,10 @@
             </div>
         </section>
 
+        {{-- UX-S10-07: Relabeled for clarity and reduced alarm for non-technical users --}}
         <section class="mt-6 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 class="text-xl font-semibold">Export Row Preview</h2>
-            <p class="mt-1 text-sm text-gray-600">Identity columns are excluded by default. This preview is for export structure only.</p>
+            <h2 class="text-xl font-semibold">CSV Export Column Preview</h2>
+            <p class="mt-1 text-sm text-gray-600">Shows the column structure of the default CSV export. Respondent identity columns are excluded unless you use the identity export above.</p>
 
             <div class="mt-4 overflow-x-auto">
                 <pre class="rounded-md bg-gray-950 p-4 text-xs text-gray-100">{{ json_encode($exportPreviewRows->values(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) }}</pre>

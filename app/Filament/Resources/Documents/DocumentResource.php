@@ -53,9 +53,43 @@ class DocumentResource extends Resource
                     ->sortable(),
                 TextColumn::make('status')
                     ->badge()
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'draft' => 'Draft',
+                        'submitted' => 'Submitted',
+                        'under_review' => 'Under Review',
+                        'revision_required' => 'Revision Required',
+                        'approved' => 'Approved',
+                        'final' => 'Final',
+                        'archived' => 'Archived',
+                        default => ucfirst(str_replace('_', ' ', $state)),
+                    })
+                    ->color(fn (string $state): string => match ($state) {
+                        'draft' => 'gray',
+                        'submitted' => 'info',
+                        'under_review' => 'warning',
+                        'revision_required' => 'danger',
+                        'approved' => 'success',
+                        'final' => 'success',
+                        'archived' => 'gray',
+                        default => 'gray',
+                    })
                     ->sortable(),
                 TextColumn::make('visibility')
                     ->badge()
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'private' => 'Private',
+                        'project' => 'Project Members',
+                        'review_link' => 'Review Link',
+                        'public' => 'Public',
+                        default => ucfirst(str_replace('_', ' ', $state)),
+                    })
+                    ->color(fn (string $state): string => match ($state) {
+                        'private' => 'gray',
+                        'project' => 'info',
+                        'review_link' => 'warning',
+                        'public' => 'success',
+                        default => 'gray',
+                    })
                     ->sortable(),
                 TextColumn::make('currentVersion.version_number')
                     ->label('Version')

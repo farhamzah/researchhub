@@ -125,8 +125,9 @@
                         <input id="question_sort_order" name="sort_order" type="number" min="0" value="{{ old('sort_order', 0) }}" class="mt-2 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm">
                     </div>
                     <div>
-                        <label for="question_key" class="block text-sm font-medium text-gray-700">Question key optional</label>
+                        <label for="question_key" class="block text-sm font-medium text-gray-700">Question key <span class="font-normal text-gray-500">(optional)</span></label>
                         <input id="question_key" name="question_key" value="{{ old('question_key') }}" placeholder="auto_generated_from_label" class="mt-2 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm">
+                        <p class="mt-1 text-xs text-gray-500">A stable identifier for this question used in exports and analysis. Auto-generated from the label if left blank. Do not change after responses are collected.</p>
                     </div>
                     <div>
                         <label for="question_type" class="block text-sm font-medium text-gray-700">Type</label>
@@ -145,13 +146,29 @@
                         <textarea id="question_help_text" name="help_text" rows="2" class="mt-2 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm">{{ old('help_text') }}</textarea>
                     </div>
                     <div>
-                        <label for="question_options_json" class="block text-sm font-medium text-gray-700">Options JSON</label>
+                        <label for="question_options_json" class="block text-sm font-medium text-gray-700">Options JSON <span class="font-normal text-gray-500">(for choice-based questions)</span></label>
                         <textarea id="question_options_json" name="options_json" rows="5" placeholder='{"choices":["Option A","Option B"]}' class="mt-2 block w-full rounded-md border border-gray-300 px-3 py-2 font-mono text-xs shadow-sm">{{ old('options_json') }}</textarea>
+                        <p class="mt-1 text-xs text-gray-500">Use valid JSON only. Required for Single Choice, Multiple Choice, Likert, and Likert Matrix types. Leave blank for text/number questions.</p>
                     </div>
                     <div>
-                        <label for="question_settings_json" class="block text-sm font-medium text-gray-700">Settings JSON</label>
+                        <label for="question_settings_json" class="block text-sm font-medium text-gray-700">Settings JSON <span class="font-normal text-gray-500">(optional)</span></label>
                         <textarea id="question_settings_json" name="settings_json" rows="5" placeholder='{"scale":[1,2,3,4,5]}' class="mt-2 block w-full rounded-md border border-gray-300 px-3 py-2 font-mono text-xs shadow-sm">{{ old('settings_json') }}</textarea>
+                        <p class="mt-1 text-xs text-gray-500">Optional question-level settings such as Likert scale range. Leave blank if not needed.</p>
                     </div>
+                    {{-- UX-S10-06: JSON quick reference for non-technical users --}}
+                    <details class="md:col-span-2 rounded-md border border-gray-200 bg-gray-50">
+                        <summary class="cursor-pointer px-4 py-2 text-xs font-semibold text-gray-600 hover:text-gray-900">JSON Format Quick Reference - click to expand</summary>
+                        <div class="border-t border-gray-200 px-4 py-3 space-y-3 text-xs text-gray-700">
+                            <p class="font-semibold text-gray-800">Single Choice / Multiple Choice</p>
+                            <pre class="rounded bg-white border border-gray-200 p-2 font-mono text-xs">Options JSON: {"choices":["Sangat Setuju","Setuju","Netral","Tidak Setuju","Sangat Tidak Setuju"]}</pre>
+                            <p class="font-semibold text-gray-800">Likert Scale</p>
+                            <pre class="rounded bg-white border border-gray-200 p-2 font-mono text-xs">Options JSON: {"choices":["1","2","3","4","5"]}
+Settings JSON: {"scale":[1,2,3,4,5]}</pre>
+                            <p class="font-semibold text-gray-800">Likert Matrix</p>
+                            <pre class="rounded bg-white border border-gray-200 p-2 font-mono text-xs">Options JSON: {"rows":["Statement 1","Statement 2"],"columns":["1","2","3","4","5"]}</pre>
+                            <p class="text-amber-700 font-semibold">A structured visual editor for these fields will be added in a future sprint.</p>
+                        </div>
+                    </details>
                     <label class="flex items-center gap-2 text-sm text-gray-700 md:col-span-2">
                         <input type="hidden" name="is_required" value="0">
                         <input type="checkbox" name="is_required" value="1" @checked(old('is_required')) class="rounded border-gray-300 text-emerald-700">

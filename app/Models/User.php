@@ -6,9 +6,10 @@ namespace App\Models;
 use Database\Factories\UserFactory;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
@@ -76,5 +77,21 @@ class User extends Authenticatable implements FilamentUser
     public function activityLogs(): HasMany
     {
         return $this->hasMany(ActivityLog::class);
+    }
+
+    public function driveConnections(): HasMany
+    {
+        return $this->hasMany(DriveConnection::class);
+    }
+
+    public function googleDriveConnection(): HasOne
+    {
+        return $this->hasOne(DriveConnection::class)
+            ->where('provider', DriveConnection::PROVIDER_GOOGLE);
+    }
+
+    public function driveFolders(): HasMany
+    {
+        return $this->hasMany(DriveFolder::class);
     }
 }

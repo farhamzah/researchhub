@@ -15,9 +15,13 @@ class ResearchProject extends Model
     use HasFactory, HasUuids, SoftDeletes;
 
     public const STATUS_DRAFT = 'draft';
+
     public const STATUS_ACTIVE = 'active';
+
     public const STATUS_PAUSED = 'paused';
+
     public const STATUS_COMPLETED = 'completed';
+
     public const STATUS_ARCHIVED = 'archived';
 
     public const STATUSES = [
@@ -79,6 +83,11 @@ class ResearchProject extends Model
     public function activityLogs(): HasMany
     {
         return $this->hasMany(ActivityLog::class, 'project_id');
+    }
+
+    public function driveFolders(): HasMany
+    {
+        return $this->hasMany(DriveFolder::class, 'project_id');
     }
 
     public function hasActiveMember(User $user): bool

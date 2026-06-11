@@ -90,6 +90,11 @@ class ResearchProject extends Model
         return $this->hasMany(DriveFolder::class, 'project_id');
     }
 
+    public function documents(): HasMany
+    {
+        return $this->hasMany(Document::class, 'project_id');
+    }
+
     public function hasActiveMember(User $user): bool
     {
         return $this->activeMembers()

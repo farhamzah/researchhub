@@ -94,4 +94,14 @@ class User extends Authenticatable implements FilamentUser
     {
         return $this->hasMany(DriveFolder::class);
     }
+
+    public function documents(): HasMany
+    {
+        return $this->hasMany(Document::class, 'owner_id');
+    }
+
+    public function uploadedDocumentVersions(): HasMany
+    {
+        return $this->hasMany(DocumentVersion::class, 'uploaded_by');
+    }
 }

@@ -18,6 +18,9 @@ Route::get('/', function () {
 });
 
 Route::middleware('auth')->group(function (): void {
+    Route::redirect('/admin/dashboard', '/admin')
+        ->name('admin.dashboard.redirect');
+
     Route::get('/settings/drive/google', [GoogleDriveOAuthController::class, 'status'])
         ->name('drive.google.status');
     Route::get('/settings/drive/google/redirect', [GoogleDriveOAuthController::class, 'redirect'])

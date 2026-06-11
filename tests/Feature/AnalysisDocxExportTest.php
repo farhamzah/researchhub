@@ -37,19 +37,31 @@ class AnalysisDocxExportTest extends TestCase
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             $response->headers->get('content-type')
         );
-        $this->assertStringContainsString('academic-draft.docx', $response->headers->get('content-disposition'));
+        $this->assertStringContainsString('analysis-draft-'.$result->id, $response->headers->get('content-disposition'));
+        $this->assertStringContainsString(now()->format('Ymd').'.docx', $response->headers->get('content-disposition'));
         $this->assertStringStartsWith('PK', $response->getContent());
 
         $text = $this->docxText($response->getContent());
 
         $this->assertStringContainsString('Draf Akademik', $text);
-        $this->assertStringContainsString('Analysis Metadata', $text);
-        $this->assertStringContainsString('Draft Disclaimer', $text);
-        $this->assertStringContainsString('Ringkasan Data', $text);
+        $this->assertStringContainsString('Draf BAB IV - Analisis Deskriptif', $text);
+        $this->assertStringContainsString('1. Informasi Analisis', $text);
+        $this->assertStringContainsString('2. Ringkasan Sumber Data', $text);
+        $this->assertStringContainsString('3. Ringkasan Hasil Analisis Deskriptif', $text);
+        $this->assertStringContainsString('4. Tabel Hasil Analisis', $text);
         $this->assertStringContainsString('Narasi Akademik Deskriptif', $text);
-        $this->assertStringContainsString('Tabel Hasil Analisis', $text);
+        $this->assertStringContainsString('6. Catatan Interpretasi', $text);
+        $this->assertStringContainsString('7. Checklist Verifikasi Peneliti', $text);
+        $this->assertStringContainsString('8. Disclaimer', $text);
+        $this->assertStringContainsString('[ ] Data responden telah diverifikasi.', $text);
+        $this->assertStringContainsString('[ ] Kesimpulan inferensial belum ditambahkan sebelum uji statistik lanjutan.', $text);
         $this->assertStringContainsString('generated at:', $text);
         $this->assertStringContainsString(AcademicDraftBuilder::DISCLAIMER, $text);
+        $this->assertStringContainsString('ResearchHub - Draf otomatis deskriptif, wajib diverifikasi.', $this->docxText($response->getContent(), 'word/footer1.xml'));
+        $this->assertLessThan(
+            mb_strpos($text, '5. Narasi Akademik Deskriptif'),
+            mb_strpos($text, '4. Tabel Hasil Analisis')
+        );
         $this->assertStringNotContainsString('Farhan Respondent', $text);
         $this->assertStringNotContainsString('farhan@example.test', $text);
         $this->assertStringNotContainsString('SECRET-HIDDEN', $text);
@@ -63,6 +75,25 @@ class AnalysisDocxExportTest extends TestCase
         $this->assertSame($result->id, $log->metadata['analysis_result_id']);
         $this->assertArrayNotHasKey('result_payload', $log->metadata);
         $this->assertArrayNotHasKey('tables', $log->metadata);
+    }
+
+    public function test_docx_layout_uses_configured_table_style_and_safe_filename(): void
+    {
+        $this->seed(RolePermissionSeeder::class);
+        [$owner, $project, $result] = $this->analysisResultFixture();
+
+        $response = $this->actingAs($owner)
+            ->get(route('admin.analysis.export.docx', ['analysisResult' => $result]))
+            ->assertOk();
+
+        $documentXml = $this->docxXml($response->getContent(), 'word/document.xml');
+
+        $this->assertSame('Calibri', config('researchhub_analysis.docx.default_font'));
+        $this->assertSame(1440, config('researchhub_analysis.docx.margin_top'));
+        $this->assertStringContainsString('ResearchHubAnalysisTable', $documentXml);
+        $this->assertStringContainsString('question key', $this->docxText($response->getContent()));
+        $this->assertStringContainsString('type', $this->docxText($response->getContent()));
+        $this->assertStringNotContainsString('DOCX Export Survey', $response->headers->get('content-disposition'));
     }
 
     public function test_docx_export_route_is_authenticated_and_policy_protected(): void
@@ -142,7 +173,12 @@ class AnalysisDocxExportTest extends TestCase
         return [$owner, $project, app(RunSurveyDescriptiveAnalysisAction::class)->handle($owner, $survey)];
     }
 
-    private function docxText(string $content): string
+    private function docxText(string $content, string $part = 'word/document.xml'): string
+    {
+        return html_entity_decode(strip_tags($this->docxXml($content, $part)), ENT_QUOTES | ENT_XML1, 'UTF-8');
+    }
+
+    private function docxXml(string $content, string $part): string
     {
         $path = tempnam(storage_path('framework/cache'), 'docx-test-');
         file_put_contents($path, $content);
@@ -150,12 +186,12 @@ class AnalysisDocxExportTest extends TestCase
         $zip = new ZipArchive;
         $this->assertTrue($zip->open($path));
 
-        $xml = $zip->getFromName('word/document.xml');
+        $xml = $zip->getFromName($part);
         $zip->close();
         unlink($path);
 
         $this->assertIsString($xml);
 
-        return html_entity_decode(strip_tags($xml), ENT_QUOTES | ENT_XML1, 'UTF-8');
+        return $xml;
     }
 }

@@ -33,8 +33,8 @@
                     <a href="{{ route('admin.analysis.export.markdown', ['analysisResult' => $result]) }}" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50">
                         Export Markdown
                     </a>
-                    <a href="{{ route('admin.analysis.export.docx', ['analysisResult' => $result]) }}" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50">
-                        Export DOCX
+                    <a href="{{ route('admin.analysis.export.docx', ['analysisResult' => $result]) }}" class="rounded-md border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800 shadow-sm hover:bg-emerald-100">
+                        Export DOCX Draft
                     </a>
                 @endif
                 <a href="{{ route('filament.admin.resources.surveys.index') }}" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50">
@@ -51,7 +51,7 @@
 
         @if ($result)
             <section class="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950">
-                Dokumen ini merupakan draf akademik otomatis berbasis analisis deskriptif. Interpretasi akhir perlu diverifikasi oleh peneliti dan pembimbing sebelum digunakan dalam naskah resmi.
+                DOCX yang dihasilkan adalah draf akademik deskriptif otomatis. Dokumen ini belum memuat kesimpulan inferensial dan wajib diverifikasi oleh peneliti/pembimbing sebelum digunakan dalam naskah resmi.
             </section>
 
             <section class="mb-6 grid gap-4 md:grid-cols-4">

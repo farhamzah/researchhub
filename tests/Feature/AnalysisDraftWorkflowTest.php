@@ -59,7 +59,8 @@ class AnalysisDraftWorkflowTest extends TestCase
             ->assertOk()
             ->assertSee('Export CSV')
             ->assertSee('Export Markdown')
-            ->assertSee('Export DOCX')
+            ->assertSee('Export DOCX Draft')
+            ->assertSee('draf akademik deskriptif otomatis')
             ->assertSee('Copy-ready narrative block')
             ->assertSee(AcademicDraftBuilder::DISCLAIMER);
     }

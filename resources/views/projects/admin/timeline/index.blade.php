@@ -27,8 +27,8 @@
                 <h1 class="mt-2 text-3xl font-semibold">Project Timeline</h1>
                 <p class="mt-2 text-sm text-gray-600">{{ $project->title }}</p>
             </div>
-            <a href="{{ route('filament.admin.resources.research-projects.index') }}" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50">
-                Back to Projects
+            <a href="{{ url('/admin') }}" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50">
+                Back to Admin
             </a>
         </div>
 
@@ -37,6 +37,12 @@
                 Timeline updated.
             </section>
         @endif
+
+        @unless ($canManageTimeline)
+            <section class="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm font-semibold text-blue-900">
+                View only. You can inspect the project timeline, but only project owners and authorized project editors can change it.
+            </section>
+        @endunless
 
         <section class="mb-6 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
             <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">

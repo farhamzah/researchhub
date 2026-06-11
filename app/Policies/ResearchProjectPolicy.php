@@ -64,6 +64,17 @@ class ResearchProjectPolicy
         return $this->ownsProject($user, $researchProject);
     }
 
+    public function viewTimeline(User $user, ResearchProject $researchProject): bool
+    {
+        return $this->view($user, $researchProject);
+    }
+
+    public function manageTimeline(User $user, ResearchProject $researchProject): bool
+    {
+        return $this->ownsProject($user, $researchProject)
+            || $researchProject->hasActiveMemberWithRole($user, config('project_roles.project_update_roles', []));
+    }
+
     private function ownsProject(User $user, ResearchProject $researchProject): bool
     {
         return $researchProject->owner_id === $user->getKey();

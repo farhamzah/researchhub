@@ -25,7 +25,7 @@ class SurveyResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentList;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Surveys';
+    protected static string|UnitEnum|null $navigationGroup = 'Survey & Analysis';
 
     protected static ?string $recordTitleAttribute = 'title';
 

@@ -22,7 +22,7 @@ class DocumentResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentText;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Documents';
+    protected static string|UnitEnum|null $navigationGroup = 'Research Documents';
 
     protected static ?string $recordTitleAttribute = 'title';
 
@@ -39,6 +39,8 @@ class DocumentResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->emptyStateHeading('No research documents yet')
+            ->emptyStateDescription('Upload or create your first research document, such as a proposal, chapter draft, revision file, dataset, presentation, or poster.')
             ->recordTitleAttribute('title')
             ->columns([
                 TextColumn::make('title')

@@ -12,7 +12,7 @@ class GoogleDriveSettings extends Page
 {
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-cloud';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Settings';
+    protected static string|UnitEnum|null $navigationGroup = 'Integrations';
 
     protected static ?string $navigationLabel = 'Google Drive';
 

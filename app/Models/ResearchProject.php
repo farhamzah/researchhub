@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -115,9 +116,30 @@ class ResearchProject extends Model
         return $this->hasMany(AnalysisResult::class, 'project_id');
     }
 
+    public function milestones(): HasMany
+    {
+        return $this->hasMany(ProjectMilestone::class, 'research_project_id')->orderBy('sort_order');
+    }
+
+    public function timelineTasks(): HasMany
+    {
+        return $this->hasMany(ProjectTimelineTask::class, 'research_project_id')->orderBy('sort_order');
+    }
+
     public function respondents(): HasMany
     {
         return $this->hasMany(Respondent::class, 'project_id');
+    }
+
+    public function scopeVisibleTo(Builder $query, User $user): Builder
+    {
+        if ($user->hasRole('super_admin')) {
+            return $query;
+        }
+
+        return $query
+            ->where('owner_id', $user->getKey())
+            ->orWhereHas('activeMembers', fn ($memberQuery) => $memberQuery->where('user_id', $user->getKey()));
     }
 
     public function hasActiveMember(User $user): bool

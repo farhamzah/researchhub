@@ -119,4 +119,9 @@ class User extends Authenticatable implements FilamentUser
     {
         return $this->hasMany(AnalysisJob::class, 'created_by');
     }
+
+    public function assignedTimelineTasks(): HasMany
+    {
+        return $this->hasMany(ProjectTimelineTask::class, 'assigned_to');
+    }
 }

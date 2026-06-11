@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminAnalysisExportController;
+use App\Http\Controllers\AdminProjectTimelineController;
 use App\Http\Controllers\AdminSurveyAnalysisController;
 use App\Http\Controllers\AdminSurveyBuilderController;
 use App\Http\Controllers\AdminSurveyResponseController;
@@ -32,6 +33,21 @@ Route::middleware('auth')->group(function (): void {
         ->name('admin.documents.review-links.store');
     Route::post('/admin/documents/{document}/review-links/{reviewLink}/revoke', [AdminDocumentReviewLinkController::class, 'revoke'])
         ->name('admin.documents.review-links.revoke');
+
+    Route::get('/admin/projects/{researchProject}/timeline', [AdminProjectTimelineController::class, 'index'])
+        ->name('admin.projects.timeline.index');
+    Route::post('/admin/projects/{researchProject}/timeline/milestones', [AdminProjectTimelineController::class, 'storeMilestone'])
+        ->name('admin.projects.timeline.milestones.store');
+    Route::put('/admin/projects/{researchProject}/timeline/milestones/{milestone}', [AdminProjectTimelineController::class, 'updateMilestone'])
+        ->name('admin.projects.timeline.milestones.update');
+    Route::delete('/admin/projects/{researchProject}/timeline/milestones/{milestone}', [AdminProjectTimelineController::class, 'deleteMilestone'])
+        ->name('admin.projects.timeline.milestones.delete');
+    Route::post('/admin/projects/{researchProject}/timeline/tasks', [AdminProjectTimelineController::class, 'storeTask'])
+        ->name('admin.projects.timeline.tasks.store');
+    Route::put('/admin/projects/{researchProject}/timeline/tasks/{task}', [AdminProjectTimelineController::class, 'updateTask'])
+        ->name('admin.projects.timeline.tasks.update');
+    Route::delete('/admin/projects/{researchProject}/timeline/tasks/{task}', [AdminProjectTimelineController::class, 'deleteTask'])
+        ->name('admin.projects.timeline.tasks.delete');
 
     Route::get('/admin/surveys/{survey}/responses', [AdminSurveyResponseController::class, 'index'])
         ->name('admin.surveys.responses.index');

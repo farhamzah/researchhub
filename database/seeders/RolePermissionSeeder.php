@@ -21,6 +21,7 @@ class RolePermissionSeeder extends Seeder
             'projects.delete',
             'projects.manage_members',
             'activity_logs.view',
+            'surveys.view_respondent_identity',
         ];
 
         foreach ($permissions as $permission) {
@@ -40,6 +41,7 @@ class RolePermissionSeeder extends Seeder
             'projects.delete',
             'projects.manage_members',
             'activity_logs.view',
+            'surveys.view_respondent_identity',
         ]);
         $researcher->syncPermissions([
             'projects.create',

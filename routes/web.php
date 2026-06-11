@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminSurveyResponseController;
 use App\Http\Controllers\PublicSurveyController;
 use App\Modules\DriveIntegration\Controllers\GoogleDriveOAuthController;
 use App\Modules\ReviewLinks\Controllers\AdminDocumentReviewLinkController;
@@ -26,6 +27,11 @@ Route::middleware('auth')->group(function (): void {
         ->name('admin.documents.review-links.store');
     Route::post('/admin/documents/{document}/review-links/{reviewLink}/revoke', [AdminDocumentReviewLinkController::class, 'revoke'])
         ->name('admin.documents.review-links.revoke');
+
+    Route::get('/admin/surveys/{survey}/responses', [AdminSurveyResponseController::class, 'index'])
+        ->name('admin.surveys.responses.index');
+    Route::get('/admin/surveys/{survey}/responses/{response}', [AdminSurveyResponseController::class, 'show'])
+        ->name('admin.surveys.responses.show');
 });
 
 Route::middleware('throttle:review-links')->group(function (): void {

@@ -96,6 +96,11 @@ class SurveyResource extends Resource
                     ->visible(fn (Survey $record): bool => $record->canReceiveResponses())
                     ->url(fn (Survey $record): string => route('survey.show', ['survey' => $record->slug]))
                     ->openUrlInNewTab(),
+                Action::make('responses')
+                    ->label('Responses')
+                    ->icon('heroicon-o-clipboard-document-check')
+                    ->visible(fn (Survey $record): bool => auth()->user()?->can('view', $record) ?? false)
+                    ->url(fn (Survey $record): string => route('admin.surveys.responses.index', ['survey' => $record])),
             ]);
     }
 

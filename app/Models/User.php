@@ -114,4 +114,9 @@ class User extends Authenticatable implements FilamentUser
     {
         return $this->hasMany(Survey::class, 'created_by');
     }
+
+    public function analysisJobs(): HasMany
+    {
+        return $this->hasMany(AnalysisJob::class, 'created_by');
+    }
 }

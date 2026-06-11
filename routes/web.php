@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminSurveyAnalysisController;
 use App\Http\Controllers\AdminSurveyBuilderController;
 use App\Http\Controllers\AdminSurveyResponseController;
 use App\Http\Controllers\AdminSurveyResponseExportController;
@@ -36,6 +37,13 @@ Route::middleware('auth')->group(function (): void {
         ->name('admin.surveys.responses.export');
     Route::get('/admin/surveys/{survey}/responses/{response}', [AdminSurveyResponseController::class, 'show'])
         ->name('admin.surveys.responses.show');
+
+    Route::get('/admin/surveys/{survey}/analysis', [AdminSurveyAnalysisController::class, 'index'])
+        ->name('admin.surveys.analysis.index');
+    Route::post('/admin/surveys/{survey}/analysis', [AdminSurveyAnalysisController::class, 'run'])
+        ->name('admin.surveys.analysis.run');
+    Route::get('/admin/analysis/results/{analysisResult}', [AdminSurveyAnalysisController::class, 'show'])
+        ->name('admin.analysis.results.show');
 
     Route::get('/admin/surveys/{survey}/builder', [AdminSurveyBuilderController::class, 'index'])
         ->name('admin.surveys.builder.index');

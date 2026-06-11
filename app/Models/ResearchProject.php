@@ -105,6 +105,16 @@ class ResearchProject extends Model
         return $this->hasMany(Survey::class, 'project_id');
     }
 
+    public function analysisJobs(): HasMany
+    {
+        return $this->hasMany(AnalysisJob::class, 'project_id');
+    }
+
+    public function analysisResults(): HasMany
+    {
+        return $this->hasMany(AnalysisResult::class, 'project_id');
+    }
+
     public function respondents(): HasMany
     {
         return $this->hasMany(Respondent::class, 'project_id');

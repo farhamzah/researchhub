@@ -120,6 +120,16 @@ class Survey extends Model
         return $this->hasMany(SurveyResponse::class);
     }
 
+    public function analysisJobs(): HasMany
+    {
+        return $this->hasMany(AnalysisJob::class);
+    }
+
+    public function analysisResults(): HasMany
+    {
+        return $this->hasMany(AnalysisResult::class);
+    }
+
     public function canReceiveResponses(): bool
     {
         return $this->status === self::STATUS_PUBLISHED && $this->is_public;

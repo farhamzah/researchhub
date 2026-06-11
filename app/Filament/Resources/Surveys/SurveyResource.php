@@ -101,6 +101,11 @@ class SurveyResource extends Resource
                     ->icon('heroicon-o-clipboard-document-check')
                     ->visible(fn (Survey $record): bool => auth()->user()?->can('view', $record) ?? false)
                     ->url(fn (Survey $record): string => route('admin.surveys.responses.index', ['survey' => $record])),
+                Action::make('analysis')
+                    ->label('Analysis')
+                    ->icon('heroicon-o-chart-bar')
+                    ->visible(fn (Survey $record): bool => auth()->user()?->can('runAnalysis', $record) ?? false)
+                    ->url(fn (Survey $record): string => route('admin.surveys.analysis.index', ['survey' => $record])),
                 Action::make('builder')
                     ->label('Builder')
                     ->icon('heroicon-o-pencil-square')

@@ -2,9 +2,12 @@
 
 namespace App\Providers;
 
+use App\Models\AnalysisJob;
+use App\Models\AnalysisResult;
 use App\Models\Document;
 use App\Models\ResearchProject;
 use App\Models\Survey;
+use App\Policies\AnalysisPolicy;
 use App\Policies\DocumentPolicy;
 use App\Policies\ResearchProjectPolicy;
 use App\Policies\SurveyPolicy;
@@ -32,6 +35,8 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(ResearchProject::class, ResearchProjectPolicy::class);
         Gate::policy(Document::class, DocumentPolicy::class);
         Gate::policy(Survey::class, SurveyPolicy::class);
+        Gate::policy(AnalysisJob::class, AnalysisPolicy::class);
+        Gate::policy(AnalysisResult::class, AnalysisPolicy::class);
 
         RateLimiter::for('review-links', function (Request $request): Limit {
             return Limit::perMinute(30)->by($request->ip() ?: 'anonymous');

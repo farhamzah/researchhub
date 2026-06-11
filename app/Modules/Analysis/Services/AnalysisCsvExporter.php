@@ -54,7 +54,7 @@ class AnalysisCsvExporter
 
     public function filename(AnalysisResult $result): string
     {
-        return 'analysis-'.$result->getKey().'-tables.csv';
+        return 'analysis-tables-'.$this->safeIdentifier($result->getKey()).'-'.now()->format('Ymd').'.csv';
     }
 
     /**
@@ -97,5 +97,10 @@ class AnalysisCsvExporter
         }
 
         return (string) $value;
+    }
+
+    private function safeIdentifier(string $identifier): string
+    {
+        return preg_replace('/[^A-Za-z0-9-]/', '-', $identifier) ?: 'analysis';
     }
 }

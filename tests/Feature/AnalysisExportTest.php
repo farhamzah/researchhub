@@ -32,7 +32,8 @@ class AnalysisExportTest extends TestCase
             ->assertOk();
 
         $this->assertStringContainsString('text/csv', $response->headers->get('content-type'));
-        $this->assertStringContainsString('tables.csv', $response->headers->get('content-disposition'));
+        $this->assertStringContainsString('analysis-tables-'.$result->id, $response->headers->get('content-disposition'));
+        $this->assertStringContainsString(now()->format('Ymd').'.csv', $response->headers->get('content-disposition'));
 
         [$header] = $this->csvRows($response->getContent());
 

@@ -45,7 +45,7 @@ class AnalysisMarkdownExporter
 
     public function filename(AnalysisResult $result): string
     {
-        return 'analysis-'.$result->getKey().'-academic-draft.md';
+        return 'analysis-draft-'.$this->safeIdentifier($result->getKey()).'-'.now()->format('Ymd').'.md';
     }
 
     /**
@@ -94,5 +94,10 @@ class AnalysisMarkdownExporter
     private function escape(string $value): string
     {
         return str_replace('|', '\\|', $value);
+    }
+
+    private function safeIdentifier(string $identifier): string
+    {
+        return preg_replace('/[^A-Za-z0-9-]/', '-', $identifier) ?: 'analysis';
     }
 }

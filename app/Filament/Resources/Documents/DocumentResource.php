@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Documents;
 use App\Filament\Resources\Documents\Pages\ManageDocuments;
 use App\Models\Document;
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -72,6 +73,13 @@ class DocumentResource extends Resource
                     ->relationship('category', 'name'),
                 SelectFilter::make('status')
                     ->options(array_combine(Document::STATUSES, Document::STATUSES)),
+            ])
+            ->recordActions([
+                Action::make('reviewLinks')
+                    ->label('Review Links')
+                    ->icon('heroicon-o-link')
+                    ->visible(fn (Document $record): bool => auth()->user()?->can('createReviewLink', $record) ?? false)
+                    ->url(fn (Document $record): string => route('admin.documents.review-links.index', ['document' => $record])),
             ]);
     }
 

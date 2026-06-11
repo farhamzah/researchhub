@@ -1,6 +1,7 @@
 <?php
 
 use App\Modules\DriveIntegration\Controllers\GoogleDriveOAuthController;
+use App\Modules\ReviewLinks\Controllers\AdminDocumentReviewLinkController;
 use App\Modules\ReviewLinks\Controllers\PublicReviewLinkController;
 use Illuminate\Support\Facades\Route;
 
@@ -17,6 +18,13 @@ Route::middleware('auth')->group(function (): void {
         ->name('drive.google.callback');
     Route::post('/settings/drive/google/disconnect', [GoogleDriveOAuthController::class, 'disconnect'])
         ->name('drive.google.disconnect');
+
+    Route::get('/admin/documents/{document}/review-links', [AdminDocumentReviewLinkController::class, 'index'])
+        ->name('admin.documents.review-links.index');
+    Route::post('/admin/documents/{document}/review-links', [AdminDocumentReviewLinkController::class, 'store'])
+        ->name('admin.documents.review-links.store');
+    Route::post('/admin/documents/{document}/review-links/{reviewLink}/revoke', [AdminDocumentReviewLinkController::class, 'revoke'])
+        ->name('admin.documents.review-links.revoke');
 });
 
 Route::middleware('throttle:review-links')->group(function (): void {

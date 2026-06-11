@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminAnalysisExportController;
 use App\Http\Controllers\AdminSurveyAnalysisController;
 use App\Http\Controllers\AdminSurveyBuilderController;
 use App\Http\Controllers\AdminSurveyResponseController;
@@ -44,6 +45,10 @@ Route::middleware('auth')->group(function (): void {
         ->name('admin.surveys.analysis.run');
     Route::get('/admin/analysis/results/{analysisResult}', [AdminSurveyAnalysisController::class, 'show'])
         ->name('admin.analysis.results.show');
+    Route::get('/admin/analysis/{analysisResult}/export/csv', [AdminAnalysisExportController::class, 'csv'])
+        ->name('admin.analysis.export.csv');
+    Route::get('/admin/analysis/{analysisResult}/export/markdown', [AdminAnalysisExportController::class, 'markdown'])
+        ->name('admin.analysis.export.markdown');
 
     Route::get('/admin/surveys/{survey}/builder', [AdminSurveyBuilderController::class, 'index'])
         ->name('admin.surveys.builder.index');

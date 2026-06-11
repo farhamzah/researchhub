@@ -21,4 +21,9 @@ class AnalysisPolicy
     {
         return $analysis->project->owner_id === $user->getKey();
     }
+
+    public function export(User $user, AnalysisResult $analysis): bool
+    {
+        return $this->view($user, $analysis);
+    }
 }

@@ -9,11 +9,11 @@ use App\Models\ResearchProject;
 use App\Models\ReviewLink;
 use App\Models\Survey;
 use BackedEnum;
-use Filament\Pages\Page;
+use Filament\Pages\Dashboard as BaseDashboard;
 use Illuminate\Support\Facades\Auth;
 use UnitEnum;
 
-class Dashboard extends Page
+class Dashboard extends BaseDashboard
 {
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-home';
 
@@ -22,8 +22,6 @@ class Dashboard extends Page
     protected static ?string $navigationLabel = 'Dashboard';
 
     protected static ?int $navigationSort = 1;
-
-    protected static ?string $slug = '';
 
     protected static ?string $title = 'Dashboard';
 

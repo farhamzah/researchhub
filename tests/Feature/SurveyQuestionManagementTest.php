@@ -1,0 +1,212 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\ProjectMember;
+use App\Models\ResearchProject;
+use App\Models\Survey;
+use App\Models\SurveyQuestion;
+use App\Models\User;
+use App\Modules\Surveys\Actions\CreateSurveyAction;
+use App\Modules\Surveys\Actions\PublishSurveyAction;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+class SurveyQuestionManagementTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_authorized_user_can_view_builder_and_create_page_and_question(): void
+    {
+        [$owner, $project, $survey] = $this->surveyFixture();
+        app(PublishSurveyAction::class)->handle($owner, $survey);
+
+        $this->actingAs($owner)
+            ->get(route('admin.surveys.builder.index', ['survey' => $survey]))
+            ->assertOk()
+            ->assertSee('Survey Builder')
+            ->assertSee('Preview Public Form')
+            ->assertSee('Responses');
+
+        $this->actingAs($owner)
+            ->post(route('admin.surveys.builder.pages.store', ['survey' => $survey]), [
+                'title' => 'Section A',
+                'description' => 'Opening questions',
+                'sort_order' => 1,
+            ])
+            ->assertRedirect(route('admin.surveys.builder.index', ['survey' => $survey]));
+
+        $page = $survey->pages()->firstOrFail();
+
+        $this->actingAs($owner)
+            ->post(route('admin.surveys.builder.questions.store', ['survey' => $survey]), [
+                'page_id' => $page->id,
+                'label' => 'Primary need',
+                'type' => SurveyQuestion::TYPE_SINGLE_CHOICE,
+                'options_json' => '{"choices":["media","assessment"]}',
+                'is_required' => '1',
+                'sort_order' => 2,
+            ])
+            ->assertRedirect(route('admin.surveys.builder.index', ['survey' => $survey]));
+
+        $question = $survey->questions()->firstOrFail();
+
+        $this->assertSame('primary_need', $question->question_key);
+        $this->assertSame(SurveyQuestion::TYPE_SINGLE_CHOICE, $question->type);
+        $this->assertSame(['choices' => ['media', 'assessment']], $question->options);
+        $this->assertTrue($question->is_required);
+        $this->assertDatabaseHas('activity_logs', ['action' => 'survey.page_created']);
+        $this->assertDatabaseHas('activity_logs', ['action' => 'survey.question_created']);
+    }
+
+    public function test_question_key_and_options_validation_are_enforced(): void
+    {
+        [$owner, $project, $survey] = $this->surveyFixture();
+
+        $this->actingAs($owner)
+            ->from(route('admin.surveys.builder.index', ['survey' => $survey]))
+            ->post(route('admin.surveys.builder.questions.store', ['survey' => $survey]), [
+                'question_key' => 'unsafe key!',
+                'label' => 'Unsafe key',
+                'type' => SurveyQuestion::TYPE_SHORT_TEXT,
+            ])
+            ->assertRedirect(route('admin.surveys.builder.index', ['survey' => $survey]))
+            ->assertSessionHasErrors('question_key');
+
+        $this->actingAs($owner)
+            ->from(route('admin.surveys.builder.index', ['survey' => $survey]))
+            ->post(route('admin.surveys.builder.questions.store', ['survey' => $survey]), [
+                'question_key' => 'choice',
+                'label' => 'Choice',
+                'type' => SurveyQuestion::TYPE_SINGLE_CHOICE,
+                'options_json' => '{"choices":[]}',
+            ])
+            ->assertRedirect(route('admin.surveys.builder.index', ['survey' => $survey]))
+            ->assertSessionHasErrors('options');
+
+        $this->actingAs($owner)
+            ->post(route('admin.surveys.builder.questions.store', ['survey' => $survey]), [
+                'question_key' => 'unique_key',
+                'label' => 'Unique Key',
+                'type' => SurveyQuestion::TYPE_SHORT_TEXT,
+            ])
+            ->assertRedirect();
+
+        $this->actingAs($owner)
+            ->from(route('admin.surveys.builder.index', ['survey' => $survey]))
+            ->post(route('admin.surveys.builder.questions.store', ['survey' => $survey]), [
+                'question_key' => 'unique_key',
+                'label' => 'Duplicate Key',
+                'type' => SurveyQuestion::TYPE_SHORT_TEXT,
+            ])
+            ->assertRedirect(route('admin.surveys.builder.index', ['survey' => $survey]))
+            ->assertSessionHasErrors('question_key');
+    }
+
+    public function test_authorization_blocks_unauthorized_member_from_managing_questions(): void
+    {
+        [$owner, $project, $survey] = $this->surveyFixture();
+        $viewer = User::factory()->create();
+        ProjectMember::create([
+            'project_id' => $project->id,
+            'user_id' => $viewer->id,
+            'role' => ProjectMember::ROLE_VIEWER,
+            'status' => ProjectMember::STATUS_ACTIVE,
+            'accepted_at' => now(),
+        ]);
+
+        $this->actingAs($viewer)
+            ->get(route('admin.surveys.builder.index', ['survey' => $survey]))
+            ->assertForbidden();
+
+        $this->actingAs($viewer)
+            ->post(route('admin.surveys.builder.questions.store', ['survey' => $survey]), [
+                'label' => 'Blocked',
+                'type' => SurveyQuestion::TYPE_SHORT_TEXT,
+            ])
+            ->assertForbidden();
+    }
+
+    public function test_authorized_user_can_update_duplicate_and_delete_when_no_responses_exist(): void
+    {
+        [$owner, $project, $survey] = $this->surveyFixture();
+        $page = $survey->pages()->create([
+            'title' => 'Page before edit',
+            'sort_order' => 1,
+        ]);
+        $question = $survey->questions()->create([
+            'page_id' => $page->id,
+            'question_key' => 'feedback',
+            'type' => SurveyQuestion::TYPE_LONG_TEXT,
+            'label' => 'Feedback',
+        ]);
+
+        $this->actingAs($owner)
+            ->put(route('admin.surveys.builder.pages.update', ['survey' => $survey, 'page' => $page]), [
+                'title' => 'Page after edit',
+                'description' => 'Updated page description',
+                'sort_order' => 3,
+            ])
+            ->assertRedirect(route('admin.surveys.builder.index', ['survey' => $survey]));
+
+        $page->refresh();
+        $this->assertSame('Page after edit', $page->title);
+        $this->assertDatabaseHas('activity_logs', ['action' => 'survey.page_updated']);
+
+        $this->actingAs($owner)
+            ->put(route('admin.surveys.builder.questions.update', ['survey' => $survey, 'question' => $question]), [
+                'question_key' => 'feedback_updated',
+                'type' => SurveyQuestion::TYPE_SHORT_TEXT,
+                'label' => 'Updated feedback',
+                'help_text' => 'Short answer',
+                'is_required' => '1',
+                'sort_order' => 5,
+            ])
+            ->assertRedirect(route('admin.surveys.builder.index', ['survey' => $survey]));
+
+        $question->refresh();
+        $this->assertSame('feedback_updated', $question->question_key);
+        $this->assertSame(SurveyQuestion::TYPE_SHORT_TEXT, $question->type);
+        $this->assertDatabaseHas('activity_logs', ['action' => 'survey.question_updated']);
+
+        $this->actingAs($owner)
+            ->post(route('admin.surveys.builder.questions.duplicate', ['survey' => $survey, 'question' => $question]))
+            ->assertRedirect(route('admin.surveys.builder.index', ['survey' => $survey]));
+
+        $this->assertDatabaseHas('survey_questions', ['question_key' => 'feedback_updated_copy']);
+        $this->assertDatabaseHas('activity_logs', ['action' => 'survey.question_duplicated']);
+
+        $copy = $survey->questions()->where('question_key', 'feedback_updated_copy')->firstOrFail();
+        $this->actingAs($owner)
+            ->delete(route('admin.surveys.builder.questions.delete', ['survey' => $survey, 'question' => $copy]))
+            ->assertRedirect(route('admin.surveys.builder.index', ['survey' => $survey]));
+
+        $this->assertDatabaseMissing('survey_questions', ['id' => $copy->id]);
+        $this->assertDatabaseHas('activity_logs', ['action' => 'survey.question_deleted']);
+
+        $this->actingAs($owner)
+            ->delete(route('admin.surveys.builder.pages.delete', ['survey' => $survey, 'page' => $page]))
+            ->assertRedirect(route('admin.surveys.builder.index', ['survey' => $survey]));
+
+        $this->assertDatabaseMissing('survey_pages', ['id' => $page->id]);
+        $this->assertDatabaseHas('activity_logs', ['action' => 'survey.page_deleted']);
+    }
+
+    /**
+     * @return array{0: User, 1: ResearchProject, 2: Survey}
+     */
+    private function surveyFixture(): array
+    {
+        $owner = User::factory()->create();
+        $project = ResearchProject::create([
+            'owner_id' => $owner->id,
+            'title' => 'Question Management Project',
+            'status' => ResearchProject::STATUS_ACTIVE,
+        ]);
+        $survey = app(CreateSurveyAction::class)->handle($owner, $project, [
+            'title' => 'Question Management Survey',
+        ]);
+
+        return [$owner, $project, $survey];
+    }
+}

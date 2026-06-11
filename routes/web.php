@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminSurveyBuilderController;
 use App\Http\Controllers\AdminSurveyResponseController;
 use App\Http\Controllers\PublicSurveyController;
 use App\Modules\DriveIntegration\Controllers\GoogleDriveOAuthController;
@@ -32,6 +33,23 @@ Route::middleware('auth')->group(function (): void {
         ->name('admin.surveys.responses.index');
     Route::get('/admin/surveys/{survey}/responses/{response}', [AdminSurveyResponseController::class, 'show'])
         ->name('admin.surveys.responses.show');
+
+    Route::get('/admin/surveys/{survey}/builder', [AdminSurveyBuilderController::class, 'index'])
+        ->name('admin.surveys.builder.index');
+    Route::post('/admin/surveys/{survey}/builder/pages', [AdminSurveyBuilderController::class, 'storePage'])
+        ->name('admin.surveys.builder.pages.store');
+    Route::put('/admin/surveys/{survey}/builder/pages/{page}', [AdminSurveyBuilderController::class, 'updatePage'])
+        ->name('admin.surveys.builder.pages.update');
+    Route::delete('/admin/surveys/{survey}/builder/pages/{page}', [AdminSurveyBuilderController::class, 'deletePage'])
+        ->name('admin.surveys.builder.pages.delete');
+    Route::post('/admin/surveys/{survey}/builder/questions', [AdminSurveyBuilderController::class, 'storeQuestion'])
+        ->name('admin.surveys.builder.questions.store');
+    Route::put('/admin/surveys/{survey}/builder/questions/{question}', [AdminSurveyBuilderController::class, 'updateQuestion'])
+        ->name('admin.surveys.builder.questions.update');
+    Route::delete('/admin/surveys/{survey}/builder/questions/{question}', [AdminSurveyBuilderController::class, 'deleteQuestion'])
+        ->name('admin.surveys.builder.questions.delete');
+    Route::post('/admin/surveys/{survey}/builder/questions/{question}/duplicate', [AdminSurveyBuilderController::class, 'duplicateQuestion'])
+        ->name('admin.surveys.builder.questions.duplicate');
 });
 
 Route::middleware('throttle:review-links')->group(function (): void {

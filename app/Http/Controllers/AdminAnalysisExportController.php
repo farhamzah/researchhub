@@ -19,6 +19,11 @@ class AdminAnalysisExportController extends Controller
         return $this->download($analysisResult, $request, $exportService, 'markdown');
     }
 
+    public function docx(AnalysisResult $analysisResult, Request $request, AnalysisExportService $exportService): Response
+    {
+        return $this->download($analysisResult, $request, $exportService, 'docx');
+    }
+
     private function download(
         AnalysisResult $analysisResult,
         Request $request,

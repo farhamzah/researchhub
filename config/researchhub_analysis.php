@@ -18,10 +18,16 @@ return [
     'export_formats' => [
         'csv',
         'markdown',
+        'docx',
     ],
 
     'docx_export' => [
-        'enabled' => false,
-        'deferred_reason' => 'phpoffice/phpword is not installed; DOCX export is deferred until report generation dependencies are approved.',
+        'enabled' => true,
+        'dependency' => 'phpoffice/phpword',
+        'required_extensions' => [
+            'zip',
+            'xml',
+            'xmlwriter',
+        ],
     ],
 ];

@@ -49,6 +49,8 @@ Route::middleware('auth')->group(function (): void {
         ->name('admin.analysis.export.csv');
     Route::get('/admin/analysis/{analysisResult}/export/markdown', [AdminAnalysisExportController::class, 'markdown'])
         ->name('admin.analysis.export.markdown');
+    Route::get('/admin/analysis/{analysisResult}/export/docx', [AdminAnalysisExportController::class, 'docx'])
+        ->name('admin.analysis.export.docx');
 
     Route::get('/admin/surveys/{survey}/builder', [AdminSurveyBuilderController::class, 'index'])
         ->name('admin.surveys.builder.index');

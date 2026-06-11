@@ -14,6 +14,7 @@ class AnalysisExportService
     public function __construct(
         private readonly AnalysisCsvExporter $csvExporter,
         private readonly AnalysisMarkdownExporter $markdownExporter,
+        private readonly AnalysisDocxExporter $docxExporter,
         private readonly ActivityLogger $activityLogger,
     ) {}
 
@@ -36,6 +37,11 @@ class AnalysisExportService
                 'content' => $this->markdownExporter->export($result),
                 'filename' => $this->markdownExporter->filename($result),
                 'content_type' => 'text/markdown; charset=UTF-8',
+            ],
+            'docx' => [
+                'content' => $this->docxExporter->export($result),
+                'filename' => $this->docxExporter->filename($result),
+                'content_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             ],
             default => throw new InvalidArgumentException('Unsupported analysis export format.'),
         };

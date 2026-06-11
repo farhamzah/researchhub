@@ -15,6 +15,14 @@
                 <p class="mt-2 text-sm text-gray-600">{{ $survey->title }}</p>
             </div>
             <div class="flex flex-wrap gap-2">
+                <a href="{{ route('admin.surveys.responses.export', ['survey' => $survey]) }}" class="rounded-md border border-emerald-700 bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-600">
+                    Export CSV
+                </a>
+                @if ($privacyService->canViewFullIdentity(auth()->user(), $survey))
+                    <a href="{{ route('admin.surveys.responses.export', ['survey' => $survey, 'with_identity' => 1]) }}" class="rounded-md border border-amber-700 bg-white px-4 py-2 text-sm font-semibold text-amber-800 shadow-sm hover:bg-amber-50">
+                        Export CSV with identity
+                    </a>
+                @endif
                 @if ($survey->canReceiveResponses())
                     <a href="{{ route('survey.show', ['survey' => $survey->slug]) }}" target="_blank" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50">
                         Public Link

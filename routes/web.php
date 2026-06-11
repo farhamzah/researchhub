@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminSurveyBuilderController;
 use App\Http\Controllers\AdminSurveyResponseController;
+use App\Http\Controllers\AdminSurveyResponseExportController;
 use App\Http\Controllers\PublicSurveyController;
 use App\Modules\DriveIntegration\Controllers\GoogleDriveOAuthController;
 use App\Modules\ReviewLinks\Controllers\AdminDocumentReviewLinkController;
@@ -31,6 +32,8 @@ Route::middleware('auth')->group(function (): void {
 
     Route::get('/admin/surveys/{survey}/responses', [AdminSurveyResponseController::class, 'index'])
         ->name('admin.surveys.responses.index');
+    Route::get('/admin/surveys/{survey}/responses/export', AdminSurveyResponseExportController::class)
+        ->name('admin.surveys.responses.export');
     Route::get('/admin/surveys/{survey}/responses/{response}', [AdminSurveyResponseController::class, 'show'])
         ->name('admin.surveys.responses.show');
 

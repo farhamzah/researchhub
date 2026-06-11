@@ -59,6 +59,11 @@ class ResearchProjectPolicy
             || $researchProject->hasActiveMemberWithRole($user, config('project_roles.member_management_roles', []));
     }
 
+    public function bootstrapDriveFolders(User $user, ResearchProject $researchProject): bool
+    {
+        return $this->ownsProject($user, $researchProject);
+    }
+
     private function ownsProject(User $user, ResearchProject $researchProject): bool
     {
         return $researchProject->owner_id === $user->getKey();

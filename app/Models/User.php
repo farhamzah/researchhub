@@ -109,4 +109,9 @@ class User extends Authenticatable implements FilamentUser
     {
         return $this->hasMany(ReviewLink::class, 'created_by');
     }
+
+    public function createdSurveys(): HasMany
+    {
+        return $this->hasMany(Survey::class, 'created_by');
+    }
 }

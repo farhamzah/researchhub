@@ -4,8 +4,10 @@ namespace App\Providers;
 
 use App\Models\Document;
 use App\Models\ResearchProject;
+use App\Models\Survey;
 use App\Policies\DocumentPolicy;
 use App\Policies\ResearchProjectPolicy;
+use App\Policies\SurveyPolicy;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -29,6 +31,7 @@ class AppServiceProvider extends ServiceProvider
     {
         Gate::policy(ResearchProject::class, ResearchProjectPolicy::class);
         Gate::policy(Document::class, DocumentPolicy::class);
+        Gate::policy(Survey::class, SurveyPolicy::class);
 
         RateLimiter::for('review-links', function (Request $request): Limit {
             return Limit::perMinute(30)->by($request->ip() ?: 'anonymous');
@@ -36,6 +39,13 @@ class AppServiceProvider extends ServiceProvider
 
         RateLimiter::for('review-link-passwords', function (Request $request): Limit {
             return Limit::perMinute(5)->by(($request->ip() ?: 'anonymous').'|'.(string) $request->route('token'));
+        });
+
+        RateLimiter::for('surveys', function (Request $request): Limit {
+            $routeSurvey = $request->route('survey');
+            $surveyKey = $routeSurvey instanceof Survey ? $routeSurvey->getRouteKey() : (string) $routeSurvey;
+
+            return Limit::perMinute(20)->by(($request->ip() ?: 'anonymous').'|'.$surveyKey);
         });
     }
 }

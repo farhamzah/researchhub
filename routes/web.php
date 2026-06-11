@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\PublicSurveyController;
 use App\Modules\DriveIntegration\Controllers\GoogleDriveOAuthController;
 use App\Modules\ReviewLinks\Controllers\AdminDocumentReviewLinkController;
 use App\Modules\ReviewLinks\Controllers\PublicReviewLinkController;
@@ -41,3 +42,10 @@ Route::middleware('throttle:review-links')->group(function (): void {
 Route::post('/review/{token}/password', [PublicReviewLinkController::class, 'password'])
     ->middleware('throttle:review-link-passwords')
     ->name('review.password');
+
+Route::middleware('throttle:surveys')->group(function (): void {
+    Route::get('/survey/{survey:slug}', [PublicSurveyController::class, 'show'])
+        ->name('survey.show');
+    Route::post('/survey/{survey:slug}/responses', [PublicSurveyController::class, 'store'])
+        ->name('survey.responses.store');
+});

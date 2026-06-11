@@ -63,6 +63,11 @@ class SurveyPolicy
         return $this->ownsSurveyProject($user, $survey);
     }
 
+    public function manageScoring(User $user, Survey $survey): bool
+    {
+        return $this->ownsSurveyProject($user, $survey);
+    }
+
     private function canManageSurvey(User $user, Survey $survey): bool
     {
         return $this->ownsSurveyProject($user, $survey)

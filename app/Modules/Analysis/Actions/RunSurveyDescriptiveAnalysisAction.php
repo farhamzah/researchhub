@@ -62,6 +62,8 @@ class RunSurveyDescriptiveAnalysisAction
                     'result_payload' => [
                         'survey' => $analysis['survey'],
                         'questions' => $analysis['questions'],
+                        'indicator_summary' => $analysis['indicator_summary'],
+                        'scale_summary' => $analysis['scale_summary'],
                     ],
                 ]);
 

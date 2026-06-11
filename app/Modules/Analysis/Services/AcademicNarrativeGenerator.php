@@ -21,6 +21,7 @@ class AcademicNarrativeGenerator
         $body = trim($notable) !== ''
             ? $notable
             : 'Sebagian besar butir telah diringkas pada tingkat deskriptif untuk membantu peneliti membaca pola awal data.';
+        $indicatorBody = $this->indicatorSentence($analysis['indicator_summary'] ?? []);
 
         return 'Draf narasi akademik: Berdasarkan hasil pengisian survei, diperoleh sebanyak '
             .$summary['submitted_count']
@@ -28,6 +29,8 @@ class AcademicNarrativeGenerator
             .$summary['response_count']
             .' respons yang tercatat. '
             .$body
+            .' '
+            .$indicatorBody
             .' Ringkasan ini menunjukkan kecenderungan awal data pada tingkat deskriptif, sehingga interpretasi akhir tetap perlu diverifikasi oleh peneliti dan pembimbing sesuai konteks penelitian serta kualitas instrumen.';
     }
 
@@ -94,5 +97,27 @@ class AcademicNarrativeGenerator
             .' sampai '
             .$question['max']
             .'.';
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $indicatorSummary
+     */
+    private function indicatorSentence(array $indicatorSummary): string
+    {
+        $indicator = collect($indicatorSummary)
+            ->filter(fn (array $summary): bool => ($summary['mean'] ?? null) !== null)
+            ->first();
+
+        if (! $indicator) {
+            return '';
+        }
+
+        $label = $indicator['interpretation_label'] ?? null;
+        $category = $label ? ' dan berada pada kategori '.$label : '';
+
+        return 'Pada indikator '.$indicator['indicator_name'].', nilai rerata sebesar '
+            .$indicator['mean']
+            .$category
+            .' berdasarkan konfigurasi skor yang tersedia; interpretasi ini masih bersifat deskriptif dan perlu diverifikasi oleh peneliti.';
     }
 }

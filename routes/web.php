@@ -5,6 +5,7 @@ use App\Http\Controllers\AdminSurveyAnalysisController;
 use App\Http\Controllers\AdminSurveyBuilderController;
 use App\Http\Controllers\AdminSurveyResponseController;
 use App\Http\Controllers\AdminSurveyResponseExportController;
+use App\Http\Controllers\AdminSurveyScoringController;
 use App\Http\Controllers\PublicSurveyController;
 use App\Modules\DriveIntegration\Controllers\GoogleDriveOAuthController;
 use App\Modules\ReviewLinks\Controllers\AdminDocumentReviewLinkController;
@@ -68,6 +69,23 @@ Route::middleware('auth')->group(function (): void {
         ->name('admin.surveys.builder.questions.delete');
     Route::post('/admin/surveys/{survey}/builder/questions/{question}/duplicate', [AdminSurveyBuilderController::class, 'duplicateQuestion'])
         ->name('admin.surveys.builder.questions.duplicate');
+
+    Route::get('/admin/surveys/{survey}/scoring', [AdminSurveyScoringController::class, 'index'])
+        ->name('admin.surveys.scoring.index');
+    Route::post('/admin/surveys/{survey}/scoring/scales', [AdminSurveyScoringController::class, 'storeScale'])
+        ->name('admin.surveys.scoring.scales.store');
+    Route::put('/admin/surveys/{survey}/scoring/scales/{scale}', [AdminSurveyScoringController::class, 'updateScale'])
+        ->name('admin.surveys.scoring.scales.update');
+    Route::delete('/admin/surveys/{survey}/scoring/scales/{scale}', [AdminSurveyScoringController::class, 'deleteScale'])
+        ->name('admin.surveys.scoring.scales.delete');
+    Route::post('/admin/surveys/{survey}/scoring/indicators', [AdminSurveyScoringController::class, 'storeIndicator'])
+        ->name('admin.surveys.scoring.indicators.store');
+    Route::put('/admin/surveys/{survey}/scoring/indicators/{indicator}', [AdminSurveyScoringController::class, 'updateIndicator'])
+        ->name('admin.surveys.scoring.indicators.update');
+    Route::delete('/admin/surveys/{survey}/scoring/indicators/{indicator}', [AdminSurveyScoringController::class, 'deleteIndicator'])
+        ->name('admin.surveys.scoring.indicators.delete');
+    Route::put('/admin/surveys/{survey}/scoring/questions/{question}', [AdminSurveyScoringController::class, 'updateQuestionScoring'])
+        ->name('admin.surveys.scoring.questions.update');
 });
 
 Route::middleware('throttle:review-links')->group(function (): void {

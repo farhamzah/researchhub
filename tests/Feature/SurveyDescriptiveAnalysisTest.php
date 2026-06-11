@@ -39,8 +39,10 @@ class SurveyDescriptiveAnalysisTest extends TestCase
         $this->assertSame(4, $result->summary['response_count']);
         $this->assertSame(8, $result->summary['analyzed_question_count']);
         $this->assertSame(1, $result->summary['hidden_question_count']);
-        $this->assertCount(1, $result->tables);
+        $this->assertCount(3, $result->tables);
         $this->assertCount(1, $result->narratives);
+        $this->assertArrayHasKey('indicator_summary', $result->result_payload);
+        $this->assertArrayHasKey('scale_summary', $result->result_payload);
 
         $questions = collect($result->result_payload['questions'])->keyBy('question_key');
 

@@ -110,6 +110,21 @@ class Survey extends Model
         return $this->hasMany(SurveyQuestion::class)->orderBy('sort_order');
     }
 
+    public function scales(): HasMany
+    {
+        return $this->hasMany(SurveyScale::class)->orderBy('sort_order');
+    }
+
+    public function indicators(): HasMany
+    {
+        return $this->hasMany(SurveyIndicator::class)->orderBy('sort_order');
+    }
+
+    public function questionScorings(): HasMany
+    {
+        return $this->hasMany(SurveyQuestionScoring::class);
+    }
+
     public function respondents(): HasMany
     {
         return $this->hasMany(Respondent::class);

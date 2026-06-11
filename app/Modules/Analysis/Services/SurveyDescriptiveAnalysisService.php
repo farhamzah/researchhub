@@ -10,7 +10,11 @@ use Illuminate\Support\Collection;
 
 class SurveyDescriptiveAnalysisService
 {
-    public function __construct(private readonly QuestionDescriptiveAnalyzer $questionAnalyzer) {}
+    public function __construct(
+        private readonly QuestionDescriptiveAnalyzer $questionAnalyzer,
+        private readonly SurveyIndicatorScoringService $indicatorScoringService,
+        private readonly SurveyScaleScoringService $scaleScoringService,
+    ) {}
 
     /**
      * @return array<string, mixed>
@@ -44,6 +48,9 @@ class SurveyDescriptiveAnalysisService
             ))
             ->values();
 
+        $indicatorSummary = $this->indicatorScoringService->summarize($survey);
+        $scaleSummary = $this->scaleScoringService->summarize($survey, $indicatorSummary);
+
         return [
             'survey' => [
                 'id' => $survey->getKey(),
@@ -61,8 +68,12 @@ class SurveyDescriptiveAnalysisService
                     ->count(),
             ],
             'questions' => $questionSummaries->all(),
+            'indicator_summary' => $indicatorSummary,
+            'scale_summary' => $scaleSummary,
             'tables' => [
                 $this->questionSummaryTable($questionSummaries),
+                $this->indicatorSummaryTable($indicatorSummary),
+                $this->scaleSummaryTable($scaleSummary),
             ],
         ];
     }
@@ -99,6 +110,67 @@ class SurveyDescriptiveAnalysisService
                     'max' => $summary['max'] ?? null,
                     'standard_deviation' => $summary['standard_deviation'] ?? null,
                 ])
+                ->values()
+                ->all(),
+        ];
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $indicatorSummary
+     * @return array{title: string, table_key: string, columns: array<int, string>, rows: array<int, array<string, mixed>>}
+     */
+    private function indicatorSummaryTable(array $indicatorSummary): array
+    {
+        return [
+            'title' => 'Indicator Descriptive Summary',
+            'table_key' => 'indicator_descriptive_summary',
+            'columns' => [
+                'indicator_name',
+                'scale_name',
+                'item_count',
+                'respondent_count',
+                'mean',
+                'median',
+                'min',
+                'max',
+                'standard_deviation',
+                'missing_count',
+                'interpretation_label',
+            ],
+            'rows' => collect($indicatorSummary)
+                ->map(fn (array $summary): array => collect($summary)
+                    ->except(['indicator_id', 'scale_id', 'respondent_scores'])
+                    ->all())
+                ->values()
+                ->all(),
+        ];
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $scaleSummary
+     * @return array{title: string, table_key: string, columns: array<int, string>, rows: array<int, array<string, mixed>>}
+     */
+    private function scaleSummaryTable(array $scaleSummary): array
+    {
+        return [
+            'title' => 'Scale Descriptive Summary',
+            'table_key' => 'scale_descriptive_summary',
+            'columns' => [
+                'scale_name',
+                'indicator_count',
+                'item_count',
+                'respondent_count',
+                'mean',
+                'median',
+                'min',
+                'max',
+                'standard_deviation',
+                'missing_count',
+            ],
+            'rows' => collect($scaleSummary)
+                ->map(fn (array $summary): array => collect($summary)
+                    ->except(['scale_id'])
+                    ->all())
                 ->values()
                 ->all(),
         ];

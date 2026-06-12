@@ -28,17 +28,20 @@ class DashboardRenderingTest extends TestCase
             ->get('/admin')
             ->assertOk()
             ->assertSee('Welcome to ResearchHub')
-            ->assertSee('Manage your research projects, documents, surveys, analysis, and academic drafts in one place.')
+            ->assertSee('Research workspace for projects, documents, surveys, analysis, and academic drafts.')
             ->assertSee('Research Projects')
             ->assertSee('Recommended next steps')
             ->assertSee('Quick Actions')
             ->assertSee('Academic Research Workspace')
-            ->assertSee('researchhub-stat-card')
+            ->assertSee('data-dashboard-card="hero"', false)
+            ->assertSee('data-dashboard-card="stat"', false)
+            ->assertSee('data-dashboard-card="next-steps"', false)
+            ->assertSee('data-dashboard-card="quick-actions"', false)
             ->assertSee('Open Research Projects')
             ->assertSee('Open Documents')
             ->assertSee('Open Surveys')
             ->assertSee('Google Drive Settings')
-            ->assertSee('Timeline planning is available from each project row')
+            ->assertSee('Open a project to manage its timeline')
             ->assertDontSee('filamentphp.com');
     }
 
@@ -57,7 +60,7 @@ class DashboardRenderingTest extends TestCase
             ->assertSee('Welcome to ResearchHub')
             ->assertSee('Recommended next steps')
             ->assertSee('Quick Actions')
-            ->assertSee('researchhub-action-tile');
+            ->assertSee('rh-action-tile');
     }
 
     private function adminUser(): User

@@ -2,12 +2,7 @@
 
 namespace App\Filament\Pages;
 
-use App\Models\AnalysisResult;
-use App\Models\Document;
-use App\Models\DriveConnection;
-use App\Models\ResearchProject;
-use App\Models\ReviewLink;
-use App\Models\Survey;
+use App\Modules\Dashboard\Services\DashboardDataService;
 use BackedEnum;
 use Filament\Pages\Dashboard as BaseDashboard;
 use Illuminate\Support\Facades\Auth;
@@ -36,49 +31,27 @@ class Dashboard extends BaseDashboard
 
         if (! $user) {
             return [
-                'projectCount' => 0,
-                'documentCount' => 0,
-                'surveyCount' => 0,
-                'analysisResultCount' => 0,
-                'activeReviewCount' => 0,
-                'driveConnected' => false,
+                'stats' => [],
+                'driveStatus' => [
+                    'connected' => false,
+                    'label' => 'Not connected',
+                    'description' => 'Sign in to view your Google Drive status.',
+                ],
+                'activeProjects' => collect(),
+                'timelineSummary' => [
+                    'active_tasks' => 0,
+                    'delayed_tasks' => 0,
+                    'upcoming_tasks' => 0,
+                    'next_due_task' => null,
+                ],
+                'recentDocuments' => collect(),
+                'recentSurveys' => collect(),
+                'recentAnalysisResults' => collect(),
+                'pinnedResearchLinks' => collect(),
+                'quickActions' => [],
             ];
         }
 
-        // All counts use the same visibility scopes enforced by Filament resources —
-        // no policy bypass, no cross-user data exposure.
-        $projectCount = ResearchProject::query()
-            ->visibleTo($user)
-            ->count();
-
-        $documentCount = Document::query()
-            ->visibleTo($user)
-            ->count();
-
-        $surveyCount = Survey::query()
-            ->visibleTo($user)
-            ->count();
-
-        $analysisResultCount = AnalysisResult::query()
-            ->whereHas('survey', fn ($q) => $q->visibleTo($user))
-            ->count();
-
-        $activeReviewCount = ReviewLink::query()
-            ->whereHas('project', fn ($q) => $q->visibleTo($user))
-            ->where('status', ReviewLink::STATUS_ACTIVE)
-            ->count();
-
-        $driveConnected = $user->googleDriveConnection()
-            ->where('status', DriveConnection::STATUS_CONNECTED)
-            ->exists();
-
-        return [
-            'projectCount' => $projectCount,
-            'documentCount' => $documentCount,
-            'surveyCount' => $surveyCount,
-            'analysisResultCount' => $analysisResultCount,
-            'activeReviewCount' => $activeReviewCount,
-            'driveConnected' => $driveConnected,
-        ];
+        return app(DashboardDataService::class)->build($user);
     }
 }

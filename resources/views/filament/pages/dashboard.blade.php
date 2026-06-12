@@ -1,69 +1,27 @@
 <x-filament-panels::page>
-    @php
-        $stats = [
-            ['label' => 'Research Projects', 'value' => $projectCount, 'description' => 'Scoped workspaces', 'accent' => '#2563eb'],
-            ['label' => 'Documents', 'value' => $documentCount, 'description' => 'Research files', 'accent' => '#059669'],
-            ['label' => 'Surveys', 'value' => $surveyCount, 'description' => 'Instruments', 'accent' => '#0891b2'],
-            ['label' => 'Analysis Results', 'value' => $analysisResultCount, 'description' => 'Draft outputs', 'accent' => '#4f46e5'],
-            ['label' => 'Pending Reviews', 'value' => $activeReviewCount, 'description' => 'Active review links', 'accent' => '#d97706'],
-        ];
-
-        $quickActions = [
-            [
-                'label' => 'Open Research Projects',
-                'description' => 'Manage project workspaces and open project timelines.',
-                'url' => route('filament.admin.resources.projects.research-projects.index'),
-                'initial' => 'P',
-            ],
-            [
-                'label' => 'Open Documents',
-                'description' => 'Review documents, versions, metadata, and review links.',
-                'url' => route('filament.admin.resources.documents.index'),
-                'initial' => 'D',
-            ],
-            [
-                'label' => 'Open Surveys',
-                'description' => 'Manage instruments, responses, scoring, and analysis.',
-                'url' => route('filament.admin.resources.surveys.index'),
-                'initial' => 'S',
-            ],
-            [
-                'label' => 'Google Drive Settings',
-                'description' => 'Connect Drive before storing research files.',
-                'url' => route('filament.admin.pages.settings.google-drive'),
-                'initial' => 'G',
-            ],
-        ];
-    @endphp
-
     <style>
         .rh-dashboard {
             display: grid;
-            gap: 1.5rem;
+            gap: 1.25rem;
         }
 
         .rh-card {
             background: #ffffff;
             border: 1px solid #e2e8f0;
-            border-radius: 18px;
-            box-shadow: 0 14px 32px rgba(15, 23, 42, 0.08);
+            border-radius: 14px;
+            box-shadow: 0 12px 26px rgba(15, 23, 42, 0.07);
         }
 
         .rh-hero {
-            position: relative;
             overflow: hidden;
-            padding: clamp(1.5rem, 3vw, 2.4rem);
+            padding: clamp(1.25rem, 3vw, 2.25rem);
             color: #ffffff;
-            background:
-                radial-gradient(circle at 82% 12%, rgba(45, 212, 191, 0.28), transparent 28%),
-                linear-gradient(135deg, #0f172a 0%, #1d4ed8 52%, #0f766e 100%);
+            background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 48%, #0f766e 100%);
         }
 
         .rh-hero-grid {
-            position: relative;
-            z-index: 1;
             display: grid;
-            gap: 1.25rem;
+            gap: 1rem;
             grid-template-columns: minmax(0, 1fr);
         }
 
@@ -72,105 +30,115 @@
             width: fit-content;
             align-items: center;
             border-radius: 999px;
-            background: rgba(255, 255, 255, 0.14);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 0.38rem 0.75rem;
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            background: rgba(255, 255, 255, 0.12);
+            padding: 0.35rem 0.72rem;
             color: rgba(255, 255, 255, 0.92);
             font-size: 0.78rem;
-            font-weight: 700;
+            font-weight: 800;
         }
 
         .rh-hero-title {
-            margin-top: 0.95rem;
+            margin-top: 0.9rem;
             max-width: 46rem;
-            font-size: clamp(2rem, 4vw, 3.1rem);
+            font-size: clamp(2rem, 4vw, 3rem);
             line-height: 1.02;
             font-weight: 850;
         }
 
         .rh-hero-copy {
             margin-top: 0.85rem;
-            max-width: 40rem;
+            max-width: 42rem;
             color: rgba(255, 255, 255, 0.82);
             font-size: 1rem;
-            line-height: 1.7;
+            line-height: 1.65;
+        }
+
+        .rh-hero-actions,
+        .rh-row-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.65rem;
         }
 
         .rh-hero-actions {
-            margin-top: 1.25rem;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.75rem;
+            margin-top: 1.2rem;
         }
 
-        .rh-primary-action,
-        .rh-secondary-action {
+        .rh-button,
+        .rh-button-ghost {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            min-height: 2.65rem;
-            border-radius: 12px;
-            padding: 0.7rem 1rem;
-            font-size: 0.9rem;
+            min-height: 2.45rem;
+            border-radius: 10px;
+            padding: 0.62rem 0.9rem;
+            font-size: 0.86rem;
             font-weight: 800;
             text-decoration: none;
         }
 
-        .rh-primary-action {
+        .rh-button {
             background: #ffffff;
             color: #1e3a8a;
         }
 
-        .rh-secondary-action {
+        .rh-button-ghost {
             color: #ffffff;
             border: 1px solid rgba(255, 255, 255, 0.28);
             background: rgba(255, 255, 255, 0.1);
         }
 
         .rh-drive-panel {
-            border-radius: 16px;
+            border-radius: 12px;
             border: 1px solid rgba(255, 255, 255, 0.22);
             background: rgba(255, 255, 255, 0.12);
             padding: 1rem;
         }
 
+        .rh-drive-label,
+        .rh-section-kicker,
+        .rh-item-meta,
+        .rh-empty {
+            font-size: 0.78rem;
+        }
+
         .rh-drive-label {
             color: rgba(255, 255, 255, 0.68);
-            font-size: 0.78rem;
-            font-weight: 800;
+            font-weight: 850;
         }
 
         .rh-drive-value {
-            margin-top: 0.3rem;
-            font-size: 1.1rem;
+            margin-top: 0.25rem;
+            font-size: 1.08rem;
             font-weight: 850;
         }
 
         .rh-drive-copy {
             margin-top: 0.45rem;
             color: rgba(255, 255, 255, 0.76);
-            font-size: 0.86rem;
-            line-height: 1.5;
+            font-size: 0.85rem;
+            line-height: 1.45;
         }
 
         .rh-stat-grid {
             display: grid;
-            gap: 1rem;
-            grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+            gap: 0.9rem;
+            grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
         }
 
         .rh-stat-card {
             position: relative;
             overflow: hidden;
-            min-height: 8.75rem;
-            padding: 1.15rem;
+            min-height: 7.5rem;
+            padding: 1rem;
         }
 
         .rh-stat-card::before {
             content: "";
             position: absolute;
             inset: 0 auto 0 0;
-            width: 0.3rem;
+            width: 0.28rem;
             background: var(--rh-accent, #2563eb);
         }
 
@@ -181,83 +149,159 @@
         }
 
         .rh-stat-value {
-            margin-top: 0.65rem;
+            margin-top: 0.55rem;
             color: #0f172a;
-            font-size: 2.45rem;
+            font-size: 2.1rem;
             line-height: 1;
             font-weight: 900;
         }
 
-        .rh-stat-description {
-            margin-top: 0.75rem;
+        .rh-stat-description,
+        .rh-item-copy {
             color: #64748b;
-            font-size: 0.84rem;
+            font-size: 0.82rem;
             line-height: 1.5;
         }
 
-        .rh-main-grid {
+        .rh-stat-description {
+            margin-top: 0.65rem;
+        }
+
+        .rh-grid {
             display: grid;
             gap: 1rem;
             grid-template-columns: repeat(auto-fit, minmax(min(100%, 25rem), 1fr));
         }
 
-        .rh-section-card {
-            padding: 1.25rem;
+        .rh-section {
+            padding: 1.15rem;
         }
 
-        .rh-eyebrow {
+        .rh-section-head {
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-start;
+            justify-content: space-between;
+        }
+
+        .rh-section-kicker {
             color: #2563eb;
-            font-size: 0.76rem;
             font-weight: 850;
         }
 
         .rh-section-title {
-            margin-top: 0.25rem;
+            margin-top: 0.2rem;
             color: #0f172a;
-            font-size: 1.15rem;
+            font-size: 1.05rem;
             font-weight: 850;
         }
 
-        .rh-step-list {
+        .rh-list {
             margin-top: 1rem;
             display: grid;
-            gap: 0.78rem;
-            padding: 0;
-            list-style: none;
-        }
-
-        .rh-step {
-            display: grid;
-            grid-template-columns: 1.75rem minmax(0, 1fr);
             gap: 0.75rem;
-            align-items: start;
         }
 
-        .rh-step-number {
+        .rh-item {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 0.9rem;
+            background: #f8fafc;
+        }
+
+        .rh-item-top {
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-start;
+            justify-content: space-between;
+        }
+
+        .rh-item-title {
+            color: #0f172a;
+            font-size: 0.92rem;
+            font-weight: 850;
+        }
+
+        .rh-item-meta {
+            margin-top: 0.25rem;
+            color: #64748b;
+            line-height: 1.45;
+        }
+
+        .rh-pill {
             display: inline-flex;
-            height: 1.75rem;
-            width: 1.75rem;
             align-items: center;
-            justify-content: center;
+            width: fit-content;
             border-radius: 999px;
-            background: #dbeafe;
+            background: #e0f2fe;
+            color: #075985;
+            padding: 0.25rem 0.55rem;
+            font-size: 0.72rem;
+            font-weight: 850;
+            white-space: nowrap;
+        }
+
+        .rh-link {
             color: #1d4ed8;
-            font-size: 0.78rem;
+            font-size: 0.8rem;
+            font-weight: 850;
+            text-decoration: none;
+        }
+
+        .rh-link:hover {
+            text-decoration: underline;
+        }
+
+        .rh-progress {
+            margin-top: 0.85rem;
+            height: 0.55rem;
+            overflow: hidden;
+            border-radius: 999px;
+            background: #e2e8f0;
+        }
+
+        .rh-progress > span {
+            display: block;
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, #2563eb, #0f766e);
+        }
+
+        .rh-focus-grid {
+            margin-top: 1rem;
+            display: grid;
+            gap: 0.75rem;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .rh-focus-cell {
+            border-radius: 12px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 0.85rem;
+        }
+
+        .rh-focus-value {
+            color: #0f172a;
+            font-size: 1.45rem;
+            line-height: 1;
             font-weight: 900;
         }
 
-        .rh-step-text {
-            color: #334155;
-            font-size: 0.92rem;
-            line-height: 1.55;
+        .rh-focus-label {
+            margin-top: 0.35rem;
+            color: #64748b;
+            font-size: 0.74rem;
+            font-weight: 800;
         }
 
-        .rh-timeline-note {
+        .rh-empty {
             margin-top: 1rem;
-            border-top: 1px solid #e2e8f0;
-            padding-top: 1rem;
+            border: 1px dashed #cbd5e1;
+            border-radius: 12px;
+            background: #f8fafc;
+            padding: 1rem;
             color: #64748b;
-            font-size: 0.85rem;
             line-height: 1.55;
         }
 
@@ -270,37 +314,30 @@
 
         .rh-action-tile {
             display: grid;
-            min-height: 8.5rem;
-            gap: 0.85rem;
+            min-height: 7.75rem;
+            gap: 0.75rem;
             border: 1px solid #dbe4ef;
-            border-radius: 16px;
+            border-radius: 12px;
             background: linear-gradient(180deg, #ffffff, #f8fafc);
             padding: 1rem;
             color: inherit;
             text-decoration: none;
-            transition: transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
-        }
-
-        .rh-action-tile:hover {
-            transform: translateY(-2px);
-            border-color: #60a5fa;
-            box-shadow: 0 14px 28px rgba(37, 99, 235, 0.13);
         }
 
         .rh-action-head {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: 0.7rem;
         }
 
         .rh-action-initial {
             display: inline-flex;
-            height: 2.1rem;
-            width: 2.1rem;
+            height: 2rem;
+            width: 2rem;
             flex: 0 0 auto;
             align-items: center;
             justify-content: center;
-            border-radius: 12px;
+            border-radius: 10px;
             background: #eff6ff;
             color: #1d4ed8;
             font-weight: 900;
@@ -308,57 +345,57 @@
 
         .rh-action-title {
             color: #0f172a;
-            font-size: 0.95rem;
-            font-weight: 850;
-        }
-
-        .rh-action-copy {
-            color: #64748b;
-            font-size: 0.82rem;
-            line-height: 1.5;
-        }
-
-        .rh-action-link {
-            color: #1d4ed8;
-            font-size: 0.82rem;
+            font-size: 0.9rem;
             font-weight: 850;
         }
 
         .dark .rh-card {
             background: #111827;
             border-color: #334155;
-            box-shadow: 0 14px 32px rgba(0, 0, 0, 0.28);
+            box-shadow: 0 12px 26px rgba(0, 0, 0, 0.28);
         }
 
         .dark .rh-stat-label,
         .dark .rh-stat-description,
-        .dark .rh-step-text,
-        .dark .rh-timeline-note,
-        .dark .rh-action-copy {
+        .dark .rh-item-copy,
+        .dark .rh-item-meta,
+        .dark .rh-empty,
+        .dark .rh-focus-label {
             color: #cbd5e1;
         }
 
         .dark .rh-stat-value,
         .dark .rh-section-title,
+        .dark .rh-item-title,
+        .dark .rh-focus-value,
         .dark .rh-action-title {
             color: #f8fafc;
         }
 
+        .dark .rh-item,
+        .dark .rh-empty,
+        .dark .rh-focus-cell,
         .dark .rh-action-tile {
-            background: linear-gradient(180deg, #111827, #0f172a);
+            background: #0f172a;
             border-color: #334155;
         }
 
         .dark .rh-action-initial,
-        .dark .rh-step-number {
+        .dark .rh-pill {
             background: rgba(59, 130, 246, 0.18);
             color: #93c5fd;
         }
 
         @media (min-width: 64rem) {
             .rh-hero-grid {
-                grid-template-columns: minmax(0, 1fr) 18rem;
+                grid-template-columns: minmax(0, 1fr) 19rem;
                 align-items: end;
+            }
+        }
+
+        @media (max-width: 32rem) {
+            .rh-focus-grid {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -367,23 +404,21 @@
         <section class="rh-card rh-hero" data-dashboard-card="hero">
             <div class="rh-hero-grid">
                 <div>
-                    <span class="rh-badge">Academic Research Workspace</span>
+                    <span class="rh-badge">Academic Research Command Center</span>
                     <h1 class="rh-hero-title">Welcome to ResearchHub</h1>
                     <p class="rh-hero-copy">
-                        Research workspace for projects, documents, surveys, analysis, and academic drafts.
+                        Research workspace for projects, documents, surveys, analysis, resource links, and academic drafts.
                     </p>
                     <div class="rh-hero-actions">
-                        <a href="{{ route('filament.admin.resources.projects.research-projects.index') }}" class="rh-primary-action">Open Projects</a>
-                        <a href="{{ route('filament.admin.resources.documents.index') }}" class="rh-secondary-action">Open Documents</a>
+                        <a href="{{ route('filament.admin.resources.projects.research-projects.index') }}" class="rh-button">Open Projects</a>
+                        <a href="{{ route('filament.admin.resources.research-links.index') }}" class="rh-button-ghost">Open Research Links</a>
                     </div>
                 </div>
 
-                <aside class="rh-drive-panel" aria-label="Google Drive status">
+                <aside class="rh-drive-panel" aria-label="Google Drive status" data-dashboard-card="drive-status">
                     <p class="rh-drive-label">Drive Status</p>
-                    <p class="rh-drive-value">{{ $driveConnected ? 'Connected' : 'Not connected' }}</p>
-                    <p class="rh-drive-copy">
-                        {{ $driveConnected ? 'Research file storage is ready.' : 'Connect Drive before uploading research files.' }}
-                    </p>
+                    <p class="rh-drive-value">{{ $driveStatus['label'] }}</p>
+                    <p class="rh-drive-copy">{{ $driveStatus['description'] }}</p>
                 </aside>
             </div>
         </section>
@@ -398,48 +433,239 @@
             @endforeach
         </section>
 
-        <div class="rh-main-grid">
-            <section class="rh-card rh-section-card" data-dashboard-card="next-steps">
-                <p class="rh-eyebrow">Recommended flow</p>
-                <h2 class="rh-section-title">Recommended next steps</h2>
+        <div class="rh-grid">
+            <section class="rh-card rh-section" data-dashboard-card="active-projects">
+                <div class="rh-section-head">
+                    <div>
+                        <p class="rh-section-kicker">Projects</p>
+                        <h2 class="rh-section-title">Active Projects</h2>
+                    </div>
+                    <a href="{{ route('filament.admin.resources.projects.research-projects.index') }}" class="rh-link">Open all</a>
+                </div>
 
-                <ol class="rh-step-list">
-                    @foreach ([
-                        'Create or open a research project.',
-                        'Connect Google Drive.',
-                        'Upload proposal/chapter documents.',
-                        'Create survey instruments.',
-                        'Run descriptive analysis.',
-                    ] as $index => $step)
-                        <li class="rh-step">
-                            <span class="rh-step-number">{{ $index + 1 }}</span>
-                            <span class="rh-step-text">{{ $step }}</span>
-                        </li>
-                    @endforeach
-                </ol>
-
-                <p class="rh-timeline-note">
-                    Open a project to manage its timeline. Timeline planning stays scoped to the selected research project.
-                </p>
+                @if ($activeProjects->isEmpty())
+                    <p class="rh-empty">
+                        No projects yet. Create your first research project to organize your documents, surveys, and timeline.
+                    </p>
+                @else
+                    <div class="rh-list">
+                        @foreach ($activeProjects as $project)
+                            <article class="rh-item">
+                                <div class="rh-item-top">
+                                    <div>
+                                        <h3 class="rh-item-title">{{ $project['title'] }}</h3>
+                                        <p class="rh-item-meta">
+                                            {{ $project['status'] }} @if ($project['target_finished_at']) | Target {{ $project['target_finished_at'] }} @endif
+                                        </p>
+                                    </div>
+                                    <span class="rh-pill">{{ $project['progress_percentage'] }}%</span>
+                                </div>
+                                <div class="rh-progress" aria-label="Project timeline progress">
+                                    <span style="width: {{ $project['progress_percentage'] }}%;"></span>
+                                </div>
+                                <p class="rh-item-meta">
+                                    {{ $project['completed_tasks'] }} of {{ $project['total_tasks'] }} timeline tasks completed.
+                                </p>
+                                <div class="rh-row-actions">
+                                    <a href="{{ $project['project_url'] }}" class="rh-link">Open Projects</a>
+                                    <a href="{{ $project['timeline_url'] }}" class="rh-link">Open Timeline</a>
+                                </div>
+                            </article>
+                        @endforeach
+                    </div>
+                @endif
             </section>
 
-            <section class="rh-card rh-section-card" data-dashboard-card="quick-actions">
-                <p class="rh-eyebrow">Workspace shortcuts</p>
-                <h2 class="rh-section-title">Quick Actions</h2>
-
-                <div class="rh-action-grid">
-                    @foreach ($quickActions as $action)
-                        <a href="{{ $action['url'] }}" class="rh-action-tile">
-                            <span class="rh-action-head">
-                                <span class="rh-action-initial">{{ $action['initial'] }}</span>
-                                <span class="rh-action-title">{{ $action['label'] }}</span>
-                            </span>
-                            <span class="rh-action-copy">{{ $action['description'] }}</span>
-                            <span class="rh-action-link">Open &rarr;</span>
-                        </a>
-                    @endforeach
+            <section class="rh-card rh-section" data-dashboard-card="timeline-focus">
+                <div class="rh-section-head">
+                    <div>
+                        <p class="rh-section-kicker">Timeline</p>
+                        <h2 class="rh-section-title">Timeline Focus</h2>
+                    </div>
                 </div>
+
+                <div class="rh-focus-grid">
+                    <div class="rh-focus-cell">
+                        <p class="rh-focus-value">{{ $timelineSummary['delayed_tasks'] }}</p>
+                        <p class="rh-focus-label">Delayed Tasks</p>
+                    </div>
+                    <div class="rh-focus-cell">
+                        <p class="rh-focus-value">{{ $timelineSummary['upcoming_tasks'] }}</p>
+                        <p class="rh-focus-label">Upcoming 14 Days</p>
+                    </div>
+                    <div class="rh-focus-cell">
+                        <p class="rh-focus-value">{{ $timelineSummary['active_tasks'] }}</p>
+                        <p class="rh-focus-label">Active Tasks</p>
+                    </div>
+                </div>
+
+                @if ($timelineSummary['next_due_task'])
+                    <article class="rh-item" style="margin-top: 1rem;">
+                        <h3 class="rh-item-title">Next due: {{ $timelineSummary['next_due_task']['title'] }}</h3>
+                        <p class="rh-item-meta">
+                            {{ $timelineSummary['next_due_task']['project'] }} | Due {{ $timelineSummary['next_due_task']['planned_end_date'] }}
+                        </p>
+                        <a href="{{ $timelineSummary['next_due_task']['url'] }}" class="rh-link">Open Timeline</a>
+                    </article>
+                @else
+                    <p class="rh-empty">
+                        No upcoming timeline tasks. Add timeline tasks inside a project to track dissertation milestones and deadlines.
+                    </p>
+                @endif
+            </section>
+
+            <section class="rh-card rh-section" data-dashboard-card="recent-documents">
+                <div class="rh-section-head">
+                    <div>
+                        <p class="rh-section-kicker">Documents</p>
+                        <h2 class="rh-section-title">Recent Documents</h2>
+                    </div>
+                    <a href="{{ route('filament.admin.resources.documents.index') }}" class="rh-link">Open all</a>
+                </div>
+
+                @forelse ($recentDocuments as $document)
+                    @if ($loop->first)
+                        <div class="rh-list">
+                    @endif
+                    <article class="rh-item">
+                        <div class="rh-item-top">
+                            <div>
+                                <h3 class="rh-item-title">{{ $document['title'] }}</h3>
+                                <p class="rh-item-meta">{{ $document['project'] }} | Updated {{ $document['updated_at'] }}</p>
+                            </div>
+                            <span class="rh-pill">{{ $document['status'] }}</span>
+                        </div>
+                        <a href="{{ $document['url'] }}" class="rh-link">Open Documents</a>
+                    </article>
+                    @if ($loop->last)
+                        </div>
+                    @endif
+                @empty
+                    <p class="rh-empty">
+                        No documents yet. Upload or create your first research document.
+                    </p>
+                @endforelse
+            </section>
+
+            <section class="rh-card rh-section" data-dashboard-card="recent-surveys">
+                <div class="rh-section-head">
+                    <div>
+                        <p class="rh-section-kicker">Surveys</p>
+                        <h2 class="rh-section-title">Recent Surveys</h2>
+                    </div>
+                    <a href="{{ route('filament.admin.resources.surveys.index') }}" class="rh-link">Open all</a>
+                </div>
+
+                @forelse ($recentSurveys as $survey)
+                    @if ($loop->first)
+                        <div class="rh-list">
+                    @endif
+                    <article class="rh-item">
+                        <div class="rh-item-top">
+                            <div>
+                                <h3 class="rh-item-title">{{ $survey['title'] }}</h3>
+                                <p class="rh-item-meta">
+                                    {{ $survey['project'] }} | {{ $survey['responses_count'] }} responses
+                                </p>
+                            </div>
+                            <span class="rh-pill">{{ $survey['status'] }}</span>
+                        </div>
+                        <a href="{{ $survey['url'] }}" class="rh-link">Open Survey</a>
+                    </article>
+                    @if ($loop->last)
+                        </div>
+                    @endif
+                @empty
+                    <p class="rh-empty">
+                        No surveys yet. Create your first survey instrument.
+                    </p>
+                @endforelse
+            </section>
+
+            <section class="rh-card rh-section" data-dashboard-card="pinned-research-links">
+                <div class="rh-section-head">
+                    <div>
+                        <p class="rh-section-kicker">Resources</p>
+                        <h2 class="rh-section-title">Pinned Research Links</h2>
+                    </div>
+                    <a href="{{ route('filament.admin.resources.research-links.index') }}" class="rh-link">Open library</a>
+                </div>
+
+                @forelse ($pinnedResearchLinks as $link)
+                    @if ($loop->first)
+                        <div class="rh-list">
+                    @endif
+                    <article class="rh-item">
+                        <div class="rh-item-top">
+                            <div>
+                                <h3 class="rh-item-title">{{ $link['title'] }}</h3>
+                                <p class="rh-item-meta">{{ $link['domain'] }}</p>
+                            </div>
+                            <span class="rh-pill">{{ $link['category'] }}</span>
+                        </div>
+                        <a href="{{ $link['url'] }}" target="_blank" rel="noopener noreferrer" class="rh-link">Open Link</a>
+                    </article>
+                    @if ($loop->last)
+                        </div>
+                    @endif
+                @empty
+                    <p class="rh-empty">
+                        No pinned research links yet. Add journals, OJS pages, regulations, repositories, or datasets for quick access.
+                    </p>
+                @endforelse
+            </section>
+
+            <section class="rh-card rh-section" data-dashboard-card="recent-analysis">
+                <div class="rh-section-head">
+                    <div>
+                        <p class="rh-section-kicker">Analysis</p>
+                        <h2 class="rh-section-title">Recent Analysis Results</h2>
+                    </div>
+                </div>
+
+                @forelse ($recentAnalysisResults as $result)
+                    @if ($loop->first)
+                        <div class="rh-list">
+                    @endif
+                    <article class="rh-item">
+                        <h3 class="rh-item-title">{{ $result['title'] }}</h3>
+                        <p class="rh-item-meta">
+                            {{ $result['project'] }} @if ($result['survey']) | {{ $result['survey'] }} @endif
+                        </p>
+                        <p class="rh-item-meta">Updated {{ $result['updated_at'] }}</p>
+                        <a href="{{ $result['url'] }}" class="rh-link">Open Analysis</a>
+                    </article>
+                    @if ($loop->last)
+                        </div>
+                    @endif
+                @empty
+                    <p class="rh-empty">
+                        No analysis results yet. Run descriptive analysis from a survey when response data is ready.
+                    </p>
+                @endforelse
             </section>
         </div>
+
+        <section class="rh-card rh-section" data-dashboard-card="quick-actions">
+            <div class="rh-section-head">
+                <div>
+                    <p class="rh-section-kicker">Workspace shortcuts</p>
+                    <h2 class="rh-section-title">Quick Actions</h2>
+                </div>
+            </div>
+
+            <div class="rh-action-grid">
+                @foreach ($quickActions as $action)
+                    <a href="{{ $action['url'] }}" class="rh-action-tile">
+                        <span class="rh-action-head">
+                            <span class="rh-action-initial">{{ $action['initial'] }}</span>
+                            <span class="rh-action-title">{{ $action['label'] }}</span>
+                        </span>
+                        <span class="rh-item-copy">{{ $action['description'] }}</span>
+                        <span class="rh-link">Open</span>
+                    </a>
+                @endforeach
+            </div>
+        </section>
     </div>
 </x-filament-panels::page>

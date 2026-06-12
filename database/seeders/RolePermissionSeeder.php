@@ -15,40 +15,100 @@ class RolePermissionSeeder extends Seeder
 
         $permissions = [
             'projects.view_any',
-            'projects.create',
             'projects.view',
+            'projects.create',
             'projects.update',
             'projects.delete',
             'projects.manage_members',
-            'activity_logs.view',
+            'projects.view_timeline',
+            'projects.manage_timeline',
+            'documents.view_any',
+            'documents.view',
+            'documents.create',
+            'documents.update',
+            'documents.delete',
+            'documents.review',
+            'review_links.view',
+            'review_links.create',
+            'review_links.revoke',
+            'surveys.view_any',
+            'surveys.view',
+            'surveys.create',
+            'surveys.update',
+            'surveys.delete',
+            'surveys.manage_responses',
             'surveys.view_respondent_identity',
+            'surveys.export_responses',
+            'surveys.manage_scoring',
+            'analysis.view',
+            'analysis.run',
+            'analysis.export',
+            'drive_connections.view',
+            'drive_connections.manage',
+            'activity_logs.view',
         ];
 
         foreach ($permissions as $permission) {
-            Permission::findOrCreate($permission, 'web');
+            Permission::query()->firstOrCreate([
+                'name' => $permission,
+                'guard_name' => 'web',
+            ]);
         }
 
-        $superAdmin = Role::findOrCreate('super_admin', 'web');
-        $admin = Role::findOrCreate('admin', 'web');
-        $researcher = Role::findOrCreate('researcher', 'web');
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+        $superAdmin = Role::query()->firstOrCreate([
+            'name' => 'super_admin',
+            'guard_name' => 'web',
+        ]);
+
+        $admin = Role::query()->firstOrCreate([
+            'name' => 'admin',
+            'guard_name' => 'web',
+        ]);
+
+        $researcher = Role::query()->firstOrCreate([
+            'name' => 'researcher',
+            'guard_name' => 'web',
+        ]);
+
+        $adminPermissions = $permissions;
+
+        $researcherPermissions = [
+            'projects.view_any',
+            'projects.view',
+            'projects.create',
+            'projects.update',
+            'projects.manage_members',
+            'projects.view_timeline',
+            'projects.manage_timeline',
+            'documents.view_any',
+            'documents.view',
+            'documents.create',
+            'documents.update',
+            'documents.delete',
+            'documents.review',
+            'review_links.view',
+            'review_links.create',
+            'review_links.revoke',
+            'surveys.view_any',
+            'surveys.view',
+            'surveys.create',
+            'surveys.update',
+            'surveys.delete',
+            'surveys.manage_responses',
+            'surveys.export_responses',
+            'surveys.manage_scoring',
+            'analysis.view',
+            'analysis.run',
+            'analysis.export',
+            'drive_connections.view',
+            'drive_connections.manage',
+        ];
 
         $superAdmin->syncPermissions($permissions);
-        $admin->syncPermissions([
-            'projects.view_any',
-            'projects.create',
-            'projects.view',
-            'projects.update',
-            'projects.delete',
-            'projects.manage_members',
-            'activity_logs.view',
-            'surveys.view_respondent_identity',
-        ]);
-        $researcher->syncPermissions([
-            'projects.create',
-            'projects.view',
-            'projects.update',
-            'projects.manage_members',
-        ]);
+        $admin->syncPermissions($adminPermissions);
+        $researcher->syncPermissions($researcherPermissions);
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
     }

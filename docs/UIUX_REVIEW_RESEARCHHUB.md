@@ -1,4 +1,4 @@
-# ResearchHub UI/UX Review
+# MyRiset UI/UX Review
 **UIUX-01 — Audit, Visual Polish Plan, and Next Feature Wireframe**
 *Prepared by: Antigravity UI/UX Review + Product Experience Agent*
 *Date: 2026-06-12*
@@ -7,7 +7,7 @@
 
 ## 1. Executive Summary
 
-ResearchHub is a modular Laravel + Filament research management platform that has delivered solid
+MyRiset is a modular Laravel + Filament research management platform that has delivered solid
 backend feature coverage through 15 development tasks. The core workflows — Projects, Documents,
 Review Links, Survey Builder, Response Management, Analysis Center, and Export — are all
 functionally in place and security-hardened.
@@ -76,10 +76,10 @@ Library**.
 | No dashboard widgets exist | HIGH | No (needs backend) |
 | No project quick-start card | HIGH | No (needs backend) |
 | No respondent count, survey count, or document count summary | HIGH | No (needs backend) |
-| Filament default branding only — no ResearchHub identity shown | MEDIUM | Yes (copy/label) |
+| Filament default branding only — no MyRiset identity shown | MEDIUM | Yes (copy/label) |
 
 **UX Risk:** A new user logging in for the first time sees an empty Filament panel with no guidance.
-No onboarding message. No "start here" direction. The product identity "ResearchHub" does not
+No onboarding message. No "start here" direction. The product identity "MyRiset" does not
 appear prominently on the dashboard entry.
 
 **Recommendation:** Add a welcome widget block as a `StatsOverviewWidget` once backend is ready.
@@ -345,7 +345,7 @@ Add a collapsible version history panel on document detail view showing version 
 
 ### LI-05 — Navigation Context Bar
 Add a sticky breadcrumb or project context bar to all custom admin pages:
-`ResearchHub Admin > Projects > [Project Name] > Surveys > Survey Builder`
+`MyRiset Admin > Projects > [Project Name] > Surveys > Survey Builder`
 
 ### LI-06 — Public Review Page: Expiry Countdown
 Show a visible expiry countdown on the review link page when less than 24 hours remain.
@@ -361,11 +361,11 @@ Survey Builder layout and the Scoring page with 6-column grids are not usable.
 
 ## 7. Suggested Dashboard Structure
 
-The following is the recommended ResearchHub dashboard composition for Sprint 10:
+The following is the recommended MyRiset dashboard composition for Sprint 10:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│  RESEARCHHUB                              [User Avatar] [Notification]  │
+│  MyRiset                              [User Avatar] [Notification]  │
 │─────────────────────────────────────────────────────────────────────────│
 │  DASHBOARD                                                              │
 │                                                                         │
@@ -742,7 +742,7 @@ Quick Wins (Section 5) and can be applied in a follow-up task.
 ## Appendix B — Browser/Visual QA Status
 
 ```
-Browser visual QA unavailable because: ResearchHub is a local Laravel application with no
+Browser visual QA unavailable because: MyRiset is a local Laravel application with no
 publicly accessible staging URL. Browser screenshot evidence was not captured.
 Visual analysis is based on source code inspection of all Blade templates and Filament Resources.
 ```
@@ -761,4 +761,4 @@ future task.
 
 ---
 
-*End of UIUX-01 Review — ResearchHub UI/UX Audit, Visual Polish Plan, and Next Feature Wireframe*
+*End of UIUX-01 Review — MyRiset UI/UX Audit, Visual Polish Plan, and Next Feature Wireframe*

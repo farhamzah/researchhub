@@ -59,7 +59,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Survey Builder - ResearchHub</title>
+    <title>Survey Builder - MyRiset</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-slate-50 text-slate-950 antialiased">
@@ -67,7 +67,7 @@
         <section class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
             <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
                 <div class="max-w-3xl">
-                    <p class="text-sm font-semibold uppercase tracking-wide text-emerald-700">ResearchHub Admin</p>
+                    <p class="text-sm font-semibold uppercase tracking-wide text-emerald-700">MyRiset Admin</p>
                     <h1 class="mt-2 text-3xl font-semibold">Survey Builder</h1>
                     <p class="mt-2 text-lg font-semibold text-slate-800">{{ $survey->title }}</p>
                     <p class="mt-1 text-sm leading-6 text-slate-600">

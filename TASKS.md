@@ -1,4 +1,4 @@
-# ResearchHub Task List
+# MyRiset Task List
 
 ## Current Task
 
@@ -150,7 +150,7 @@ Scope:
 
 Must not do:
 
-- Do not implement ResearchHub business features yet.
+- Do not implement MyRiset business features yet.
 - Do not implement Google Drive.
 - Do not implement document vault.
 - Do not implement survey builder.
@@ -167,7 +167,7 @@ Acceptance Criteria:
 - UUID strategy is documented before domain migrations.
 - `.env` is not committed.
 - `.env.example` is safe.
-- No ResearchHub business features are added yet.
+- No MyRiset business features are added yet.
 - No secrets are committed.
 - Git working tree is clean or clearly explained.
 - Install/test commands are reported.
@@ -231,7 +231,7 @@ Scope:
 - Implement Google OAuth connection per user.
 - Store encrypted Drive tokens.
 - Store Drive connection metadata.
-- Create or stage ResearchHub and project folder auto-create behavior.
+- Create or stage MyRiset and project folder auto-create behavior.
 - Add disconnect/reconnect flow.
 - Add safe Drive error handling.
 - Enforce authorization checks.

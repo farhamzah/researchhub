@@ -3,14 +3,14 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Analysis Center - ResearchHub</title>
+    <title>Analysis Center - MyRiset</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-gray-50 text-gray-950 antialiased">
     <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div class="mb-8 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
-                <p class="text-sm font-semibold uppercase tracking-wide text-emerald-700">ResearchHub Analysis</p>
+                <p class="text-sm font-semibold uppercase tracking-wide text-emerald-700">MyRiset Analysis</p>
                 <h1 class="mt-2 text-3xl font-semibold">Analysis Center</h1>
                 <p class="mt-2 text-sm text-gray-600">{{ $survey?->title }}</p>
             </div>

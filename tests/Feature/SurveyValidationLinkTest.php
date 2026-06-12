@@ -154,7 +154,8 @@ class SurveyValidationLinkTest extends TestCase
 
         $this->get(route('validation.survey.show', ['token' => $token]))
             ->assertOk()
-            ->assertSee('ResearchHub Expert Validation')
+            ->assertSee('MyRiset Expert Validation')
+            ->assertDontSee('ResearchHub Expert Validation')
             ->assertSee($survey->title)
             ->assertSee('Validator Ahli')
             ->assertSee($firstQuestion->label)

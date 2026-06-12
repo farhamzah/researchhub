@@ -1,4 +1,4 @@
-# ResearchHub Roadmap
+# MyRiset Roadmap
 
 ## Sprint 0 - Contract and Architecture
 
@@ -66,7 +66,7 @@ Deliverables:
 - Google OAuth connection
 - Encrypted token storage
 - Drive connection status
-- Auto-create ResearchHub folder
+- Auto-create MyRiset folder
 - Auto-create project folders
 - Drive error handling
 - Disconnect/reconnect flow

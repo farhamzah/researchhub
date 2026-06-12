@@ -3,13 +3,13 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Supervision Review - ResearchHub</title>
+    <title>Supervision Review - MyRiset</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-gray-50 text-gray-950 antialiased">
     <main class="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
         <section class="mb-6">
-            <p class="text-sm font-semibold uppercase tracking-wide text-emerald-700">ResearchHub Supervision Review</p>
+            <p class="text-sm font-semibold uppercase tracking-wide text-emerald-700">MyRiset Supervision Review</p>
             <h1 class="mt-2 text-3xl font-semibold">{{ $session->title }}</h1>
             <p class="mt-2 text-sm text-gray-600">{{ $project->title }}</p>
             <p class="mt-1 text-xs text-gray-500">Reviewer: {{ $reviewLink->recipientDisplayName() }}{{ $reviewLink->expires_at ? ' - Expires '.$reviewLink->expires_at->format('Y-m-d H:i') : '' }}</p>

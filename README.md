@@ -1,13 +1,13 @@
-# ResearchHub
+# MyRiset
 
-ResearchHub is a Laravel and Filament foundation for a secure, multi-user research management system for dissertation and academic research workflows.
+MyRiset is a Laravel and Filament foundation for a secure, multi-user research management system for dissertation and academic research workflows.
 
 ## Foundation
 
 - Laravel application scaffold
 - Filament admin panel at `/admin`
 - PostgreSQL as the intended database
-- UUID strategy documented in the contract pack before ResearchHub domain migrations
+- UUID strategy documented in the contract pack before MyRiset domain migrations
 - Modular monolith folder scaffold under `app/Modules`
 
 ## Local Setup
@@ -32,7 +32,7 @@ Configure PostgreSQL in `.env`:
 DB_CONNECTION=pgsql
 DB_HOST=127.0.0.1
 DB_PORT=5432
-DB_DATABASE=researchhub
+DB_DATABASE=MyRiset
 DB_USERNAME=postgres
 DB_PASSWORD=
 ```
@@ -52,4 +52,4 @@ npm run build
 
 ## Task Boundary
 
-TASK 01 establishes the application skeleton only. ResearchHub business modules such as projects, documents, Google Drive integration, review links, surveys, respondents, analysis, and reports are intentionally not implemented yet.
+TASK 01 establishes the application skeleton only. MyRiset business modules such as projects, documents, Google Drive integration, review links, surveys, respondents, analysis, and reports are intentionally not implemented yet.

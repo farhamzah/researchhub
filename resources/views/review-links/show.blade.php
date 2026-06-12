@@ -3,13 +3,13 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>ResearchHub Review</title>
+    <title>MyRiset Review</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-gray-50 text-gray-950 antialiased">
     <main class="mx-auto min-h-screen max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
         <header class="mb-8">
-            <p class="text-sm font-semibold uppercase tracking-wide text-blue-700">ResearchHub</p>
+            <p class="text-sm font-semibold uppercase tracking-wide text-blue-700">MyRiset</p>
             <h1 class="mt-2 text-3xl font-semibold">Document Review</h1>
         </header>
 

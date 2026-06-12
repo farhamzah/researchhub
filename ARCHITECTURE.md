@@ -1,8 +1,8 @@
-# ResearchHub Architecture
+# MyRiset Architecture
 
 ## Product Summary
 
-ResearchHub is a web-based research management platform designed for dissertation and academic research workflows.
+MyRiset is a web-based research management platform designed for dissertation and academic research workflows.
 
 The first target user is one main researcher, but the system must be multi-user and multi-project from the beginning.
 
@@ -22,7 +22,7 @@ Reason:
 ## Main Components
 
 ```text
-ResearchHub Web App
+MyRiset Web App
     |
 Laravel Application
     |
@@ -75,7 +75,7 @@ Later:
 
 Each user can connect their own Google Drive account.
 
-ResearchHub stores:
+MyRiset stores:
 
 - User data
 - Project metadata
@@ -89,11 +89,11 @@ ResearchHub stores:
 - Approval status
 - Audit logs
 
-ResearchHub must not store large document binaries in the database.
+MyRiset must not store large document binaries in the database.
 
 ## Database Identity Strategy
 
-ResearchHub uses UUID primary keys for all main domain entities from the first migration.
+MyRiset uses UUID primary keys for all main domain entities from the first migration.
 
 Rules:
 
@@ -107,12 +107,12 @@ Rules:
 
 Each user connects Google Drive using OAuth.
 
-ResearchHub creates a folder structure in the user's Drive.
+MyRiset creates a folder structure in the user's Drive.
 
 Example:
 
 ```text
-ResearchHub/
+MyRiset/
   Project Name/
     01_Proposal/
     02_BAB_I_II_III/

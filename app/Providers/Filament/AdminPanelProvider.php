@@ -30,7 +30,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
-            ->brandName('ResearchHub')
+            ->brandName('MyRiset')
             ->defaultThemeMode(ThemeMode::Light)
             ->darkMode(false)
             ->colors([

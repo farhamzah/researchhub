@@ -1,4 +1,4 @@
-# ResearchHub Database Plan
+# MyRiset Database Plan
 
 ## Database
 
@@ -6,7 +6,7 @@ Use PostgreSQL.
 
 ## Primary Key Strategy
 
-Use UUID primary keys for all main ResearchHub domain tables from the first migration.
+Use UUID primary keys for all main MyRiset domain tables from the first migration.
 
 Rules:
 
@@ -448,7 +448,7 @@ updated_at
 
 ## Important Database Rules
 
-- UUID is the final primary key strategy for all main ResearchHub domain tables.
+- UUID is the final primary key strategy for all main MyRiset domain tables.
 - Use foreign UUID columns for relationships between domain tables.
 - Do not use auto-increment bigint IDs for main domain tables.
 - Pivot and log tables may also use UUID unless there is a clear technical reason not to.

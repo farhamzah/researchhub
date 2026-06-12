@@ -23,7 +23,7 @@
                     <p class="text-sm font-semibold uppercase tracking-wide text-slate-500">Google Drive Integration</p>
                     <h2 class="mt-2 text-2xl font-semibold text-slate-950">Connection Status</h2>
                     <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-                        Connect ResearchHub to your own Google Drive account so future document workflows can store file metadata safely without exposing tokens or secrets.
+                        Connect MyRiset to your own Google Drive account so future document workflows can store file metadata safely without exposing tokens or secrets.
                     </p>
                 </div>
 
@@ -158,7 +158,7 @@
                             @csrf
                             <button
                                 type="submit"
-                                onclick="return confirm('Disconnect Google Drive for this user? Local OAuth tokens will be cleared from ResearchHub.')"
+                                onclick="return confirm('Disconnect Google Drive for this user? Local OAuth tokens will be cleared from MyRiset.')"
                                 class="inline-flex w-full items-center justify-center rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
                             >
                                 Disconnect / Revoke Local Connection
@@ -215,7 +215,7 @@
             </ol>
 
             <div class="mt-5 rounded-md border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-900">
-                ResearchHub requests only the Drive file scope for files created or opened by the app. Do not paste OAuth secrets into tickets, chats, screenshots, or source files.
+                MyRiset requests only the Drive file scope for files created or opened by the app. Do not paste OAuth secrets into tickets, chats, screenshots, or source files.
             </div>
         </section>
     </div>

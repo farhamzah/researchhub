@@ -57,7 +57,7 @@ class AnalysisDocxExportTest extends TestCase
         $this->assertStringContainsString('[ ] Kesimpulan inferensial belum ditambahkan sebelum uji statistik lanjutan.', $text);
         $this->assertStringContainsString('generated at:', $text);
         $this->assertStringContainsString(AcademicDraftBuilder::DISCLAIMER, $text);
-        $this->assertStringContainsString('ResearchHub - Draf otomatis deskriptif, wajib diverifikasi.', $this->docxText($response->getContent(), 'word/footer1.xml'));
+        $this->assertStringContainsString('MyRiset - Draf otomatis deskriptif, wajib diverifikasi.', $this->docxText($response->getContent(), 'word/footer1.xml'));
         $this->assertLessThan(
             mb_strpos($text, '5. Narasi Akademik Deskriptif'),
             mb_strpos($text, '4. Tabel Hasil Analisis')

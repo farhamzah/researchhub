@@ -65,7 +65,8 @@ class SupervisionWorkflowTest extends TestCase
 
         $this->get(route('supervision.review.show', ['token' => $token]))
             ->assertOk()
-            ->assertSee('ResearchHub Supervision Review')
+            ->assertSee('MyRiset Supervision Review')
+            ->assertDontSee('ResearchHub Supervision Review')
             ->assertSee('Bab 1 Draft Review')
             ->assertSee('Progress minggu ini')
             ->assertSee('Submit Supervisor Feedback')

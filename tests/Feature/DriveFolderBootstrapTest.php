@@ -42,15 +42,15 @@ class DriveFolderBootstrapTest extends TestCase
             'user_id' => $owner->id,
             'project_id' => null,
             'folder_type' => DriveFolder::TYPE_RESEARCHHUB_ROOT,
-            'name' => 'ResearchHub',
-            'path' => 'ResearchHub',
+            'name' => 'MyRiset',
+            'path' => 'MyRiset',
         ]);
         $this->assertDatabaseHas('drive_folders', [
             'user_id' => $owner->id,
             'project_id' => $project->id,
             'folder_type' => DriveFolder::TYPE_PROJECT_ROOT,
             'name' => 'Dissertation Study',
-            'path' => 'ResearchHub/Dissertation Study',
+            'path' => 'MyRiset/Dissertation Study',
         ]);
         $this->assertDatabaseHas('drive_folders', [
             'project_id' => $project->id,

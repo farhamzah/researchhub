@@ -37,7 +37,7 @@ class DashboardDataService
                 'connected' => $driveConnected,
                 'label' => $driveConnected ? 'Connected' : 'Not connected',
                 'description' => $driveConnected
-                    ? 'Google Drive is ready for ResearchHub document storage.'
+                    ? 'Google Drive is ready for MyRiset document storage.'
                     : 'Connect Google Drive before storing research files.',
             ],
             'activeProjects' => $this->activeProjects($user),

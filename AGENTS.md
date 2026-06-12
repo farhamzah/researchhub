@@ -1,18 +1,18 @@
-# AGENTS.md - ResearchHub
+# AGENTS.md - MyRiset
 
 ## Project Name
 
-ResearchHub
+MyRiset
 
 ## Product Type
 
-ResearchHub is a multi-user research management system for dissertation and academic research workflows.
+MyRiset is a multi-user research management system for dissertation and academic research workflows.
 
 The system is designed first for one main researcher, but it must be architected from day one to support many users, many projects, supervisors, examiners, validators, enumerators, and respondents.
 
 ## Core Product Goals
 
-ResearchHub must help researchers manage:
+MyRiset must help researchers manage:
 
 - Research projects
 - Dissertation documents
@@ -97,7 +97,7 @@ Resources
 - Use Jobs for slow operations.
 - Use Events for audit-worthy actions when useful.
 - Use migrations for every database change.
-- Use UUID primary keys for all main ResearchHub domain tables from the first migration.
+- Use UUID primary keys for all main MyRiset domain tables from the first migration.
 - Use foreign UUIDs for domain relationships.
 - Do not use auto-increment bigint IDs for main domain tables.
 - Use seeders for baseline roles, permissions, and document categories.
@@ -109,7 +109,7 @@ Resources
 
 ## Security Rules
 
-ResearchHub handles sensitive academic data, research data, respondent information, review links, and Google Drive tokens. Security is mandatory.
+MyRiset handles sensitive academic data, research data, respondent information, review links, and Google Drive tokens. Security is mandatory.
 
 - Never store Google OAuth tokens in plain text.
 - Encrypt external service tokens.
@@ -163,7 +163,7 @@ docs/*
 Commit style:
 
 ```text
-docs(agent): add initial ResearchHub contract pack
+docs(agent): add initial MyRiset contract pack
 feat(projects): add research project workspace
 feat(documents): add document vault metadata
 feat(review): add secure expiring review links

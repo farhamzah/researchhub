@@ -1,8 +1,8 @@
-# ResearchHub Security Policy
+# MyRiset Security Policy
 
 ## Security Principle
 
-ResearchHub must be secure by default.
+MyRiset must be secure by default.
 
 The system handles:
 

@@ -385,9 +385,9 @@
             <div class="rh-hero-grid">
                 <div>
                     <span class="rh-badge">Academic Research Command Center</span>
-                    <h1 class="rh-hero-title">Welcome to ResearchHub</h1>
+                    <h1 class="rh-hero-title">Welcome to MyRiset</h1>
                     <p class="rh-hero-copy">
-                        Research workspace for projects, documents, surveys, analysis, resource links, and academic drafts.
+                        Platform manajemen riset, validasi ahli, bimbingan, dan laporan akademik.
                     </p>
                     <div class="rh-hero-actions">
                         <a href="{{ route('filament.admin.resources.projects.research-projects.index') }}" class="rh-button">Open Projects</a>
@@ -403,7 +403,7 @@
             </div>
         </section>
 
-        <section class="rh-stat-grid" aria-label="ResearchHub workspace statistics">
+        <section class="rh-stat-grid" aria-label="MyRiset workspace statistics">
             @foreach ($stats as $stat)
                 <article class="rh-card rh-stat-card" data-dashboard-card="stat" style="--rh-accent: {{ $stat['accent'] }};">
                     <p class="rh-stat-label">{{ $stat['label'] }}</p>

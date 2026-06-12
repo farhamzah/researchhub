@@ -104,7 +104,7 @@ class BootstrapResearchHubDriveFoldersAction
             return $existing;
         }
 
-        $folder = $this->folderService->createFolder($connection, (string) config('researchhub_drive.root_folder_name', 'ResearchHub'));
+        $folder = $this->folderService->createFolder($connection, (string) config('researchhub_drive.root_folder_name', 'MyRiset'));
 
         return $this->persistFolder($user, null, DriveFolder::TYPE_RESEARCHHUB_ROOT, $folder, $folder->name);
     }

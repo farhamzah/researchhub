@@ -3,14 +3,14 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Review Links - ResearchHub</title>
+    <title>Review Links - MyRiset</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-gray-50 text-gray-950 antialiased">
     <main class="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
         <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
-                <p class="text-sm font-semibold uppercase tracking-wide text-blue-700">ResearchHub Admin</p>
+                <p class="text-sm font-semibold uppercase tracking-wide text-blue-700">MyRiset Admin</p>
                 <h1 class="mt-2 text-3xl font-semibold">Review Links</h1>
                 <p class="mt-2 text-sm text-gray-600">{{ $document->title }} - {{ $document->project->title }}</p>
             </div>
@@ -28,7 +28,7 @@
                     </svg>
                     <div class="flex-1">
                         <h2 class="text-base font-bold text-amber-900">Copy this review URL now - it will not be shown again</h2>
-                        <p class="mt-1 text-sm text-amber-800">ResearchHub stores only a hash of the token. Once you navigate away from this page, the raw URL cannot be recovered. Copy and send it to the reviewer immediately.</p>
+                        <p class="mt-1 text-sm text-amber-800">MyRiset stores only a hash of the token. Once you navigate away from this page, the raw URL cannot be recovered. Copy and send it to the reviewer immediately.</p>
                         <div class="mt-3 flex items-center gap-2">
                             <input id="review-url-once" readonly value="{{ session('generated_review_url') }}" class="block w-full rounded-md border border-amber-300 bg-white px-3 py-2 text-sm font-mono text-gray-900 shadow-sm">
                             <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('review-url-once').value).then(function(){ this.textContent='Copied!'; }.bind(this))" class="flex-shrink-0 rounded-md bg-amber-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-amber-500">
@@ -130,7 +130,7 @@
                 <h2 class="text-xl font-semibold">Create Review Link</h2>
                 {{-- UX-S10-09: Clearer once-only notice before form --}}
                 <div class="mt-2 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                    <strong>Security notice:</strong> The raw review URL is shown <em>once only</em> after creation. Store it safely or send it directly to the reviewer. ResearchHub cannot recover it.
+                    <strong>Security notice:</strong> The raw review URL is shown <em>once only</em> after creation. Store it safely or send it directly to the reviewer. MyRiset cannot recover it.
                 </div>
 
                 <form method="POST" action="{{ route('admin.documents.review-links.store', ['document' => $document]) }}" class="mt-5 space-y-4">

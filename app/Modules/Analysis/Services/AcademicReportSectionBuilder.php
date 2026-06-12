@@ -76,7 +76,7 @@ class AcademicReportSectionBuilder
      */
     private function sourceSummaryText(array $summary): string
     {
-        return 'Dokumen ini disusun dari data respons survei yang telah tersimpan di ResearchHub. '
+        return 'Dokumen ini disusun dari data respons survei yang telah tersimpan di MyRiset. '
             .'Analisis menggunakan '.($summary['submitted_count'] ?? 0).' respons submitted dari total '
             .($summary['response_count'] ?? 0).' respons tercatat. Jumlah butir yang dianalisis adalah '
             .($summary['analyzed_question_count'] ?? 0).'. Sebanyak '

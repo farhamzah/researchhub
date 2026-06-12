@@ -3,13 +3,13 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $survey->title }} - ResearchHub Survey</title>
+    <title>{{ $survey->title }} - MyRiset Survey</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-gray-50 text-gray-950 antialiased">
     <main class="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
         <header class="mb-8 border-b border-gray-200 pb-6">
-            <p class="text-sm font-semibold uppercase tracking-wide text-emerald-700">ResearchHub Survey</p>
+            <p class="text-sm font-semibold uppercase tracking-wide text-emerald-700">MyRiset Survey</p>
             <h1 class="mt-2 text-3xl font-semibold">{{ $survey->title }}</h1>
             @if ($survey->description)
                 <p class="mt-3 text-base leading-7 text-gray-600">{{ $survey->description }}</p>

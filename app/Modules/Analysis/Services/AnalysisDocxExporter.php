@@ -88,7 +88,7 @@ class AnalysisDocxExporter
             return;
         }
 
-        $section->addFooter()->addText('ResearchHub - Draf otomatis deskriptif, wajib diverifikasi.', $this->styleFactory->mutedText());
+        $section->addFooter()->addText('MyRiset - Draf otomatis deskriptif, wajib diverifikasi.', $this->styleFactory->mutedText());
     }
 
     private function addParagraphs(Section $section, string $content): void

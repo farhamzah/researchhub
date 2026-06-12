@@ -149,7 +149,7 @@ return [
 
         'options' => [
             'cluster' => env('REDIS_CLUSTER', 'redis'),
-            'prefix' => env('REDIS_PREFIX', Str::slug((string) env('APP_NAME', 'ResearchHub')).'-database-'),
+            'prefix' => env('REDIS_PREFIX', Str::slug((string) env('APP_NAME', 'MyRiset')).'-database-'),
             'persistent' => env('REDIS_PERSISTENT', false),
         ],
 

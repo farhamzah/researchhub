@@ -1,8 +1,8 @@
-# ResearchHub UI/UX Guide
+# MyRiset UI/UX Guide
 
 ## UI Direction
 
-ResearchHub should look:
+MyRiset should look:
 
 - Clean
 - Premium
@@ -106,7 +106,7 @@ Public review page must be simple.
 
 Must show:
 
-- ResearchHub branding
+- MyRiset branding
 - Document title
 - Version
 - Expiry notice

@@ -3,7 +3,7 @@
 use App\Models\DriveFolder;
 
 return [
-    'root_folder_name' => 'ResearchHub',
+    'root_folder_name' => 'MyRiset',
 
     'project_folders' => [
         [

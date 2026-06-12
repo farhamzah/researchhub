@@ -75,6 +75,18 @@ Route::middleware('auth')->group(function (): void {
         ->name('admin.projects.supervision.sessions.store');
     Route::put('/admin/projects/{researchProject}/supervision/sessions/{session}', [AdminProjectSupervisionController::class, 'updateSession'])
         ->name('admin.projects.supervision.sessions.update');
+    Route::post('/admin/projects/{researchProject}/supervision/sessions/{session}/resources', [AdminProjectSupervisionController::class, 'storeResource'])
+        ->name('admin.projects.supervision.resources.store');
+    Route::put('/admin/projects/{researchProject}/supervision/sessions/{session}/resources/{resource}', [AdminProjectSupervisionController::class, 'updateResource'])
+        ->name('admin.projects.supervision.resources.update');
+    Route::delete('/admin/projects/{researchProject}/supervision/sessions/{session}/resources/{resource}', [AdminProjectSupervisionController::class, 'deleteResource'])
+        ->name('admin.projects.supervision.resources.delete');
+    Route::post('/admin/projects/{researchProject}/supervision/sessions/{session}/follow-ups', [AdminProjectSupervisionController::class, 'storeFollowUp'])
+        ->name('admin.projects.supervision.follow-ups.store');
+    Route::put('/admin/projects/{researchProject}/supervision/sessions/{session}/follow-ups/{followUp}', [AdminProjectSupervisionController::class, 'updateFollowUp'])
+        ->name('admin.projects.supervision.follow-ups.update');
+    Route::delete('/admin/projects/{researchProject}/supervision/sessions/{session}/follow-ups/{followUp}', [AdminProjectSupervisionController::class, 'deleteFollowUp'])
+        ->name('admin.projects.supervision.follow-ups.delete');
     Route::post('/admin/projects/{researchProject}/supervision/sessions/{session}/links', [AdminProjectSupervisionController::class, 'generateLink'])
         ->name('admin.projects.supervision.links.generate');
     Route::post('/admin/projects/{researchProject}/supervision/links/{reviewLink}/revoke', [AdminProjectSupervisionController::class, 'revokeLink'])

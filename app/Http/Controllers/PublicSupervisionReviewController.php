@@ -33,7 +33,7 @@ class PublicSupervisionReviewController extends Controller
 
         return view('supervision.show', [
             'reviewLink' => $reviewLink,
-            'session' => $reviewLink->session,
+            'session' => $reviewLink->session->load('visibleResources'),
             'project' => $reviewLink->session->project,
             'token' => $token,
             'decisionLabels' => SupervisionFeedback::DECISION_LABELS,

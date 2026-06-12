@@ -40,6 +40,33 @@
             </div>
         </section>
 
+        @if ($session->visibleResources->isNotEmpty())
+            <section class="mb-6 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+                <h2 class="text-xl font-semibold">Shared Resources</h2>
+                <div class="mt-4 space-y-3">
+                    @foreach ($session->visibleResources as $resource)
+                        <article class="rounded-md border border-gray-200 bg-gray-50 p-4">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <h3 class="font-semibold">{{ $resource->displayTitle() }}</h3>
+                                <span class="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-800">{{ $resource->typeLabel() }}</span>
+                            </div>
+                            @if ($resource->description)
+                                <p class="mt-2 whitespace-pre-line text-sm text-gray-700">{{ $resource->description }}</p>
+                            @endif
+                            @if ($resource->notes)
+                                <p class="mt-2 whitespace-pre-line text-xs text-gray-500">{{ $resource->notes }}</p>
+                            @endif
+                            @if ($resource->safePublicUrl())
+                                <a href="{{ $resource->safePublicUrl() }}" target="_blank" rel="noopener noreferrer" class="mt-3 inline-flex rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-sm font-semibold text-emerald-800 hover:bg-emerald-100">
+                                    Open resource
+                                </a>
+                            @endif
+                        </article>
+                    @endforeach
+                </div>
+            </section>
+        @endif
+
         @if ($errors->any())
             <section class="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-900">
                 <p class="font-semibold">Please review the feedback form.</p>

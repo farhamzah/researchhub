@@ -14,6 +14,19 @@
         \App\Models\SupervisionReviewLink::STATUS_OPENED => 'bg-blue-50 text-blue-800',
         default => 'bg-gray-100 text-gray-700',
     };
+    $followUpStatusClass = fn (string $status): string => match ($status) {
+        \App\Models\SupervisionFollowUpItem::STATUS_COMPLETED => 'bg-emerald-50 text-emerald-800',
+        \App\Models\SupervisionFollowUpItem::STATUS_IN_PROGRESS => 'bg-blue-50 text-blue-800',
+        \App\Models\SupervisionFollowUpItem::STATUS_WAITING_SUPERVISOR => 'bg-amber-50 text-amber-800',
+        \App\Models\SupervisionFollowUpItem::STATUS_CANCELLED => 'bg-gray-100 text-gray-600',
+        default => 'bg-slate-100 text-slate-700',
+    };
+    $priorityClass = fn (string $priority): string => match ($priority) {
+        \App\Models\SupervisionFollowUpItem::PRIORITY_URGENT => 'bg-red-50 text-red-800',
+        \App\Models\SupervisionFollowUpItem::PRIORITY_HIGH => 'bg-amber-50 text-amber-800',
+        \App\Models\SupervisionFollowUpItem::PRIORITY_LOW => 'bg-gray-100 text-gray-600',
+        default => 'bg-blue-50 text-blue-800',
+    };
 @endphp
 
 <!DOCTYPE html>
@@ -149,6 +162,290 @@
                             <p class="mt-3 whitespace-pre-line text-sm text-gray-700">{{ $session->requested_feedback ?: '' }}</p>
                         </div>
                     </div>
+
+                    <section class="mt-5 rounded-md border border-gray-200 p-4">
+                        <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                            <div>
+                                <h3 class="font-semibold">Shared Resources</h3>
+                                <p class="mt-1 text-xs text-gray-500">Only resources marked visible are shown to supervisors on the public review page.</p>
+                            </div>
+                            <span class="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-700">{{ $session->resources->count() }} resource(s)</span>
+                        </div>
+
+                        @if ($canManageSupervision)
+                            <form method="POST" action="{{ route('admin.projects.supervision.resources.store', ['researchProject' => $project, 'session' => $session]) }}" class="mt-4 grid gap-3 md:grid-cols-6">
+                                @csrf
+                                <div>
+                                    <label class="text-xs font-semibold uppercase tracking-wide text-gray-500">Type</label>
+                                    <select name="resource_type" required class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm">
+                                        @foreach ($resourceTypeLabels as $value => $label)
+                                            <option value="{{ $value }}">{{ $label }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-xs font-semibold uppercase tracking-wide text-gray-500">Related Record</label>
+                                    <select name="resource_id" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm">
+                                        <option value="">Manual / none</option>
+                                        @foreach ($resourceOptions as $type => $options)
+                                            @if ($options)
+                                                <optgroup label="{{ $resourceTypeLabels[$type] ?? $type }}">
+                                                    @foreach ($options as $id => $label)
+                                                        <option value="{{ $id }}">{{ $label }}</option>
+                                                    @endforeach
+                                                </optgroup>
+                                            @endif
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-xs font-semibold uppercase tracking-wide text-gray-500">Title</label>
+                                    <input name="title" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-semibold uppercase tracking-wide text-gray-500">Manual URL</label>
+                                    <input name="url" placeholder="https://..." class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-semibold uppercase tracking-wide text-gray-500">Sort</label>
+                                    <input type="number" min="0" name="sort_order" value="0" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm">
+                                </div>
+                                <label class="mt-6 flex items-center gap-2 text-sm font-semibold text-gray-700">
+                                    <input type="checkbox" name="is_visible_to_supervisor" value="1" checked class="rounded border-gray-300">
+                                    Visible
+                                </label>
+                                <div class="md:col-span-3">
+                                    <label class="text-xs font-semibold uppercase tracking-wide text-gray-500">Description</label>
+                                    <textarea name="description" rows="2" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm"></textarea>
+                                </div>
+                                <div class="md:col-span-3">
+                                    <label class="text-xs font-semibold uppercase tracking-wide text-gray-500">Notes for supervisor</label>
+                                    <textarea name="notes" rows="2" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm"></textarea>
+                                </div>
+                                <div class="md:col-span-6 flex justify-end">
+                                    <button class="rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-800">Add Resource</button>
+                                </div>
+                            </form>
+                        @endif
+
+                        <div class="mt-4 space-y-3">
+                            @forelse ($session->resources as $resource)
+                                <div class="rounded-md border border-gray-200 bg-gray-50 p-4">
+                                    <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                                        <div>
+                                            <div class="flex flex-wrap items-center gap-2">
+                                                <p class="font-semibold">{{ $resource->displayTitle() }}</p>
+                                                <span class="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-800">{{ $resource->typeLabel() }}</span>
+                                                <span class="rounded-full px-2.5 py-0.5 text-xs font-semibold {{ $resource->is_visible_to_supervisor ? 'bg-emerald-50 text-emerald-800' : 'bg-gray-100 text-gray-600' }}">{{ $resource->is_visible_to_supervisor ? 'Visible to supervisor' : 'Hidden from supervisor' }}</span>
+                                            </div>
+                                            @if ($resource->description)
+                                                <p class="mt-2 whitespace-pre-line text-sm text-gray-700">{{ $resource->description }}</p>
+                                            @endif
+                                            @if ($resource->notes)
+                                                <p class="mt-2 whitespace-pre-line text-xs text-gray-500">{{ $resource->notes }}</p>
+                                            @endif
+                                            @if ($resource->safePublicUrl())
+                                                <a href="{{ $resource->safePublicUrl() }}" target="_blank" rel="noopener noreferrer" class="mt-2 inline-flex text-sm font-semibold text-emerald-700 hover:text-emerald-900">Open safe link</a>
+                                            @endif
+                                        </div>
+
+                                        @if ($canManageSupervision)
+                                            <details class="lg:min-w-80">
+                                                <summary class="cursor-pointer text-xs font-semibold text-gray-700">Edit</summary>
+                                                <form method="POST" action="{{ route('admin.projects.supervision.resources.update', ['researchProject' => $project, 'session' => $session, 'resource' => $resource]) }}" class="mt-3 grid gap-2 rounded-md border border-gray-200 bg-white p-3 shadow-sm">
+                                                    @csrf
+                                                    @method('PUT')
+                                                    <select name="resource_type" required class="rounded-md border border-gray-300 px-3 py-2 text-sm">
+                                                        @foreach ($resourceTypeLabels as $value => $label)
+                                                            <option value="{{ $value }}" @selected($resource->resource_type === $value)>{{ $label }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                    <select name="resource_id" class="rounded-md border border-gray-300 px-3 py-2 text-sm">
+                                                        <option value="">Manual / none</option>
+                                                        @foreach ($resourceOptions as $type => $options)
+                                                            @if ($options)
+                                                                <optgroup label="{{ $resourceTypeLabels[$type] ?? $type }}">
+                                                                    @foreach ($options as $id => $label)
+                                                                        <option value="{{ $id }}" @selected($resource->resource_id === $id)>{{ $label }}</option>
+                                                                    @endforeach
+                                                                </optgroup>
+                                                            @endif
+                                                        @endforeach
+                                                    </select>
+                                                    <input name="title" value="{{ $resource->title }}" placeholder="Title" class="rounded-md border border-gray-300 px-3 py-2 text-sm">
+                                                    <input name="url" value="{{ $resource->url }}" placeholder="https://..." class="rounded-md border border-gray-300 px-3 py-2 text-sm">
+                                                    <input type="number" min="0" name="sort_order" value="{{ $resource->sort_order }}" class="rounded-md border border-gray-300 px-3 py-2 text-sm">
+                                                    <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                                                        <input type="checkbox" name="is_visible_to_supervisor" value="1" @checked($resource->is_visible_to_supervisor) class="rounded border-gray-300">
+                                                        Visible to supervisor
+                                                    </label>
+                                                    <textarea name="description" rows="2" placeholder="Description" class="rounded-md border border-gray-300 px-3 py-2 text-sm">{{ $resource->description }}</textarea>
+                                                    <textarea name="notes" rows="2" placeholder="Notes for supervisor" class="rounded-md border border-gray-300 px-3 py-2 text-sm">{{ $resource->notes }}</textarea>
+                                                    <div class="flex gap-2">
+                                                        <button class="rounded-md bg-gray-900 px-3 py-1.5 text-xs font-semibold text-white">Save</button>
+                                                    </div>
+                                                </form>
+                                                <form method="POST" action="{{ route('admin.projects.supervision.resources.delete', ['researchProject' => $project, 'session' => $session, 'resource' => $resource]) }}" class="mt-2">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button class="rounded-md border border-red-300 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50" onclick="return confirm('Delete this shared resource?')">Delete</button>
+                                                </form>
+                                            </details>
+                                        @endif
+                                    </div>
+                                </div>
+                            @empty
+                                <p class="rounded-md border border-dashed border-gray-300 p-4 text-sm text-gray-500">No shared resources yet.</p>
+                            @endforelse
+                        </div>
+                    </section>
+
+                    <section class="mt-5 rounded-md border border-gray-200 p-4">
+                        <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                            <div>
+                                <h3 class="font-semibold">Follow-Up Action Items</h3>
+                                <p class="mt-1 text-xs text-gray-500">Track revisions, responsibilities, due dates, and completion notes after supervision feedback.</p>
+                            </div>
+                            <span class="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-700">{{ $session->followUpItems->whereNotIn('status', [\App\Models\SupervisionFollowUpItem::STATUS_COMPLETED, \App\Models\SupervisionFollowUpItem::STATUS_CANCELLED])->count() }} pending</span>
+                        </div>
+
+                        @if ($canManageSupervision)
+                            <form method="POST" action="{{ route('admin.projects.supervision.follow-ups.store', ['researchProject' => $project, 'session' => $session]) }}" class="mt-4 grid gap-3 md:grid-cols-6">
+                                @csrf
+                                <div class="md:col-span-2">
+                                    <label class="text-xs font-semibold uppercase tracking-wide text-gray-500">Title</label>
+                                    <input name="title" required class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-semibold uppercase tracking-wide text-gray-500">Status</label>
+                                    <select name="status" required class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm">
+                                        @foreach ($followUpStatusLabels as $value => $label)
+                                            <option value="{{ $value }}">{{ $label }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-xs font-semibold uppercase tracking-wide text-gray-500">Priority</label>
+                                    <select name="priority" required class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm">
+                                        @foreach ($followUpPriorityLabels as $value => $label)
+                                            <option value="{{ $value }}">{{ $label }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-xs font-semibold uppercase tracking-wide text-gray-500">Due Date</label>
+                                    <input type="date" name="due_date" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-semibold uppercase tracking-wide text-gray-500">Assigned To</label>
+                                    <select name="assigned_to" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm">
+                                        <option value="">Unassigned</option>
+                                        @foreach ($assignableUsers as $id => $name)
+                                            <option value="{{ $id }}">{{ $name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-xs font-semibold uppercase tracking-wide text-gray-500">Source</label>
+                                    <select name="source" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm">
+                                        @foreach ($followUpSourceLabels as $value => $label)
+                                            <option value="{{ $value }}">{{ $label }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="md:col-span-5">
+                                    <label class="text-xs font-semibold uppercase tracking-wide text-gray-500">Description</label>
+                                    <textarea name="description" rows="2" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm"></textarea>
+                                </div>
+                                <div class="md:col-span-6 flex justify-end">
+                                    <button class="rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-black">Add Follow-Up</button>
+                                </div>
+                            </form>
+                        @endif
+
+                        <div class="mt-4 overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200 text-sm">
+                                <thead>
+                                    <tr class="text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                        <th class="py-3 pr-4">Title</th>
+                                        <th class="py-3 pr-4">Status</th>
+                                        <th class="py-3 pr-4">Priority</th>
+                                        <th class="py-3 pr-4">Due</th>
+                                        <th class="py-3 pr-4">Assigned</th>
+                                        <th class="py-3 pr-4">Completed</th>
+                                        <th class="py-3 pr-4">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    @forelse ($session->followUpItems as $item)
+                                        <tr>
+                                            <td class="py-3 pr-4">
+                                                <p class="font-medium">{{ $item->title }}</p>
+                                                @if ($item->description)
+                                                    <p class="mt-1 text-xs text-gray-500">{{ $item->description }}</p>
+                                                @endif
+                                            </td>
+                                            <td class="py-3 pr-4"><span class="rounded-full px-2.5 py-0.5 text-xs font-semibold {{ $followUpStatusClass($item->status) }}">{{ $followUpStatusLabels[$item->status] ?? $item->status }}</span></td>
+                                            <td class="py-3 pr-4"><span class="rounded-full px-2.5 py-0.5 text-xs font-semibold {{ $priorityClass($item->priority) }}">{{ $followUpPriorityLabels[$item->priority] ?? $item->priority }}</span></td>
+                                            <td class="py-3 pr-4">{{ $item->due_date?->format('Y-m-d') ?? '-' }}</td>
+                                            <td class="py-3 pr-4">{{ $item->assignee?->name ?? 'Unassigned' }}</td>
+                                            <td class="py-3 pr-4">{{ $item->completed_at?->format('Y-m-d H:i') ?? '-' }}</td>
+                                            <td class="py-3 pr-4">
+                                                @if ($canManageSupervision)
+                                                    <details>
+                                                        <summary class="cursor-pointer text-xs font-semibold text-gray-700">Edit</summary>
+                                                        <form method="POST" action="{{ route('admin.projects.supervision.follow-ups.update', ['researchProject' => $project, 'session' => $session, 'followUp' => $item]) }}" class="mt-3 grid min-w-[22rem] gap-2 rounded-md border border-gray-200 bg-white p-3 shadow-sm">
+                                                            @csrf
+                                                            @method('PUT')
+                                                            <input name="title" required value="{{ $item->title }}" class="rounded-md border border-gray-300 px-3 py-2 text-sm">
+                                                            <select name="status" required class="rounded-md border border-gray-300 px-3 py-2 text-sm">
+                                                                @foreach ($followUpStatusLabels as $value => $label)
+                                                                    <option value="{{ $value }}" @selected($item->status === $value)>{{ $label }}</option>
+                                                                @endforeach
+                                                            </select>
+                                                            <select name="priority" required class="rounded-md border border-gray-300 px-3 py-2 text-sm">
+                                                                @foreach ($followUpPriorityLabels as $value => $label)
+                                                                    <option value="{{ $value }}" @selected($item->priority === $value)>{{ $label }}</option>
+                                                                @endforeach
+                                                            </select>
+                                                            <select name="assigned_to" class="rounded-md border border-gray-300 px-3 py-2 text-sm">
+                                                                <option value="">Unassigned</option>
+                                                                @foreach ($assignableUsers as $id => $name)
+                                                                    <option value="{{ $id }}" @selected($item->assigned_to === $id)>{{ $name }}</option>
+                                                                @endforeach
+                                                            </select>
+                                                            <select name="source" class="rounded-md border border-gray-300 px-3 py-2 text-sm">
+                                                                @foreach ($followUpSourceLabels as $value => $label)
+                                                                    <option value="{{ $value }}" @selected($item->source === $value)>{{ $label }}</option>
+                                                                @endforeach
+                                                            </select>
+                                                            <input type="date" name="due_date" value="{{ $item->due_date?->format('Y-m-d') }}" class="rounded-md border border-gray-300 px-3 py-2 text-sm">
+                                                            <textarea name="description" rows="2" class="rounded-md border border-gray-300 px-3 py-2 text-sm">{{ $item->description }}</textarea>
+                                                            <textarea name="completion_note" rows="2" placeholder="Completion note" class="rounded-md border border-gray-300 px-3 py-2 text-sm">{{ $item->completion_note }}</textarea>
+                                                            <div class="flex gap-2">
+                                                                <button class="rounded-md bg-gray-900 px-3 py-1.5 text-xs font-semibold text-white">Save</button>
+                                                            </div>
+                                                        </form>
+                                                        <form method="POST" action="{{ route('admin.projects.supervision.follow-ups.delete', ['researchProject' => $project, 'session' => $session, 'followUp' => $item]) }}" class="mt-2">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button class="rounded-md border border-red-300 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50" onclick="return confirm('Delete this follow-up item?')">Delete</button>
+                                                        </form>
+                                                    </details>
+                                                @else
+                                                    <span class="text-xs text-gray-500">No action</span>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="7" class="py-6 text-center text-sm text-gray-500">No follow-up items yet.</td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
 
                     @if ($canManageSupervision)
                         <details class="mt-5 rounded-md border border-gray-200 p-4">

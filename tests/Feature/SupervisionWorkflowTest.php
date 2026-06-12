@@ -3,13 +3,18 @@
 namespace Tests\Feature;
 
 use App\Models\ActivityLog;
+use App\Models\Document;
+use App\Models\DocumentCategory;
 use App\Models\ExpertValidator;
 use App\Models\ExpertValidatorProject;
+use App\Models\ResearchLink;
 use App\Models\ResearchProject;
 use App\Models\Respondent;
 use App\Models\SupervisionFeedback;
+use App\Models\SupervisionFollowUpItem;
 use App\Models\SupervisionReviewLink;
 use App\Models\SupervisionSession;
+use App\Models\SupervisionSessionResource;
 use App\Models\Survey;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
@@ -126,6 +131,201 @@ class SupervisionWorkflowTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_admin_can_manage_supervision_resources_and_public_link_only_shows_visible_resources(): void
+    {
+        [$owner, $project, $validator] = $this->projectWithSupervisor();
+        $session = $this->createSession($owner, $project);
+        $document = $this->createDocument($owner, $project, 'Chapter 2 Private Draft');
+        $researchLink = ResearchLink::create([
+            'research_project_id' => $project->id,
+            'created_by' => $owner->id,
+            'title' => 'Methodology Reference',
+            'url' => 'https://example.com/methodology',
+            'category' => ResearchLink::CATEGORY_REFERENCE,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($owner)
+            ->post(route('admin.projects.supervision.resources.store', ['researchProject' => $project, 'session' => $session]), [
+                'resource_type' => SupervisionSessionResource::TYPE_DOCUMENT,
+                'resource_id' => $document->id,
+                'title' => 'Draft Bab 2',
+                'description' => 'Read the conceptual framework section.',
+                'notes' => 'Focus on alignment with research questions.',
+                'sort_order' => 1,
+                'is_visible_to_supervisor' => '1',
+            ])
+            ->assertRedirect(route('admin.projects.supervision.index', ['researchProject' => $project]));
+
+        $this->actingAs($owner)
+            ->post(route('admin.projects.supervision.resources.store', ['researchProject' => $project, 'session' => $session]), [
+                'resource_type' => SupervisionSessionResource::TYPE_RESEARCH_LINK,
+                'resource_id' => $researchLink->id,
+                'title' => 'Reference Link',
+                'description' => 'Reference for the methodology section.',
+                'sort_order' => 2,
+                'is_visible_to_supervisor' => '1',
+            ])
+            ->assertRedirect(route('admin.projects.supervision.index', ['researchProject' => $project]));
+
+        $this->actingAs($owner)
+            ->post(route('admin.projects.supervision.resources.store', ['researchProject' => $project, 'session' => $session]), [
+                'resource_type' => SupervisionSessionResource::TYPE_MANUAL_NOTE,
+                'title' => 'Internal Revision Concern',
+                'description' => 'This should stay private to the researcher.',
+                'is_visible_to_supervisor' => '0',
+            ])
+            ->assertRedirect(route('admin.projects.supervision.index', ['researchProject' => $project]));
+
+        $visibleDocumentResource = SupervisionSessionResource::query()
+            ->where('resource_type', SupervisionSessionResource::TYPE_DOCUMENT)
+            ->firstOrFail();
+
+        $this->actingAs($owner)
+            ->put(route('admin.projects.supervision.resources.update', ['researchProject' => $project, 'session' => $session, 'resource' => $visibleDocumentResource]), [
+                'resource_type' => SupervisionSessionResource::TYPE_DOCUMENT,
+                'resource_id' => $document->id,
+                'title' => 'Updated Draft Bab 2',
+                'description' => 'Read the revised framework section.',
+                'notes' => 'Supervisor-visible note.',
+                'sort_order' => 3,
+                'is_visible_to_supervisor' => '1',
+            ])
+            ->assertRedirect(route('admin.projects.supervision.index', ['researchProject' => $project]));
+
+        $this->actingAs($owner)
+            ->get(route('admin.projects.supervision.index', ['researchProject' => $project]))
+            ->assertOk()
+            ->assertSee('Shared Resources')
+            ->assertSee('Follow-Up Action Items')
+            ->assertSee('Updated Draft Bab 2')
+            ->assertSee('Resource yang dibagikan')
+            ->assertSee('Chapter 2 Private Draft')
+            ->assertSee('Internal Revision Concern');
+
+        $token = $this->generateToken($owner, $project, $session, $validator);
+        $link = SupervisionReviewLink::query()->firstOrFail();
+
+        $this->get(route('supervision.review.show', ['token' => $token]))
+            ->assertOk()
+            ->assertSee('Shared Resources')
+            ->assertSee('Updated Draft Bab 2')
+            ->assertSee('Reference Link')
+            ->assertSee('https://example.com/methodology')
+            ->assertDontSee('Internal Revision Concern')
+            ->assertDontSee('This should stay private')
+            ->assertDontSee($link->token_hash)
+            ->assertDontSee('Respondent Rahasia')
+            ->assertDontSee('secret@example.test');
+
+        $logs = ActivityLog::query()
+            ->whereIn('action', ['supervision_resource.created', 'supervision_resource.updated'])
+            ->get();
+
+        $this->assertCount(4, $logs);
+        $encodedMetadata = $logs->pluck('metadata')->map(fn ($metadata): string => json_encode($metadata, JSON_THROW_ON_ERROR))->join("\n");
+        $this->assertStringNotContainsString('https://example.com/methodology', $encodedMetadata);
+        $this->assertStringNotContainsString('Supervisor-visible note', $encodedMetadata);
+    }
+
+    public function test_supervision_resource_management_enforces_url_safety_and_project_scope(): void
+    {
+        [$owner, $project] = $this->projectWithSupervisor('resource-owner@example.test');
+        $session = $this->createSession($owner, $project);
+        [$otherOwner, $otherProject] = $this->projectWithSupervisor('other-owner@example.test');
+        $otherDocument = $this->createDocument($otherOwner, $otherProject, 'Other Project Draft');
+        $outsider = $this->adminUser('resource-outsider@example.test');
+
+        $this->actingAs($owner)
+            ->from(route('admin.projects.supervision.index', ['researchProject' => $project]))
+            ->post(route('admin.projects.supervision.resources.store', ['researchProject' => $project, 'session' => $session]), [
+                'resource_type' => SupervisionSessionResource::TYPE_MANUAL_URL,
+                'title' => 'Unsafe URL',
+                'url' => 'javascript:alert(1)',
+                'is_visible_to_supervisor' => '1',
+            ])
+            ->assertRedirect(route('admin.projects.supervision.index', ['researchProject' => $project]))
+            ->assertSessionHasErrors('url');
+
+        $this->actingAs($owner)
+            ->post(route('admin.projects.supervision.resources.store', ['researchProject' => $project, 'session' => $session]), [
+                'resource_type' => SupervisionSessionResource::TYPE_DOCUMENT,
+                'resource_id' => $otherDocument->id,
+                'title' => 'Cross Project Document',
+                'is_visible_to_supervisor' => '1',
+            ])
+            ->assertNotFound();
+
+        $this->actingAs($outsider)
+            ->post(route('admin.projects.supervision.resources.store', ['researchProject' => $project, 'session' => $session]), [
+                'resource_type' => SupervisionSessionResource::TYPE_MANUAL_NOTE,
+                'title' => 'Unauthorized Note',
+            ])
+            ->assertForbidden();
+
+        $this->assertDatabaseMissing('supervision_session_resources', [
+            'title' => 'Cross Project Document',
+        ]);
+        $this->assertDatabaseMissing('supervision_session_resources', [
+            'title' => 'Unauthorized Note',
+        ]);
+    }
+
+    public function test_admin_can_track_and_complete_supervision_follow_up_items(): void
+    {
+        [$owner, $project] = $this->projectWithSupervisor();
+        $session = $this->createSession($owner, $project);
+
+        $this->actingAs($owner)
+            ->post(route('admin.projects.supervision.follow-ups.store', ['researchProject' => $project, 'session' => $session]), [
+                'title' => 'Revise research questions',
+                'description' => 'Sharpen the question wording after supervisor feedback.',
+                'source' => SupervisionFollowUpItem::SOURCE_SUPERVISOR_FEEDBACK,
+                'status' => SupervisionFollowUpItem::STATUS_TODO,
+                'priority' => SupervisionFollowUpItem::PRIORITY_HIGH,
+                'due_date' => now()->addDays(3)->format('Y-m-d'),
+                'assigned_to' => $owner->id,
+            ])
+            ->assertRedirect(route('admin.projects.supervision.index', ['researchProject' => $project]));
+
+        $item = SupervisionFollowUpItem::query()->firstOrFail();
+
+        $this->actingAs($owner)
+            ->put(route('admin.projects.supervision.follow-ups.update', ['researchProject' => $project, 'session' => $session, 'followUp' => $item]), [
+                'title' => 'Revise research questions',
+                'description' => 'Completed after supervisor discussion.',
+                'source' => SupervisionFollowUpItem::SOURCE_SUPERVISOR_FEEDBACK,
+                'status' => SupervisionFollowUpItem::STATUS_COMPLETED,
+                'priority' => SupervisionFollowUpItem::PRIORITY_HIGH,
+                'due_date' => now()->addDays(3)->format('Y-m-d'),
+                'assigned_to' => $owner->id,
+                'completion_note' => 'Revision completed and ready for next meeting.',
+            ])
+            ->assertRedirect(route('admin.projects.supervision.index', ['researchProject' => $project]));
+
+        $item->refresh();
+
+        $this->assertSame(SupervisionFollowUpItem::STATUS_COMPLETED, $item->status);
+        $this->assertNotNull($item->completed_at);
+
+        $summary = $session->fresh()->copyReadySummary();
+        $this->assertStringContainsString('Tindak lanjut:', $summary);
+        $this->assertStringContainsString('Status tindak lanjut:', $summary);
+        $this->assertStringContainsString('Revise research questions', $summary);
+        $this->assertStringContainsString('Completed', $summary);
+
+        $this->actingAs($owner)
+            ->get(route('admin.projects.supervision.index', ['researchProject' => $project]))
+            ->assertOk()
+            ->assertSee('Follow-Up Action Items')
+            ->assertSee('Revise research questions')
+            ->assertSee('Completed');
+
+        $this->assertDatabaseHas('activity_logs', [
+            'action' => 'supervision_follow_up.completed',
+        ]);
+    }
+
     public function test_invalid_expired_and_revoked_supervision_tokens_are_safe(): void
     {
         [$owner, $project, $validator] = $this->projectWithSupervisor();
@@ -210,7 +410,7 @@ class SupervisionWorkflowTest extends TestCase
         $survey = Survey::create([
             'project_id' => $project->id,
             'created_by' => $owner->id,
-            'title' => 'Private Survey',
+            'title' => 'Private Survey '.str_replace(['@', '.'], '-', $email),
             'status' => Survey::STATUS_DRAFT,
             'identity_mode' => Survey::IDENTITY_HIDDEN,
         ]);
@@ -232,6 +432,33 @@ class SupervisionWorkflowTest extends TestCase
         $user->assignRole('admin');
 
         return $user;
+    }
+
+    private function createSession(User $owner, ResearchProject $project): SupervisionSession
+    {
+        return SupervisionSession::create([
+            ...$this->sessionPayload(),
+            'research_project_id' => $project->id,
+            'created_by' => $owner->id,
+        ]);
+    }
+
+    private function createDocument(User $owner, ResearchProject $project, string $title): Document
+    {
+        $category = DocumentCategory::firstOrCreate(
+            ['slug' => 'draft'],
+            ['name' => 'Draft', 'sort_order' => 1, 'is_default' => true],
+        );
+
+        return Document::create([
+            'project_id' => $project->id,
+            'category_id' => $category->id,
+            'owner_id' => $owner->id,
+            'title' => $title,
+            'description' => 'Private document metadata only.',
+            'status' => Document::STATUS_DRAFT,
+            'visibility' => Document::VISIBILITY_PRIVATE,
+        ]);
     }
 
     /**

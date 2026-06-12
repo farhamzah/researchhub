@@ -157,6 +157,21 @@ class SupervisionSession extends Model
         return $this->hasMany(SupervisionFeedback::class);
     }
 
+    public function resources(): HasMany
+    {
+        return $this->hasMany(SupervisionSessionResource::class)->orderBy('sort_order')->orderBy('created_at');
+    }
+
+    public function visibleResources(): HasMany
+    {
+        return $this->resources()->where('is_visible_to_supervisor', true);
+    }
+
+    public function followUpItems(): HasMany
+    {
+        return $this->hasMany(SupervisionFollowUpItem::class)->orderBy('due_date')->orderBy('created_at');
+    }
+
     public function scopeVisibleTo(Builder $query, User $user): Builder
     {
         if ($user->hasRole('super_admin')) {
@@ -173,13 +188,30 @@ class SupervisionSession extends Model
     public function copyReadySummary(): string
     {
         $latestFeedback = $this->feedback()->latest()->first();
+        $resources = $this->resources()
+            ->get()
+            ->map(fn (SupervisionSessionResource $resource): string => '- '.$resource->displayTitle().' ('.$resource->typeLabel().')')
+            ->join(PHP_EOL);
+        $followUps = $this->followUpItems()
+            ->with('assignee')
+            ->get()
+            ->map(function (SupervisionFollowUpItem $item): string {
+                $status = SupervisionFollowUpItem::STATUS_LABELS[$item->status] ?? $item->status;
+                $assignee = $item->assignee?->name ? ' - PIC: '.$item->assignee->name : '';
+                $due = $item->due_date ? ' - Due: '.$item->due_date->format('Y-m-d') : '';
+
+                return "- {$item->title} ({$status}){$assignee}{$due}";
+            })
+            ->join(PHP_EOL);
 
         return collect([
             'Topik bimbingan: '.$this->title,
             'Progress yang dilaporkan: '.($this->progress_report ?: '-'),
             'Pertanyaan untuk pembimbing: '.($this->questions ?: '-'),
+            'Resource yang dibagikan: '.($resources !== '' ? PHP_EOL.$resources : '-'),
             'Masukan pembimbing: '.($latestFeedback?->general_feedback ?: '-'),
             'Tindak lanjut: '.($latestFeedback?->recommended_next_steps ?: ($this->next_plan ?: '-')),
+            'Status tindak lanjut: '.($followUps !== '' ? PHP_EOL.$followUps : '-'),
             'Status: '.(self::STATUS_LABELS[$this->status] ?? $this->status),
         ])->join(PHP_EOL);
     }

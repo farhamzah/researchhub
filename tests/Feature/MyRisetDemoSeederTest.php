@@ -2,18 +2,25 @@
 
 namespace Tests\Feature;
 
+use App\Models\AnalysisResult;
 use App\Models\Document;
 use App\Models\ExpertValidator;
 use App\Models\ProjectMilestone;
 use App\Models\ProjectTimelineTask;
 use App\Models\ResearchLink;
 use App\Models\ResearchProject;
+use App\Models\Respondent;
 use App\Models\SupervisionFollowUpItem;
 use App\Models\SupervisionReviewLink;
 use App\Models\SupervisionSession;
 use App\Models\SupervisionSessionResource;
 use App\Models\Survey;
+use App\Models\SurveyAnswer;
+use App\Models\SurveyIndicator;
 use App\Models\SurveyQuestion;
+use App\Models\SurveyQuestionScoring;
+use App\Models\SurveyResponse;
+use App\Models\SurveyScale;
 use App\Models\SurveyValidationAssignment;
 use App\Models\SurveyValidationRound;
 use App\Models\SurveyValidationScore;
@@ -48,21 +55,35 @@ class MyRisetDemoSeederTest extends TestCase
         $this->assertSame('Disertasi PharmVR', $project->title);
 
         $survey = Survey::query()->where('slug', 'angket-evaluasi-pembelajaran-pharmvr')->firstOrFail();
-        $this->assertSame(5, $survey->questions()->count());
-        $this->assertSame(4, $survey->questions()->where('type', SurveyQuestion::TYPE_LIKERT)->count());
+        $this->assertSame(12, $survey->questions()->count());
+        $this->assertSame(11, $survey->questions()->where('type', SurveyQuestion::TYPE_LIKERT)->count());
         $this->assertSame(1, $survey->questions()->where('type', SurveyQuestion::TYPE_SHORT_TEXT)->count());
+        $this->assertSame(1, SurveyScale::query()->where('survey_id', $survey->id)->count());
+        $this->assertSame(4, SurveyIndicator::query()->where('survey_id', $survey->id)->count());
+        $this->assertSame(12, SurveyQuestionScoring::query()->where('survey_id', $survey->id)->count());
+        $this->assertSame(6, Respondent::query()->where('survey_id', $survey->id)->count());
+        $this->assertSame(6, SurveyResponse::query()->where('survey_id', $survey->id)->where('status', SurveyResponse::STATUS_SUBMITTED)->count());
+        $this->assertSame(72, SurveyAnswer::query()->whereHas('response', fn ($query) => $query->where('survey_id', $survey->id))->count());
+
+        $analysis = AnalysisResult::query()
+            ->where('survey_id', $survey->id)
+            ->where('title', 'Demo Descriptive Analysis - Angket Evaluasi Pembelajaran PharmVR')
+            ->firstOrFail();
+        $this->assertSame(6, $analysis->summary['submitted_count']);
+        $this->assertSame(12, $analysis->summary['analyzed_question_count']);
 
         $round = SurveyValidationRound::query()
             ->where('title', 'Validasi Instrumen Angket Evaluasi PharmVR')
             ->firstOrFail();
         $this->assertSame(3, $round->assignments()->count());
         $this->assertSame(2, $round->assignments()->where('status', SurveyValidationAssignment::STATUS_SUBMITTED)->count());
-        $this->assertSame(10, SurveyValidationScore::query()->whereHas('assignment', fn ($query) => $query->where('survey_validation_round_id', $round->id))->count());
+        $this->assertSame(24, SurveyValidationScore::query()->whereHas('assignment', fn ($query) => $query->where('survey_validation_round_id', $round->id))->count());
 
         $session = SupervisionSession::query()
             ->where('title', 'Bimbingan Proposal dan Validasi Instrumen PharmVR')
             ->firstOrFail();
-        $this->assertSame(6, $session->resources()->count());
+        $this->assertSame(7, $session->resources()->count());
+        $this->assertTrue($session->resources()->where('title', $analysis->title)->exists());
         $this->assertSame(3, $session->followUpItems()->count());
 
         $this->assertSame(5, Document::query()->where('project_id', $project->id)->count());
@@ -90,6 +111,7 @@ class MyRisetDemoSeederTest extends TestCase
             ->assertSeeText('Validasi Instrumen Angket Evaluasi PharmVR')
             ->assertSeeText('Bimbingan Proposal dan Validasi Instrumen PharmVR')
             ->assertSeeText('Revisi instrumen validasi ahli')
+            ->assertSeeText('Demo Descriptive Analysis - Angket Evaluasi Pembelajaran PharmVR')
             ->assertDontSee('raw-validation-dashboard-token')
             ->assertDontSee('raw-supervision-dashboard-token')
             ->assertDontSee(SurveyValidationAssignment::hashToken('raw-validation-dashboard-token'))
@@ -124,6 +146,13 @@ class MyRisetDemoSeederTest extends TestCase
             'milestones' => ProjectMilestone::query()->where('research_project_id', $project->id)->count(),
             'tasks' => ProjectTimelineTask::query()->where('research_project_id', $project->id)->count(),
             'questions' => SurveyQuestion::query()->where('survey_id', $survey->id)->count(),
+            'scales' => SurveyScale::query()->where('survey_id', $survey->id)->count(),
+            'indicators' => SurveyIndicator::query()->where('survey_id', $survey->id)->count(),
+            'scorings' => SurveyQuestionScoring::query()->where('survey_id', $survey->id)->count(),
+            'respondents' => Respondent::query()->where('survey_id', $survey->id)->count(),
+            'responses' => SurveyResponse::query()->where('survey_id', $survey->id)->count(),
+            'answers' => SurveyAnswer::query()->whereHas('response', fn ($query) => $query->where('survey_id', $survey->id))->count(),
+            'analysis_results' => AnalysisResult::query()->where('survey_id', $survey->id)->count(),
             'assignments' => SurveyValidationAssignment::query()->where('survey_validation_round_id', $round->id)->count(),
             'scores' => SurveyValidationScore::query()->whereHas('assignment', fn ($query) => $query->where('survey_validation_round_id', $round->id))->count(),
             'supervision_resources' => SupervisionSessionResource::query()->where('supervision_session_id', $session->id)->count(),

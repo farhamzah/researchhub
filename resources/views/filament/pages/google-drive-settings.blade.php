@@ -373,7 +373,7 @@
             <div class="drive-header-row">
                 <div>
                     <p class="drive-eyebrow">Google Drive Integration</p>
-                    <h2 id="google-drive-settings-title" class="drive-title">Google Drive Settings</h2>
+                    <h2 id="google-drive-settings-title" class="drive-title">Connect MyRiset to Google Drive</h2>
                     <p class="drive-copy">Connect MyRiset to your own Google Drive account.</p>
                     <p class="drive-copy">
                         Use Google Drive to prepare future document workflows while keeping tokens and secrets private.

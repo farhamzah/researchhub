@@ -2,6 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Models\AnalysisJob;
+use App\Models\AnalysisResult;
 use App\Models\Document;
 use App\Models\DocumentCategory;
 use App\Models\ExpertValidator;
@@ -10,14 +12,20 @@ use App\Models\ProjectMilestone;
 use App\Models\ProjectTimelineTask;
 use App\Models\ResearchLink;
 use App\Models\ResearchProject;
+use App\Models\Respondent;
 use App\Models\SupervisionFeedback;
 use App\Models\SupervisionFollowUpItem;
 use App\Models\SupervisionReviewLink;
 use App\Models\SupervisionSession;
 use App\Models\SupervisionSessionResource;
 use App\Models\Survey;
+use App\Models\SurveyAnswer;
+use App\Models\SurveyIndicator;
 use App\Models\SurveyPage;
 use App\Models\SurveyQuestion;
+use App\Models\SurveyQuestionScoring;
+use App\Models\SurveyResponse;
+use App\Models\SurveyScale;
 use App\Models\SurveyValidationAssignment;
 use App\Models\SurveyValidationRound;
 use App\Models\SurveyValidationScore;
@@ -60,8 +68,10 @@ class MyRisetDemoSeeder extends Seeder
         $documents = $this->seedDocuments($admin, $project);
         $links = $this->seedResearchLinks($admin, $project);
         [$survey, $questions] = $this->seedSurvey($admin, $project);
+        $this->seedSurveyResponses($project, $survey, $questions);
+        $analysisResult = $this->seedAnalysis($admin, $project, $survey);
         [$validators, $round, $assignments] = $this->seedValidation($admin, $project, $survey, $questions);
-        $this->seedSupervision($admin, $project, $documents, $links, $survey, $round);
+        $this->seedSupervision($admin, $project, $documents, $links, $survey, $round, $analysisResult);
     }
 
     /**
@@ -242,19 +252,78 @@ class MyRisetDemoSeeder extends Seeder
             ],
         );
 
+        $likertScale = [
+            1 => 'Sangat tidak setuju',
+            2 => 'Tidak setuju',
+            3 => 'Setuju',
+            4 => 'Sangat setuju',
+        ];
+
+        $scale = SurveyScale::query()->updateOrCreate(
+            [
+                'survey_id' => $survey->id,
+                'slug' => 'evaluasi-pembelajaran-pharmvr',
+            ],
+            [
+                'name' => 'Evaluasi Pembelajaran PharmVR',
+                'description' => 'Skala demo untuk mengukur usability, engagement, pemahaman CPOB, dan relevansi materi PharmVR.',
+                'sort_order' => 1,
+                'settings' => [
+                    'min' => 1,
+                    'max' => 4,
+                    'labels' => $likertScale,
+                ],
+            ],
+        );
+
+        $indicatorRows = [
+            ['key' => 'usability', 'name' => 'Usability dan Kejelasan Media', 'sort' => 1],
+            ['key' => 'engagement', 'name' => 'Keterlibatan Belajar', 'sort' => 2],
+            ['key' => 'cpob_understanding', 'name' => 'Pemahaman CPOB/GMP', 'sort' => 3],
+            ['key' => 'material_relevance', 'name' => 'Relevansi Materi', 'sort' => 4],
+        ];
+
+        $indicators = [];
+
+        foreach ($indicatorRows as $row) {
+            $indicators[$row['key']] = SurveyIndicator::query()->updateOrCreate(
+                [
+                    'survey_id' => $survey->id,
+                    'slug' => $row['key'],
+                ],
+                [
+                    'survey_scale_id' => $scale->id,
+                    'name' => $row['name'],
+                    'description' => 'Demo indicator untuk '.$row['name'].'.',
+                    'interpretation_rules' => [
+                        ['min' => 1, 'max' => 1.99, 'label' => 'Perlu perbaikan mayor'],
+                        ['min' => 2, 'max' => 2.99, 'label' => 'Perlu perbaikan minor'],
+                        ['min' => 3, 'max' => 3.49, 'label' => 'Baik'],
+                        ['min' => 3.5, 'max' => 4, 'label' => 'Sangat baik'],
+                    ],
+                    'sort_order' => $row['sort'],
+                ],
+            );
+        }
+
         $likertOptions = [
-            ['value' => 1, 'label' => 'Sangat tidak setuju'],
-            ['value' => 2, 'label' => 'Tidak setuju'],
-            ['value' => 3, 'label' => 'Setuju'],
-            ['value' => 4, 'label' => 'Sangat setuju'],
+            'scale' => array_keys($likertScale),
+            'labels' => $likertScale,
         ];
 
         $questionRows = [
-            ['key' => 'pharmvr_cpob_understanding', 'type' => SurveyQuestion::TYPE_LIKERT, 'label' => 'PharmVR membantu saya memahami alur produksi sesuai prinsip CPOB.', 'sort' => 1],
-            ['key' => 'pharmvr_visual_clarity', 'type' => SurveyQuestion::TYPE_LIKERT, 'label' => 'Tampilan visual PharmVR mudah dipahami.', 'sort' => 2],
-            ['key' => 'pharmvr_learning_engagement', 'type' => SurveyQuestion::TYPE_LIKERT, 'label' => 'Interaksi dalam PharmVR meningkatkan keterlibatan belajar.', 'sort' => 3],
-            ['key' => 'pharmvr_material_relevance', 'type' => SurveyQuestion::TYPE_LIKERT, 'label' => 'Materi yang disajikan relevan dengan pembelajaran farmasi industri.', 'sort' => 4],
-            ['key' => 'pharmvr_helpful_part', 'type' => SurveyQuestion::TYPE_SHORT_TEXT, 'label' => 'Bagian apa yang paling membantu dalam pembelajaran menggunakan PharmVR?', 'sort' => 5],
+            ['key' => 'pharmvr_navigation_ease', 'type' => SurveyQuestion::TYPE_LIKERT, 'label' => 'Navigasi dalam PharmVR mudah diikuti.', 'sort' => 1, 'indicator' => 'usability'],
+            ['key' => 'pharmvr_visual_clarity', 'type' => SurveyQuestion::TYPE_LIKERT, 'label' => 'Tampilan visual PharmVR mudah dipahami.', 'sort' => 2, 'indicator' => 'usability'],
+            ['key' => 'pharmvr_instruction_clarity', 'type' => SurveyQuestion::TYPE_LIKERT, 'label' => 'Instruksi penggunaan PharmVR jelas sebelum simulasi dimulai.', 'sort' => 3, 'indicator' => 'usability'],
+            ['key' => 'pharmvr_learning_engagement', 'type' => SurveyQuestion::TYPE_LIKERT, 'label' => 'Interaksi dalam PharmVR meningkatkan keterlibatan belajar.', 'sort' => 4, 'indicator' => 'engagement'],
+            ['key' => 'pharmvr_motivation', 'type' => SurveyQuestion::TYPE_LIKERT, 'label' => 'PharmVR membuat saya lebih termotivasi mempelajari farmasi industri.', 'sort' => 5, 'indicator' => 'engagement'],
+            ['key' => 'pharmvr_confidence', 'type' => SurveyQuestion::TYPE_LIKERT, 'label' => 'Saya lebih percaya diri menjelaskan proses produksi setelah menggunakan PharmVR.', 'sort' => 6, 'indicator' => 'engagement'],
+            ['key' => 'pharmvr_cpob_understanding', 'type' => SurveyQuestion::TYPE_LIKERT, 'label' => 'PharmVR membantu saya memahami alur produksi sesuai prinsip CPOB.', 'sort' => 7, 'indicator' => 'cpob_understanding'],
+            ['key' => 'pharmvr_gmp_compliance', 'type' => SurveyQuestion::TYPE_LIKERT, 'label' => 'PharmVR membantu saya mengenali area kritis kepatuhan GMP.', 'sort' => 8, 'indicator' => 'cpob_understanding'],
+            ['key' => 'pharmvr_process_sequence', 'type' => SurveyQuestion::TYPE_LIKERT, 'label' => 'Urutan proses produksi dalam PharmVR mudah dipahami.', 'sort' => 9, 'indicator' => 'cpob_understanding'],
+            ['key' => 'pharmvr_material_relevance', 'type' => SurveyQuestion::TYPE_LIKERT, 'label' => 'Materi yang disajikan relevan dengan pembelajaran farmasi industri.', 'sort' => 10, 'indicator' => 'material_relevance'],
+            ['key' => 'pharmvr_assessment_alignment', 'type' => SurveyQuestion::TYPE_LIKERT, 'label' => 'Aktivitas PharmVR selaras dengan capaian pembelajaran mata kuliah.', 'sort' => 11, 'indicator' => 'material_relevance'],
+            ['key' => 'pharmvr_helpful_part', 'type' => SurveyQuestion::TYPE_SHORT_TEXT, 'label' => 'Bagian apa yang paling membantu dalam pembelajaran menggunakan PharmVR?', 'sort' => 12, 'indicator' => null],
         ];
 
         $questions = [];
@@ -269,16 +338,200 @@ class MyRisetDemoSeeder extends Seeder
                     'page_id' => $page->id,
                     'type' => $row['type'],
                     'label' => $row['label'],
-                    'help_text' => $row['type'] === SurveyQuestion::TYPE_LIKERT ? 'Gunakan skala 1 sampai 4.' : null,
+                    'help_text' => $row['type'] === SurveyQuestion::TYPE_LIKERT ? 'Gunakan skala 1 sampai 4.' : 'Jawaban demo tidak berisi identitas pribadi.',
                     'options' => $row['type'] === SurveyQuestion::TYPE_LIKERT ? $likertOptions : null,
-                    'settings' => $row['type'] === SurveyQuestion::TYPE_LIKERT ? ['scale_min' => 1, 'scale_max' => 4] : null,
+                    'settings' => $row['type'] === SurveyQuestion::TYPE_LIKERT ? ['scale' => array_keys($likertScale), 'scale_min' => 1, 'scale_max' => 4] : null,
                     'is_required' => true,
                     'sort_order' => $row['sort'],
+                ],
+            );
+
+            SurveyQuestionScoring::query()->updateOrCreate(
+                ['survey_question_id' => $questions[$row['key']]->id],
+                [
+                    'survey_id' => $survey->id,
+                    'survey_indicator_id' => $row['indicator'] ? $indicators[$row['indicator']]->id : null,
+                    'is_scored' => $row['type'] === SurveyQuestion::TYPE_LIKERT,
+                    'score_min' => $row['type'] === SurveyQuestion::TYPE_LIKERT ? 1 : null,
+                    'score_max' => $row['type'] === SurveyQuestion::TYPE_LIKERT ? 4 : null,
+                    'weight' => 1,
+                    'is_reverse_scored' => false,
+                    'settings' => $row['type'] === SurveyQuestion::TYPE_LIKERT ? ['scale' => array_keys($likertScale)] : null,
                 ],
             );
         }
 
         return [$survey, $questions];
+    }
+
+    /**
+     * @param  array<string, SurveyQuestion>  $questions
+     */
+    private function seedSurveyResponses(ResearchProject $project, Survey $survey, array $questions): void
+    {
+        $answerRows = [
+            'MR-DEMO-001' => [4, 4, 3, 4, 4, 3, 4, 4, 3, 4, 3, 'Simulasi area produksi membantu memahami alur CPOB.'],
+            'MR-DEMO-002' => [3, 4, 3, 3, 4, 3, 4, 3, 3, 4, 4, 'Visualisasi ruang bersih dan alur material paling membantu.'],
+            'MR-DEMO-003' => [4, 3, 4, 4, 3, 4, 3, 4, 4, 3, 3, 'Interaksi checklist GMP membuat materi lebih mudah diingat.'],
+            'MR-DEMO-004' => [3, 3, 3, 4, 4, 4, 4, 4, 3, 4, 4, 'Bagian inspeksi virtual memberi konteks praktis.'],
+            'MR-DEMO-005' => [4, 4, 4, 3, 3, 3, 4, 3, 4, 4, 3, 'Urutan proses produksi dan contoh deviasi paling membantu.'],
+            'MR-DEMO-006' => [3, 4, 3, 4, 3, 4, 3, 4, 3, 3, 4, 'Saya terbantu oleh penjelasan visual area kritis.'],
+        ];
+
+        $questionKeys = array_keys($questions);
+
+        foreach ($answerRows as $pseudonym => $answers) {
+            $respondent = Respondent::query()->updateOrCreate(
+                [
+                    'survey_id' => $survey->id,
+                    'pseudonym_code' => $pseudonym,
+                ],
+                [
+                    'project_id' => $project->id,
+                    'name' => null,
+                    'email' => null,
+                    'identifier' => null,
+                    'institution' => 'Demo Cohort',
+                    'metadata' => ['demo' => true, 'cohort' => 'pharmvr-usability'],
+                ],
+            );
+
+            $numericScores = array_slice($answers, 0, 11);
+            $response = SurveyResponse::query()->updateOrCreate(
+                ['response_token_hash' => hash('sha256', 'myriset-demo-response-'.$pseudonym)],
+                [
+                    'survey_id' => $survey->id,
+                    'respondent_id' => $respondent->id,
+                    'status' => SurveyResponse::STATUS_SUBMITTED,
+                    'submitted_at' => now()->subDays(6)->addHours((int) substr($pseudonym, -1)),
+                    'ip_address' => null,
+                    'user_agent' => 'MyRiset demo seeder',
+                    'score_total' => array_sum($numericScores),
+                    'metadata' => ['demo_response_key' => $pseudonym],
+                ],
+            );
+
+            foreach ($questionKeys as $index => $questionKey) {
+                $question = $questions[$questionKey];
+                $value = $answers[$index];
+
+                SurveyAnswer::query()->updateOrCreate(
+                    [
+                        'survey_response_id' => $response->id,
+                        'survey_question_id' => $question->id,
+                    ],
+                    [
+                        'question_key' => $question->question_key,
+                        'answer_value' => $value,
+                        'score' => is_numeric($value) ? $value : null,
+                    ],
+                );
+            }
+        }
+    }
+
+    private function seedAnalysis(User $admin, ResearchProject $project, Survey $survey): AnalysisResult
+    {
+        $job = AnalysisJob::query()
+            ->where('project_id', $project->id)
+            ->where('survey_id', $survey->id)
+            ->where('created_by', $admin->id)
+            ->where('type', AnalysisJob::TYPE_SURVEY_DESCRIPTIVE)
+            ->where('input_config->demo_key', 'pharmvr_demo_descriptive')
+            ->first();
+
+        if (! $job) {
+            $job = AnalysisJob::query()->create([
+                'project_id' => $project->id,
+                'survey_id' => $survey->id,
+                'created_by' => $admin->id,
+                'type' => AnalysisJob::TYPE_SURVEY_DESCRIPTIVE,
+                'status' => AnalysisJob::STATUS_COMPLETED,
+                'input_config' => [
+                    'demo_key' => 'pharmvr_demo_descriptive',
+                    'response_status' => 'submitted_only',
+                    'hidden_questions' => 'omitted',
+                ],
+                'started_at' => now()->subDays(1),
+                'finished_at' => now()->subDays(1)->addMinutes(2),
+            ]);
+        } else {
+            $job->update([
+                'status' => AnalysisJob::STATUS_COMPLETED,
+                'started_at' => now()->subDays(1),
+                'finished_at' => now()->subDays(1)->addMinutes(2),
+                'error_message' => null,
+            ]);
+        }
+
+        $summary = [
+            'response_count' => 6,
+            'submitted_count' => 6,
+            'completion_count' => 6,
+            'analyzed_question_count' => 12,
+            'hidden_question_count' => 0,
+        ];
+
+        $result = AnalysisResult::query()->updateOrCreate(
+            [
+                'analysis_job_id' => $job->id,
+                'title' => 'Demo Descriptive Analysis - Angket Evaluasi Pembelajaran PharmVR',
+            ],
+            [
+                'project_id' => $project->id,
+                'survey_id' => $survey->id,
+                'type' => AnalysisJob::TYPE_SURVEY_DESCRIPTIVE,
+                'summary' => $summary,
+                'result_payload' => [
+                    'survey' => [
+                        'id' => $survey->id,
+                        'title' => $survey->title,
+                        'status' => $survey->status,
+                        'identity_mode' => $survey->identity_mode,
+                    ],
+                    'questions' => [
+                        ['question_key' => 'pharmvr_visual_clarity', 'mean' => 3.67, 'answered_count' => 6],
+                        ['question_key' => 'pharmvr_learning_engagement', 'mean' => 3.67, 'answered_count' => 6],
+                        ['question_key' => 'pharmvr_cpob_understanding', 'mean' => 3.67, 'answered_count' => 6],
+                    ],
+                    'indicator_summary' => [
+                        ['indicator_name' => 'Usability dan Kejelasan Media', 'mean' => 3.56, 'interpretation_label' => 'Sangat baik'],
+                        ['indicator_name' => 'Keterlibatan Belajar', 'mean' => 3.56, 'interpretation_label' => 'Sangat baik'],
+                        ['indicator_name' => 'Pemahaman CPOB/GMP', 'mean' => 3.56, 'interpretation_label' => 'Sangat baik'],
+                        ['indicator_name' => 'Relevansi Materi', 'mean' => 3.67, 'interpretation_label' => 'Sangat baik'],
+                    ],
+                    'scale_summary' => [
+                        ['scale_name' => 'Evaluasi Pembelajaran PharmVR', 'mean' => 3.59, 'respondent_count' => 6],
+                    ],
+                ],
+            ],
+        );
+
+        $result->tables()->updateOrCreate(
+            ['table_key' => 'demo_indicator_summary'],
+            [
+                'title' => 'Demo Indicator Summary',
+                'columns' => ['indicator', 'mean', 'interpretation'],
+                'rows' => [
+                    ['indicator' => 'Usability dan Kejelasan Media', 'mean' => 3.56, 'interpretation' => 'Sangat baik'],
+                    ['indicator' => 'Keterlibatan Belajar', 'mean' => 3.56, 'interpretation' => 'Sangat baik'],
+                    ['indicator' => 'Pemahaman CPOB/GMP', 'mean' => 3.56, 'interpretation' => 'Sangat baik'],
+                    ['indicator' => 'Relevansi Materi', 'mean' => 3.67, 'interpretation' => 'Sangat baik'],
+                ],
+            ],
+        );
+
+        $result->narratives()->updateOrCreate(
+            [
+                'section' => 'descriptive_summary',
+                'language' => 'id',
+            ],
+            [
+                'narrative' => 'Demo analysis menunjukkan respons PharmVR cenderung sangat baik pada usability, engagement, pemahaman CPOB/GMP, dan relevansi materi.',
+            ],
+        );
+
+        return $result;
     }
 
     /**
@@ -411,6 +664,7 @@ class MyRisetDemoSeeder extends Seeder
         array $links,
         Survey $survey,
         SurveyValidationRound $round,
+        AnalysisResult $analysisResult,
     ): void {
         $session = SupervisionSession::query()->updateOrCreate(
             [
@@ -467,8 +721,9 @@ class MyRisetDemoSeeder extends Seeder
             ['type' => SupervisionSessionResource::TYPE_DOCUMENT, 'id' => $documents['Instrumen Validasi Ahli']->id, 'title' => 'Instrumen Validasi Ahli', 'sort' => 2, 'visible' => true],
             ['type' => SupervisionSessionResource::TYPE_SURVEY, 'id' => $survey->id, 'title' => 'Angket Evaluasi Pembelajaran PharmVR', 'sort' => 3, 'visible' => true],
             ['type' => SupervisionSessionResource::TYPE_VALIDATION_ROUND, 'id' => $round->id, 'title' => 'Validasi Instrumen Angket Evaluasi PharmVR', 'sort' => 4, 'visible' => true],
-            ['type' => SupervisionSessionResource::TYPE_RESEARCH_LINK, 'id' => $links['Google Scholar']->id, 'title' => 'Google Scholar', 'sort' => 5, 'visible' => true],
-            ['type' => SupervisionSessionResource::TYPE_MANUAL_NOTE, 'id' => null, 'title' => 'Fokus bimbingan pada kesiapan instrumen dan desain validasi ahli', 'sort' => 6, 'visible' => true],
+            ['type' => SupervisionSessionResource::TYPE_OTHER, 'id' => $analysisResult->id, 'title' => 'Demo Descriptive Analysis - Angket Evaluasi Pembelajaran PharmVR', 'sort' => 5, 'visible' => true],
+            ['type' => SupervisionSessionResource::TYPE_RESEARCH_LINK, 'id' => $links['Google Scholar']->id, 'title' => 'Google Scholar', 'sort' => 6, 'visible' => true],
+            ['type' => SupervisionSessionResource::TYPE_MANUAL_NOTE, 'id' => null, 'title' => 'Fokus bimbingan pada kesiapan instrumen, analisis awal, dan desain validasi ahli', 'sort' => 7, 'visible' => true],
         ];
 
         foreach ($resourceRows as $row) {

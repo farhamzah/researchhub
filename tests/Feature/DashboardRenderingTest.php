@@ -29,6 +29,7 @@ class DashboardRenderingTest extends TestCase
             ->assertOk()
             ->assertSee('Welcome to MyRiset')
             ->assertDontSee('Welcome to ResearchHub')
+            ->assertDontSee('<h1 class="fi-header-heading', false)
             ->assertSee('Platform manajemen riset, validasi ahli, bimbingan, dan laporan akademik.')
             ->assertSee('Research Projects')
             ->assertSee('Active Projects')

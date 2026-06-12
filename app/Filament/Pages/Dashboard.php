@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Modules\Dashboard\Services\DashboardDataService;
 use BackedEnum;
 use Filament\Pages\Dashboard as BaseDashboard;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Facades\Auth;
 use UnitEnum;
 
@@ -21,6 +22,11 @@ class Dashboard extends BaseDashboard
     protected static ?string $title = 'Dashboard';
 
     protected string $view = 'filament.pages.dashboard';
+
+    public function getHeading(): string|Htmlable|null
+    {
+        return null;
+    }
 
     /**
      * @return array<string, mixed>

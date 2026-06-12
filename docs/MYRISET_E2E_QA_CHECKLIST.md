@@ -51,7 +51,9 @@ Do not use real personal data, real tokens, production Google credentials, or pr
 
 - URL/path: `/admin/surveys`
 - Expected screen: Survey list includes Angket Evaluasi Pembelajaran PharmVR.
-- Expected action: Open builder and confirm four Likert questions plus one short-text question are present.
+- Expected action: Open builder and confirm twelve demo questions are present: eleven Likert questions plus one short-text question.
+- Expected scoring check: Confirm the scoring setup includes one scale, four indicators, and scored Likert items for usability, engagement, CPOB/GMP understanding, and material relevance.
+- Expected response check: Confirm demo responses are available for descriptive analysis without exposing respondent identity.
 - Pass/fail: [ ]
 - Notes:
 
@@ -74,7 +76,7 @@ Do not use real personal data, real tokens, production Google credentials, or pr
 ## 8. Expert Validation Results Aiken/CVI
 
 - URL/path: `/admin/surveys/{survey}/validation/rounds/{round}/results`
-- Expected screen: Result page shows submitted expert scores, mixed accepted/revision recommendations, and Aiken/CVI-ready summary.
+- Expected screen: Result page shows submitted expert scores for all twelve questions, mixed accepted/revision recommendations, and Aiken/CVI-ready summary.
 - Expected action: Confirm comments and recommendations render without exposing tokens or respondent data.
 - Pass/fail: [ ]
 - Notes:
@@ -90,8 +92,16 @@ Do not use real personal data, real tokens, production Google credentials, or pr
 ## 10. Supervision Resources and Follow-Up
 
 - URL/path: `/admin/projects/{researchProject}/supervision`
-- Expected screen: Shared Resources include proposal, validation instrument, survey, validation round, Google Scholar, and manual note. Follow-Up items include two pending and one completed item.
+- Expected screen: Shared Resources include proposal, validation instrument, survey, validation round, demo descriptive analysis result, Google Scholar, and manual note. Follow-Up items include two pending and one completed item.
 - Expected action: Confirm visible resources do not expose private file paths and follow-up statuses/due dates appear.
+- Pass/fail: [ ]
+- Notes:
+
+## 10A. Survey Analysis Demo
+
+- URL/path: `/admin/surveys`
+- Expected screen: Angket Evaluasi Pembelajaran PharmVR has submitted demo responses and a descriptive analysis result.
+- Expected action: Open the analysis result and confirm indicator/scale summaries render for usability, engagement, CPOB/GMP understanding, and material relevance.
 - Pass/fail: [ ]
 - Notes:
 

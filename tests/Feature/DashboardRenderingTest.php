@@ -75,6 +75,29 @@ class DashboardRenderingTest extends TestCase
             ->assertSee('rh-action-tile');
     }
 
+    public function test_admin_panel_resource_pages_use_global_light_academic_theme(): void
+    {
+        $user = $this->adminUser();
+
+        foreach ([
+            '/admin',
+            '/admin/documents',
+            '/admin/projects/research-projects',
+            '/admin/surveys',
+            '/admin/research-links',
+            '/admin/settings/google-drive',
+        ] as $path) {
+            $this->actingAs($user)
+                ->get($path)
+                ->assertOk()
+                ->assertSee('id="researchhub-panel-light-theme"', false)
+                ->assertSee('--default-theme-mode: light', false)
+                ->assertSee('color-scheme: light', false)
+                ->assertSee('.fi-page-heading', false)
+                ->assertSee('color: #0f172a !important;', false);
+        }
+    }
+
     private function adminUser(): User
     {
         $this->seed(RolePermissionSeeder::class);

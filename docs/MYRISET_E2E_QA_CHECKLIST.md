@@ -1,0 +1,112 @@
+# MyRiset End-to-End QA Checklist
+
+Run demo data first:
+
+```bash
+php artisan db:seed --class=MyRisetDemoSeeder
+```
+
+Use local demo login when available:
+
+```text
+Email: admin@researchhub.test
+Password: password
+```
+
+Do not use real personal data, real tokens, production Google credentials, or private files during this QA pass.
+
+## 1. Login
+
+- URL/path: `/admin/login`
+- Expected screen: MyRiset sign-in page.
+- Expected action: Login with the local demo admin.
+- Pass/fail: [ ]
+- Notes:
+
+## 2. Dashboard Action Center
+
+- URL/path: `/admin`
+- Expected screen: Dashboard with Action Center, Pending Follow-Up, Expert Validation Pending, Supervisor Feedback, and Timeline Risks.
+- Expected action: Confirm demo items for Disertasi PharmVR are visible and no token/hash/private data is shown.
+- Pass/fail: [ ]
+- Notes:
+
+## 3. Project Detail
+
+- URL/path: `/admin/projects/research-projects`
+- Expected screen: Research Projects list includes Disertasi PharmVR.
+- Expected action: Open project actions for timeline, validators, and supervision where available.
+- Pass/fail: [ ]
+- Notes:
+
+## 4. Documents CRUD
+
+- URL/path: `/admin/documents`
+- Expected screen: Documents list includes Proposal Disertasi PharmVR, BAB I Pendahuluan, BAB III Metodologi Penelitian, Draft Artikel BMC Medical Education, and Instrumen Validasi Ahli.
+- Expected action: View/edit metadata only; do not upload private files for this checklist.
+- Pass/fail: [ ]
+- Notes:
+
+## 5. Survey CRUD and Builder
+
+- URL/path: `/admin/surveys`
+- Expected screen: Survey list includes Angket Evaluasi Pembelajaran PharmVR.
+- Expected action: Open builder and confirm four Likert questions plus one short-text question are present.
+- Pass/fail: [ ]
+- Notes:
+
+## 6. Expert Validator Registry
+
+- URL/path: `/admin/expert-validators`
+- Expected screen: Demo validators for CPOB material, media learning, and instrument methodology are listed.
+- Expected action: Confirm validator emails use `example.test` and no real phone/private data is present.
+- Pass/fail: [ ]
+- Notes:
+
+## 7. Expert Validation Link Public Flow
+
+- URL/path: `/admin/surveys/{survey}/validation`
+- Expected screen: Validation round Validasi Instrumen Angket Evaluasi PharmVR with two submitted assignments and one pending assignment.
+- Expected action: Generate a validation link only if needed for manual QA, copy once, and verify public validation form in a private browser session.
+- Pass/fail: [ ]
+- Notes:
+
+## 8. Expert Validation Results Aiken/CVI
+
+- URL/path: `/admin/surveys/{survey}/validation/rounds/{round}/results`
+- Expected screen: Result page shows submitted expert scores, mixed accepted/revision recommendations, and Aiken/CVI-ready summary.
+- Expected action: Confirm comments and recommendations render without exposing tokens or respondent data.
+- Pass/fail: [ ]
+- Notes:
+
+## 9. Supervision Link Public Flow
+
+- URL/path: `/admin/projects/{researchProject}/supervision`
+- Expected screen: Bimbingan Proposal dan Validasi Instrumen PharmVR session exists with feedback status.
+- Expected action: Generate a review link only if needed for manual QA, copy once, and verify public supervision feedback form in a private browser session.
+- Pass/fail: [ ]
+- Notes:
+
+## 10. Supervision Resources and Follow-Up
+
+- URL/path: `/admin/projects/{researchProject}/supervision`
+- Expected screen: Shared Resources include proposal, validation instrument, survey, validation round, Google Scholar, and manual note. Follow-Up items include two pending and one completed item.
+- Expected action: Confirm visible resources do not expose private file paths and follow-up statuses/due dates appear.
+- Pass/fail: [ ]
+- Notes:
+
+## 11. Research Links
+
+- URL/path: `/admin/research-links`
+- Expected screen: BPOM CPOB 2024, Google Scholar, BMC Medical Education, Scopus, and Research Methods Resource appear as active/pinned links.
+- Expected action: Confirm links use safe `https` URLs and open with a new-tab behavior where applicable.
+- Pass/fail: [ ]
+- Notes:
+
+## 12. Google Drive Settings
+
+- URL/path: `/admin/settings/google-drive`
+- Expected screen: Google Drive settings page.
+- Expected action: Skip real connection unless local Google Cloud OAuth credentials are configured. Confirm disconnected/readiness state is clear and no secret values are shown.
+- Pass/fail: [ ]
+- Notes:

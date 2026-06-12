@@ -1,8 +1,21 @@
 <x-filament-panels::page>
     <style>
+        .fi-body,
+        .fi-main,
+        .fi-page-content {
+            background: #f8fafc;
+        }
+
+        html.dark .fi-body,
+        html.dark .fi-main,
+        html.dark .fi-page-content {
+            background: #f8fafc;
+        }
+
         .rh-dashboard {
             display: grid;
             gap: 1.25rem;
+            color: #0f172a;
         }
 
         .rh-card {
@@ -15,8 +28,10 @@
         .rh-hero {
             overflow: hidden;
             padding: clamp(1.25rem, 3vw, 2.25rem);
-            color: #ffffff;
-            background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 48%, #0f766e 100%);
+            color: #0f172a;
+            background:
+                linear-gradient(135deg, rgba(37, 99, 235, 0.12) 0%, rgba(15, 118, 110, 0.1) 52%, rgba(255, 255, 255, 0.96) 100%),
+                #ffffff;
         }
 
         .rh-hero-grid {
@@ -30,10 +45,10 @@
             width: fit-content;
             align-items: center;
             border-radius: 999px;
-            border: 1px solid rgba(255, 255, 255, 0.22);
-            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid #bfdbfe;
+            background: #eff6ff;
             padding: 0.35rem 0.72rem;
-            color: rgba(255, 255, 255, 0.92);
+            color: #1d4ed8;
             font-size: 0.78rem;
             font-weight: 800;
         }
@@ -49,7 +64,7 @@
         .rh-hero-copy {
             margin-top: 0.85rem;
             max-width: 42rem;
-            color: rgba(255, 255, 255, 0.82);
+            color: #475569;
             font-size: 1rem;
             line-height: 1.65;
         }
@@ -79,21 +94,23 @@
         }
 
         .rh-button {
-            background: #ffffff;
-            color: #1e3a8a;
+            background: #2563eb;
+            color: #ffffff;
+            box-shadow: 0 10px 20px rgba(37, 99, 235, 0.18);
         }
 
         .rh-button-ghost {
-            color: #ffffff;
-            border: 1px solid rgba(255, 255, 255, 0.28);
-            background: rgba(255, 255, 255, 0.1);
+            color: #1d4ed8;
+            border: 1px solid #bfdbfe;
+            background: #ffffff;
         }
 
         .rh-drive-panel {
             border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.22);
-            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid #dbeafe;
+            background: rgba(255, 255, 255, 0.82);
             padding: 1rem;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
         }
 
         .rh-drive-label,
@@ -104,7 +121,7 @@
         }
 
         .rh-drive-label {
-            color: rgba(255, 255, 255, 0.68);
+            color: #2563eb;
             font-weight: 850;
         }
 
@@ -116,7 +133,7 @@
 
         .rh-drive-copy {
             margin-top: 0.45rem;
-            color: rgba(255, 255, 255, 0.76);
+            color: #64748b;
             font-size: 0.85rem;
             line-height: 1.45;
         }
@@ -347,43 +364,6 @@
             color: #0f172a;
             font-size: 0.9rem;
             font-weight: 850;
-        }
-
-        .dark .rh-card {
-            background: #111827;
-            border-color: #334155;
-            box-shadow: 0 12px 26px rgba(0, 0, 0, 0.28);
-        }
-
-        .dark .rh-stat-label,
-        .dark .rh-stat-description,
-        .dark .rh-item-copy,
-        .dark .rh-item-meta,
-        .dark .rh-empty,
-        .dark .rh-focus-label {
-            color: #cbd5e1;
-        }
-
-        .dark .rh-stat-value,
-        .dark .rh-section-title,
-        .dark .rh-item-title,
-        .dark .rh-focus-value,
-        .dark .rh-action-title {
-            color: #f8fafc;
-        }
-
-        .dark .rh-item,
-        .dark .rh-empty,
-        .dark .rh-focus-cell,
-        .dark .rh-action-tile {
-            background: #0f172a;
-            border-color: #334155;
-        }
-
-        .dark .rh-action-initial,
-        .dark .rh-pill {
-            background: rgba(59, 130, 246, 0.18);
-            color: #93c5fd;
         }
 
         @media (min-width: 64rem) {

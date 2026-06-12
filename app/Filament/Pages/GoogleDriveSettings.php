@@ -33,11 +33,16 @@ class GoogleDriveSettings extends Page
         $connection = Auth::user()?->googleDriveConnection()->first();
         $clientId = (string) config('google.client_id');
         $clientSecret = (string) config('google.client_secret');
+        $configuredRedirectUri = (string) config('google.redirect_uri');
+        $routeRedirectUri = route('drive.google.callback');
+        $requiredScopes = config('google.drive_scopes', []);
         $clientIdConfigured = filled($clientId);
         $clientSecretConfigured = filled($clientSecret);
-        $credentialsConfigured = $clientIdConfigured && $clientSecretConfigured;
+        $redirectUriConfigured = filled($configuredRedirectUri);
+        $credentialsConfigured = $clientIdConfigured && $clientSecretConfigured && $redirectUriConfigured;
         $isConnected = $connection?->status === DriveConnection::STATUS_CONNECTED;
         $tokenExpired = $connection?->token_expires_at?->isPast() ?? false;
+        $redirectUriMismatch = $redirectUriConfigured && $configuredRedirectUri !== $routeRedirectUri;
 
         return [
             'connection' => $connection,
@@ -46,14 +51,19 @@ class GoogleDriveSettings extends Page
             'healthStatus' => $this->healthStatus($connection, $credentialsConfigured, $tokenExpired),
             'clientIdConfigured' => $clientIdConfigured,
             'clientSecretConfigured' => $clientSecretConfigured,
+            'redirectUriConfigured' => $redirectUriConfigured,
             'credentialsConfigured' => $credentialsConfigured,
             'maskedClientId' => $this->maskedClientId($clientId),
-            'configuredRedirectUri' => (string) config('google.redirect_uri'),
-            'routeRedirectUri' => route('drive.google.callback'),
-            'requiredScopes' => config('google.drive_scopes', []),
+            'configuredRedirectUri' => $configuredRedirectUri,
+            'routeRedirectUri' => $routeRedirectUri,
+            'redirectUriMismatch' => $redirectUriMismatch,
+            'requiredScopes' => $requiredScopes,
+            'primaryScope' => $requiredScopes[0] ?? 'https://www.googleapis.com/auth/drive.file',
             'connectUrl' => route('drive.google.redirect'),
             'disconnectUrl' => route('drive.google.disconnect'),
             'refreshUrl' => route('filament.admin.pages.settings.google-drive'),
+            'statusUrl' => route('drive.google.status'),
+            'productionRedirectUri' => 'https://myriset.net/auth/google/drive/callback',
         ];
     }
 

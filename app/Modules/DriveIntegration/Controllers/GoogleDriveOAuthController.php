@@ -32,6 +32,14 @@ class GoogleDriveOAuthController extends Controller
 
     public function redirect(Request $request, GoogleDriveOAuthService $oauth): RedirectResponse
     {
+        if (! filled(config('google.client_id'))
+            || ! filled(config('google.client_secret'))
+            || ! filled(config('google.redirect_uri'))) {
+            return redirect()->route('filament.admin.pages.settings.google-drive')->withErrors([
+                'google_drive' => 'Google Drive OAuth credentials are not configured yet.',
+            ]);
+        }
+
         $state = Str::random(40);
 
         $request->session()->put('google_drive_oauth_state', $state);

@@ -52,6 +52,9 @@ class DriveConnectionSecurityTest extends TestCase
 
     public function test_redirect_stores_oauth_state_and_uses_minimum_drive_scope(): void
     {
+        config()->set('google.client_id', 'safe-client-id.apps.googleusercontent.com');
+        config()->set('google.client_secret', 'safe-client-secret');
+        config()->set('google.redirect_uri', 'http://127.0.0.1:8001/auth/google/drive/callback');
         config()->set('google.drive_scopes', ['https://www.googleapis.com/auth/drive.file']);
 
         $user = User::factory()->create();
@@ -69,6 +72,21 @@ class DriveConnectionSecurityTest extends TestCase
             ->assertSessionHas('google_drive_oauth_state');
 
         $this->assertSame(['https://www.googleapis.com/auth/drive.file'], config('google.drive_scopes'));
+    }
+
+    public function test_redirect_is_guarded_when_oauth_credentials_are_missing(): void
+    {
+        config()->set('google.client_id', null);
+        config()->set('google.client_secret', null);
+        config()->set('google.redirect_uri', 'http://127.0.0.1:8001/auth/google/drive/callback');
+
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->get('/settings/drive/google/redirect')
+            ->assertRedirect(route('filament.admin.pages.settings.google-drive'))
+            ->assertSessionHasErrors('google_drive')
+            ->assertSessionMissing('google_drive_oauth_state');
     }
 
     public function test_callback_rejects_invalid_state_without_creating_connection(): void

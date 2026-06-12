@@ -1,222 +1,578 @@
 <x-filament-panels::page>
     @php
-        $connectionBadge = $isConnected
-            ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-            : 'border-slate-200 bg-slate-50 text-slate-700';
+        $connectionLabel = $isConnected ? 'Connected' : 'Not connected';
+        $storedStatus = ucfirst($connection?->status ?: 'disconnected');
+        $readinessLabel = $credentialsConfigured ? 'Ready' : 'Not configured';
+        $visibleRedirectUri = $configuredRedirectUri ?: $routeRedirectUri;
 
-        $readinessBadge = $credentialsConfigured
-            ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-            : 'border-amber-200 bg-amber-50 text-amber-800';
-
-        $healthBadge = match ($healthStatus) {
-            'Healthy' => 'border-emerald-200 bg-emerald-50 text-emerald-700',
-            'Token expired', 'Connection failed' => 'border-red-200 bg-red-50 text-red-700',
-            'Credentials missing' => 'border-amber-200 bg-amber-50 text-amber-800',
-            default => 'border-blue-200 bg-blue-50 text-blue-700',
+        $statusClass = $isConnected ? 'drive-badge drive-badge-success' : 'drive-badge drive-badge-muted';
+        $readinessClass = $credentialsConfigured ? 'drive-badge drive-badge-success' : 'drive-badge drive-badge-warning';
+        $healthClass = match ($healthStatus) {
+            'Healthy' => 'drive-badge drive-badge-success',
+            'Token expired', 'Connection failed' => 'drive-badge drive-badge-danger',
+            'Credentials missing' => 'drive-badge drive-badge-warning',
+            default => 'drive-badge drive-badge-info',
         };
     @endphp
 
-    <div class="space-y-6">
-        <section class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-            <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+    <style>
+        .myriset-drive-page {
+            color: #0f172a;
+        }
+
+        .myriset-drive-page * {
+            box-sizing: border-box;
+        }
+
+        .drive-hero,
+        .drive-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+        }
+
+        .drive-hero {
+            padding: 24px;
+        }
+
+        .drive-grid {
+            display: grid;
+            gap: 20px;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            margin-top: 20px;
+        }
+
+        .drive-card {
+            padding: 22px;
+        }
+
+        .drive-card-wide {
+            grid-column: 1 / -1;
+        }
+
+        .drive-eyebrow {
+            color: #64748b;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            margin: 0;
+            text-transform: uppercase;
+        }
+
+        .drive-title {
+            color: #0f172a;
+            font-size: 28px;
+            font-weight: 700;
+            line-height: 1.2;
+            margin: 8px 0 0;
+        }
+
+        .drive-card-title {
+            color: #0f172a;
+            font-size: 18px;
+            font-weight: 700;
+            line-height: 1.3;
+            margin: 8px 0 0;
+        }
+
+        .drive-copy {
+            color: #475569;
+            font-size: 14px;
+            line-height: 1.65;
+            margin: 10px 0 0;
+        }
+
+        .drive-header-row,
+        .drive-action-row {
+            align-items: flex-start;
+            display: flex;
+            gap: 12px;
+            justify-content: space-between;
+        }
+
+        .drive-badge-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+
+        .drive-badge {
+            align-items: center;
+            border: 1px solid transparent;
+            border-radius: 999px;
+            display: inline-flex;
+            font-size: 12px;
+            font-weight: 700;
+            line-height: 1;
+            min-height: 28px;
+            padding: 7px 10px;
+            white-space: nowrap;
+        }
+
+        .drive-badge-success {
+            background: #ecfdf5;
+            border-color: #a7f3d0;
+            color: #047857;
+        }
+
+        .drive-badge-warning {
+            background: #fffbeb;
+            border-color: #fde68a;
+            color: #92400e;
+        }
+
+        .drive-badge-danger {
+            background: #fff1f2;
+            border-color: #fecdd3;
+            color: #be123c;
+        }
+
+        .drive-badge-info {
+            background: #eff6ff;
+            border-color: #bfdbfe;
+            color: #1d4ed8;
+        }
+
+        .drive-badge-muted {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+            color: #475569;
+        }
+
+        .drive-facts {
+            display: grid;
+            gap: 12px;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            margin: 18px 0 0;
+        }
+
+        .drive-fact {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            min-width: 0;
+            padding: 14px;
+        }
+
+        .drive-fact-label {
+            color: #64748b;
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        .drive-fact-value {
+            color: #0f172a;
+            display: block;
+            font-size: 14px;
+            font-weight: 700;
+            margin-top: 7px;
+            overflow-wrap: anywhere;
+        }
+
+        .drive-code {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            color: #0f172a;
+            display: block;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 13px;
+            line-height: 1.55;
+            margin-top: 10px;
+            overflow-x: auto;
+            padding: 12px;
+            white-space: pre;
+        }
+
+        .drive-alert {
+            border-radius: 10px;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-top: 16px;
+            padding: 14px;
+        }
+
+        .drive-alert-warning {
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            color: #92400e;
+        }
+
+        .drive-alert-info {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            color: #1e40af;
+        }
+
+        .drive-alert-danger {
+            background: #fff1f2;
+            border: 1px solid #fecdd3;
+            color: #be123c;
+        }
+
+        .drive-checklist {
+            counter-reset: drive-step;
+            display: grid;
+            gap: 10px;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            list-style: none;
+            margin: 18px 0 0;
+            padding: 0;
+        }
+
+        .drive-checklist li {
+            align-items: flex-start;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            color: #334155;
+            display: flex;
+            font-size: 14px;
+            gap: 10px;
+            line-height: 1.55;
+            padding: 12px;
+        }
+
+        .drive-checklist li::before {
+            align-items: center;
+            background: #2563eb;
+            border-radius: 999px;
+            color: #ffffff;
+            content: counter(drive-step);
+            counter-increment: drive-step;
+            display: inline-flex;
+            flex: 0 0 auto;
+            font-size: 12px;
+            font-weight: 700;
+            height: 24px;
+            justify-content: center;
+            margin-top: 1px;
+            width: 24px;
+        }
+
+        .drive-actions {
+            display: grid;
+            gap: 10px;
+            margin-top: 18px;
+        }
+
+        .drive-button {
+            align-items: center;
+            border-radius: 10px;
+            display: inline-flex;
+            font-size: 14px;
+            font-weight: 700;
+            justify-content: center;
+            min-height: 42px;
+            padding: 10px 14px;
+            text-decoration: none;
+            transition: background 120ms ease, border-color 120ms ease;
+            width: 100%;
+        }
+
+        .drive-button-primary {
+            background: #2563eb;
+            border: 1px solid #2563eb;
+            color: #ffffff;
+        }
+
+        .drive-button-primary:hover {
+            background: #1d4ed8;
+            color: #ffffff;
+        }
+
+        .drive-button-secondary {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            color: #334155;
+        }
+
+        .drive-button-secondary:hover {
+            background: #f8fafc;
+            color: #0f172a;
+        }
+
+        .drive-button-danger {
+            background: #e11d48;
+            border: 1px solid #e11d48;
+            color: #ffffff;
+        }
+
+        .drive-button-danger:hover {
+            background: #be123c;
+            color: #ffffff;
+        }
+
+        .drive-button-disabled {
+            background: #e2e8f0;
+            border: 1px solid #cbd5e1;
+            color: #64748b;
+            cursor: not-allowed;
+        }
+
+        .drive-roadmap {
+            display: grid;
+            gap: 10px;
+            list-style: none;
+            margin: 18px 0 0;
+            padding: 0;
+        }
+
+        .drive-roadmap li {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            color: #334155;
+            font-size: 14px;
+            line-height: 1.55;
+            padding: 12px;
+        }
+
+        @media (max-width: 900px) {
+            .drive-grid,
+            .drive-facts,
+            .drive-checklist {
+                grid-template-columns: 1fr;
+            }
+
+            .drive-header-row,
+            .drive-action-row {
+                display: block;
+            }
+
+            .drive-badge-row {
+                justify-content: flex-start;
+                margin-top: 14px;
+            }
+        }
+    </style>
+
+    <div class="myriset-drive-page">
+        @if ($errors->has('google_drive'))
+            <div class="drive-alert drive-alert-danger" role="alert">
+                {{ $errors->first('google_drive') }}
+            </div>
+        @endif
+
+        <section class="drive-hero" aria-labelledby="google-drive-settings-title">
+            <div class="drive-header-row">
                 <div>
-                    <p class="text-sm font-semibold uppercase tracking-wide text-slate-500">Google Drive Integration</p>
-                    <h2 class="mt-2 text-2xl font-semibold text-slate-950">Connection Status</h2>
-                    <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-                        Connect MyRiset to your own Google Drive account so future document workflows can store file metadata safely without exposing tokens or secrets.
+                    <p class="drive-eyebrow">Google Drive Integration</p>
+                    <h2 id="google-drive-settings-title" class="drive-title">Google Drive Settings</h2>
+                    <p class="drive-copy">Connect MyRiset to your own Google Drive account.</p>
+                    <p class="drive-copy">
+                        Use Google Drive to prepare future document workflows while keeping tokens and secrets private.
                     </p>
                 </div>
 
-                <div class="flex flex-wrap gap-2">
-                    <span class="inline-flex items-center rounded-full border px-3 py-1 text-sm font-semibold {{ $connectionBadge }}">
-                        {{ $isConnected ? 'Connected' : 'Not connected' }}
-                    </span>
-                    <span class="inline-flex items-center rounded-full border px-3 py-1 text-sm font-semibold {{ $healthBadge }}">
-                        {{ $healthStatus }}
-                    </span>
+                <div class="drive-badge-row" aria-label="Google Drive status summary">
+                    <span class="{{ $statusClass }}">{{ $connectionLabel }}</span>
+                    <span class="{{ $readinessClass }}">{{ $readinessLabel }}</span>
+                    <span class="{{ $healthClass }}">{{ $healthStatus }}</span>
                 </div>
             </div>
-
-            <dl class="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-                <div class="rounded-md border border-slate-100 bg-slate-50 p-4">
-                    <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Google account</dt>
-                    <dd class="mt-2 break-words text-sm font-semibold text-slate-950">
-                        {{ $connection?->email ?: 'Not connected' }}
-                    </dd>
-                </div>
-
-                <div class="rounded-md border border-slate-100 bg-slate-50 p-4">
-                    <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Last connected</dt>
-                    <dd class="mt-2 text-sm font-semibold text-slate-950">
-                        {{ $connection?->last_connected_at?->format('Y-m-d H:i') ?: 'Not available' }}
-                    </dd>
-                </div>
-
-                <div class="rounded-md border border-slate-100 bg-slate-50 p-4">
-                    <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Token expiry</dt>
-                    <dd class="mt-2 text-sm font-semibold {{ $tokenExpired ? 'text-red-700' : 'text-slate-950' }}">
-                        {{ $connection?->token_expires_at?->format('Y-m-d H:i') ?: 'Not available' }}
-                    </dd>
-                </div>
-
-                <div class="rounded-md border border-slate-100 bg-slate-50 p-4">
-                    <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Stored status</dt>
-                    <dd class="mt-2 text-sm font-semibold text-slate-950">
-                        {{ ucfirst($connection?->status ?: 'disconnected') }}
-                    </dd>
-                </div>
-
-                <div class="rounded-md border border-slate-100 bg-slate-50 p-4">
-                    <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Privacy boundary</dt>
-                    <dd class="mt-2 text-sm font-semibold text-slate-950">
-                        Current user only
-                    </dd>
-                </div>
-            </dl>
-
-            @if ($connection?->last_error)
-                <div class="mt-5 rounded-md border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-800">
-                    Last connection error: {{ $connection->last_error }}
-                </div>
-            @endif
         </section>
 
-        <section class="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-            <div class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-                <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div class="drive-grid">
+            <section class="drive-card" data-testid="drive-status-card" aria-labelledby="drive-status-card-title">
+                <div class="drive-header-row">
                     <div>
-                        <p class="text-sm font-semibold uppercase tracking-wide text-slate-500">OAuth Setup</p>
-                        <h3 class="mt-2 text-xl font-semibold text-slate-950">Configuration Readiness</h3>
+                        <p class="drive-eyebrow">Connection Status</p>
+                        <h3 id="drive-status-card-title" class="drive-card-title">Current Google Drive connection</h3>
                     </div>
-                    <span class="inline-flex w-fit items-center rounded-full border px-3 py-1 text-sm font-semibold {{ $readinessBadge }}">
-                        {{ $credentialsConfigured ? 'Ready' : 'Not configured' }}
-                    </span>
+                    <span class="{{ $statusClass }}">{{ $connectionLabel }}</span>
                 </div>
 
-                <dl class="mt-6 grid gap-4 sm:grid-cols-2">
-                    <div class="rounded-md border border-slate-100 bg-slate-50 p-4">
-                        <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Client ID configured</dt>
-                        <dd class="mt-2 text-sm font-semibold {{ $clientIdConfigured ? 'text-emerald-700' : 'text-amber-800' }}">
-                            {{ $clientIdConfigured ? 'Yes' : 'No' }}
-                        </dd>
-                        <dd class="mt-1 break-words text-xs text-slate-500">
-                            {{ $maskedClientId }}
-                        </dd>
+                <dl class="drive-facts">
+                    <div class="drive-fact">
+                        <dt class="drive-fact-label">Google account</dt>
+                        <dd class="drive-fact-value">{{ $connection?->email ?: 'Not connected' }}</dd>
                     </div>
-
-                    <div class="rounded-md border border-slate-100 bg-slate-50 p-4">
-                        <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Client secret configured</dt>
-                        <dd class="mt-2 text-sm font-semibold {{ $clientSecretConfigured ? 'text-emerald-700' : 'text-amber-800' }}">
-                            {{ $clientSecretConfigured ? 'Yes' : 'No' }}
-                        </dd>
-                        <dd class="mt-1 text-xs text-slate-500">
-                            Value hidden for security.
-                        </dd>
+                    <div class="drive-fact">
+                        <dt class="drive-fact-label">Last connected</dt>
+                        <dd class="drive-fact-value">{{ $connection?->last_connected_at?->format('Y-m-d H:i') ?: 'Not available' }}</dd>
+                    </div>
+                    <div class="drive-fact">
+                        <dt class="drive-fact-label">Token expiry</dt>
+                        <dd class="drive-fact-value">{{ $connection?->token_expires_at?->format('Y-m-d H:i') ?: 'Not available' }}</dd>
+                    </div>
+                    <div class="drive-fact">
+                        <dt class="drive-fact-label">Stored status</dt>
+                        <dd class="drive-fact-value">{{ $storedStatus }}</dd>
+                    </div>
+                    <div class="drive-fact">
+                        <dt class="drive-fact-label">Privacy boundary</dt>
+                        <dd class="drive-fact-value">Current user only</dd>
+                    </div>
+                    <div class="drive-fact">
+                        <dt class="drive-fact-label">Status detail</dt>
+                        <dd class="drive-fact-value">{{ $healthStatus }}</dd>
                     </div>
                 </dl>
 
-                <div class="mt-5 space-y-4">
-                    <div>
-                        <p class="text-sm font-semibold text-slate-700">Redirect URI to add in Google Cloud Console</p>
-                        <code class="mt-2 block overflow-x-auto rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800">{{ $configuredRedirectUri }}</code>
-                        @if ($configuredRedirectUri !== $routeRedirectUri)
-                            <p class="mt-2 text-xs leading-5 text-amber-700">
-                                Current route URL resolves to {{ $routeRedirectUri }}. Make sure APP_URL and GOOGLE_REDIRECT_URI match the local URL you use in the browser.
-                            </p>
-                        @else
-                            <p class="mt-2 text-xs leading-5 text-slate-500">
-                                Make sure APP_URL matches the local URL you use in the browser.
-                            </p>
-                        @endif
+                @if ($connection?->last_error)
+                    <div class="drive-alert drive-alert-warning">
+                        A previous connection error was recorded. The exact secret-bearing OAuth payload is not displayed here.
                     </div>
+                @endif
+            </section>
 
+            <section class="drive-card" data-testid="oauth-readiness-card" aria-labelledby="oauth-readiness-card-title">
+                <div class="drive-header-row">
                     <div>
-                        <p class="text-sm font-semibold text-slate-700">Required OAuth scope</p>
-                        <div class="mt-2 space-y-2">
-                            @forelse ($requiredScopes as $scope)
-                                <code class="block overflow-x-auto rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800">{{ $scope }}</code>
-                            @empty
-                                <p class="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800">
-                                    No Google Drive scope is configured.
-                                </p>
-                            @endforelse
-                        </div>
+                        <p class="drive-eyebrow">OAuth Readiness</p>
+                        <h3 id="oauth-readiness-card-title" class="drive-card-title">Configuration readiness</h3>
                     </div>
+                    <span class="{{ $readinessClass }}">{{ $readinessLabel }}</span>
                 </div>
-            </div>
 
-            <div class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-                <p class="text-sm font-semibold uppercase tracking-wide text-slate-500">Actions</p>
-                <h3 class="mt-2 text-xl font-semibold text-slate-950">Manage Connection</h3>
-                <p class="mt-2 text-sm leading-6 text-slate-600">
-                    Connect is available only after OAuth credentials are configured. Refresh is always safe and only reloads this status page.
+                <dl class="drive-facts">
+                    <div class="drive-fact">
+                        <dt class="drive-fact-label">Client ID configured</dt>
+                        <dd class="drive-fact-value">{{ $clientIdConfigured ? 'Yes' : 'No' }}</dd>
+                        <dd class="drive-copy">{{ $maskedClientId }}</dd>
+                    </div>
+                    <div class="drive-fact">
+                        <dt class="drive-fact-label">Client secret configured</dt>
+                        <dd class="drive-fact-value">{{ $clientSecretConfigured ? 'Yes' : 'No' }}</dd>
+                        <dd class="drive-copy">Value hidden for security.</dd>
+                    </div>
+                    <div class="drive-fact">
+                        <dt class="drive-fact-label">Redirect URI configured</dt>
+                        <dd class="drive-fact-value">{{ $redirectUriConfigured ? 'Yes' : 'No' }}</dd>
+                    </div>
+                    <div class="drive-fact">
+                        <dt class="drive-fact-label">Configuration readiness</dt>
+                        <dd class="drive-fact-value">{{ $readinessLabel }}</dd>
+                    </div>
+                </dl>
+
+                @unless ($credentialsConfigured)
+                    <div class="drive-alert drive-alert-warning">
+                        OAuth credentials are not configured yet. Add them to your local .env, clear cache, then refresh this page.
+                    </div>
+                @endunless
+            </section>
+
+            <section class="drive-card" data-testid="redirect-scope-card" aria-labelledby="redirect-scope-card-title">
+                <p class="drive-eyebrow">Redirect URI and Scope</p>
+                <h3 id="redirect-scope-card-title" class="drive-card-title">Copy these values into Google Cloud</h3>
+                <p class="drive-copy">
+                    The redirect URI must match the web application OAuth client in Google Cloud Console.
                 </p>
 
-                <div class="mt-6 flex flex-col gap-3">
+                <div class="drive-facts">
+                    <div class="drive-fact">
+                        <span class="drive-fact-label">Authorized redirect URI</span>
+                        <code class="drive-code">{{ $visibleRedirectUri }}</code>
+                    </div>
+                    <div class="drive-fact">
+                        <span class="drive-fact-label">Required scope</span>
+                        <code class="drive-code">{{ $primaryScope }}</code>
+                    </div>
+                </div>
+
+                @if (count($requiredScopes) > 1)
+                    <div class="drive-alert drive-alert-info">
+                        Additional configured scopes:
+                        @foreach (array_slice($requiredScopes, 1) as $scope)
+                            <code>{{ $scope }}</code>@if (! $loop->last), @endif
+                        @endforeach
+                    </div>
+                @endif
+
+                @if (! $redirectUriConfigured)
+                    <div class="drive-alert drive-alert-warning">
+                        GOOGLE_REDIRECT_URI is not configured. The route currently resolves to {{ $routeRedirectUri }}.
+                    </div>
+                @elseif ($redirectUriMismatch)
+                    <div class="drive-alert drive-alert-warning">
+                        Configured redirect URI differs from the route URL. Configured: {{ $configuredRedirectUri }}. Route URL: {{ $routeRedirectUri }}.
+                    </div>
+                @endif
+
+                <div class="drive-alert drive-alert-info">
+                    Production redirect URI for myriset.net: <code>{{ $productionRedirectUri }}</code>
+                </div>
+            </section>
+
+            <section class="drive-card" data-testid="drive-actions-card" aria-labelledby="drive-actions-card-title">
+                <p class="drive-eyebrow">Actions</p>
+                <h3 id="drive-actions-card-title" class="drive-card-title">Manage connection</h3>
+                <p class="drive-copy">
+                    Connect is available only when OAuth readiness is complete. Refresh is safe and only reloads this page.
+                </p>
+
+                <div class="drive-actions">
                     @if ($isConnected)
                         <form method="POST" action="{{ $disconnectUrl }}">
                             @csrf
                             <button
                                 type="submit"
                                 onclick="return confirm('Disconnect Google Drive for this user? Local OAuth tokens will be cleared from MyRiset.')"
-                                class="inline-flex w-full items-center justify-center rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                                class="drive-button drive-button-danger"
                             >
-                                Disconnect / Revoke Local Connection
+                                Disconnect / Revoke Connection
                             </button>
                         </form>
+                    @elseif ($credentialsConfigured)
+                        <a href="{{ $connectUrl }}" class="drive-button drive-button-primary">
+                            Connect Google Drive
+                        </a>
                     @else
-                        @if ($credentialsConfigured)
-                            <a
-                                href="{{ $connectUrl }}"
-                                class="inline-flex w-full items-center justify-center rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-                            >
-                                Connect Google Drive
-                            </a>
-                        @else
-                            <button
-                                type="button"
-                                disabled
-                                class="inline-flex w-full cursor-not-allowed items-center justify-center rounded-md bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-500"
-                            >
-                                Connect Google Drive unavailable
-                            </button>
-                        @endif
+                        <button type="button" disabled class="drive-button drive-button-disabled" aria-disabled="true">
+                            Connect Google Drive unavailable
+                        </button>
                     @endif
 
-                    <a
-                        href="{{ $refreshUrl }}"
-                        class="inline-flex w-full items-center justify-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-                    >
+                    <a href="{{ $refreshUrl }}" class="drive-button drive-button-secondary">
                         Refresh Status
                     </a>
                 </div>
 
-                @unless ($credentialsConfigured)
-                    <div class="mt-5 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
-                        OAuth credentials are missing. Add safe local values to `.env`, run `php artisan optimize:clear`, then return here.
-                    </div>
-                @endunless
-            </div>
-        </section>
+                <div class="drive-alert drive-alert-info">
+                    JSON status endpoint for diagnostics: <code>{{ $statusUrl }}</code>. It never returns access tokens or refresh tokens.
+                </div>
+            </section>
 
-        <section class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-            <p class="text-sm font-semibold uppercase tracking-wide text-slate-500">Local Development Setup</p>
-            <h3 class="mt-2 text-xl font-semibold text-slate-950">Safe Setup Instructions</h3>
+            <section class="drive-card drive-card-wide" data-testid="setup-checklist-card" aria-labelledby="setup-checklist-card-title">
+                <p class="drive-eyebrow">Setup Checklist</p>
+                <h3 id="setup-checklist-card-title" class="drive-card-title">Prepare Google Cloud OAuth</h3>
 
-            <ol class="mt-5 grid gap-3 text-sm leading-6 text-slate-700 md:grid-cols-2">
-                <li class="rounded-md border border-slate-100 bg-slate-50 p-4"><span class="font-semibold text-slate-950">1.</span> Create or open a Google Cloud project.</li>
-                <li class="rounded-md border border-slate-100 bg-slate-50 p-4"><span class="font-semibold text-slate-950">2.</span> Enable the Google Drive API.</li>
-                <li class="rounded-md border border-slate-100 bg-slate-50 p-4"><span class="font-semibold text-slate-950">3.</span> Configure the OAuth consent screen.</li>
-                <li class="rounded-md border border-slate-100 bg-slate-50 p-4"><span class="font-semibold text-slate-950">4.</span> Create an OAuth client with type Web application.</li>
-                <li class="rounded-md border border-slate-100 bg-slate-50 p-4"><span class="font-semibold text-slate-950">5.</span> Add the redirect URI shown on this page.</li>
-                <li class="rounded-md border border-slate-100 bg-slate-50 p-4"><span class="font-semibold text-slate-950">6.</span> Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to local `.env`.</li>
-                <li class="rounded-md border border-slate-100 bg-slate-50 p-4"><span class="font-semibold text-slate-950">7.</span> Run `php artisan optimize:clear` after changing environment values.</li>
-                <li class="rounded-md border border-slate-100 bg-slate-50 p-4"><span class="font-semibold text-slate-950">8.</span> Return here and click Connect Google Drive.</li>
-            </ol>
+                <ol class="drive-checklist">
+                    <li>Open Google Cloud Console.</li>
+                    <li>Create or select a Google Cloud project.</li>
+                    <li>Enable Google Drive API.</li>
+                    <li>Configure OAuth consent screen.</li>
+                    <li>Create OAuth Client ID with type Web application.</li>
+                    <li>Add the redirect URI shown on this page.</li>
+                    <li>Copy Client ID and Client Secret.</li>
+                    <li>Add them to your local .env file.</li>
+                    <li>Run php artisan optimize:clear.</li>
+                    <li>Refresh this page and click Connect Google Drive.</li>
+                </ol>
 
-            <div class="mt-5 rounded-md border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-900">
-                MyRiset requests only the Drive file scope for files created or opened by the app. Do not paste OAuth secrets into tickets, chats, screenshots, or source files.
-            </div>
-        </section>
+                <p class="drive-copy">Safe local placeholder snippet. Do not paste real secrets into source control.</p>
+                <code class="drive-code">GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GOOGLE_REDIRECT_URI={{ $visibleRedirectUri }}
+GOOGLE_DRIVE_SCOPES="https://www.googleapis.com/auth/drive.file"</code>
+            </section>
+
+            <section class="drive-card drive-card-wide" data-testid="drive-roadmap-card" aria-labelledby="drive-roadmap-card-title">
+                <p class="drive-eyebrow">Coming Next</p>
+                <h3 id="drive-roadmap-card-title" class="drive-card-title">Planned Google workspace integrations</h3>
+                <ul class="drive-roadmap">
+                    <li>Export validation and supervision reports to Google Docs.</li>
+                    <li>Export survey and validation data to Google Sheets.</li>
+                    <li>Bootstrap project folders in Google Drive.</li>
+                </ul>
+            </section>
+        </div>
     </div>
 </x-filament-panels::page>

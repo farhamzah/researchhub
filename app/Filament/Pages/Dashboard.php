@@ -44,6 +44,8 @@ class Dashboard extends BaseDashboard
                     'description' => 'Sign in to view your Google Drive status.',
                 ],
                 'activeProjects' => collect(),
+                'journeyProjects' => collect(),
+                'onboardingChecklist' => [],
                 'timelineSummary' => [
                     'active_tasks' => 0,
                     'delayed_tasks' => 0,

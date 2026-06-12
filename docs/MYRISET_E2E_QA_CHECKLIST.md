@@ -35,7 +35,18 @@ Do not use real personal data, real tokens, production Google credentials, or pr
 
 - URL/path: `/admin/projects/research-projects`
 - Expected screen: Research Projects list includes Disertasi PharmVR.
-- Expected action: Open project actions for timeline, validators, and supervision where available.
+- Expected action: Open project actions for Alur Riset, timeline, validators, and supervision where available.
+- Pass/fail: [ ]
+- Notes:
+
+## 3A. Project Research Journey QA
+
+- URL/path: `/admin/projects/{researchProject}/journey`
+- Expected screen: Alur Riset page for Disertasi PharmVR.
+- Expected action: Open Disertasi PharmVR project, choose Alur Riset / Research Journey, and verify overall progress is visible.
+- Expected step check: Confirm all eleven steps appear with status badges, descriptions, metrics, and real CTA links.
+- Expected next action check: Confirm Langkah berikutnya points to a meaningful next action, not a generic empty state.
+- Expected safety check: Confirm no raw validation tokens, token hashes, public review URLs, respondent identity, private file paths, or Drive folder IDs appear.
 - Pass/fail: [ ]
 - Notes:
 

@@ -106,6 +106,11 @@ class ResearchProjectResource extends Resource
             ->recordActions([
                 EditAction::make()
                     ->visible(fn (ResearchProject $record): bool => auth()->user()?->can('update', $record) ?? false),
+                Action::make('journey')
+                    ->label('Alur Riset')
+                    ->icon('heroicon-o-map')
+                    ->visible(fn (ResearchProject $record): bool => auth()->user()?->can('view', $record) ?? false)
+                    ->url(fn (ResearchProject $record): string => route('admin.projects.journey.show', ['researchProject' => $record])),
                 Action::make('timeline')
                     ->label('Open Timeline')
                     ->icon('heroicon-o-calendar-days')

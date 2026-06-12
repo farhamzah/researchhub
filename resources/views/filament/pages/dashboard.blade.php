@@ -392,6 +392,57 @@
             grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
         }
 
+        .rh-journey-grid {
+            margin-top: 1rem;
+            display: grid;
+            gap: 0.85rem;
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+        }
+
+        .rh-journey-tile {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            background: #ffffff;
+            padding: 1rem;
+        }
+
+        .rh-journey-title-row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 0.75rem;
+        }
+
+        .rh-journey-progress {
+            margin-top: 0.85rem;
+            height: 0.5rem;
+            overflow: hidden;
+            border-radius: 999px;
+            background: #e2e8f0;
+        }
+
+        .rh-journey-progress > span {
+            display: block;
+            height: 100%;
+            border-radius: inherit;
+            background: #2563eb;
+        }
+
+        .rh-onboarding-list {
+            margin-top: 1rem;
+            display: grid;
+            gap: 0.65rem;
+        }
+
+        .rh-onboarding-item {
+            display: grid;
+            gap: 0.2rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            background: #f8fafc;
+            padding: 0.85rem;
+        }
+
         @media (min-width: 64rem) {
             .rh-hero-grid {
                 grid-template-columns: minmax(0, 1fr) 19rem;
@@ -467,6 +518,55 @@
                                 <span class="rh-pill {{ $item['is_risk'] ? 'rh-pill-risk' : '' }}">{{ $item['badge'] }}</span>
                             </div>
                             <a href="{{ $item['url'] }}" class="rh-link">{{ $item['action_label'] }}</a>
+                        </article>
+                    @endforeach
+                </div>
+            @endif
+        </section>
+
+        <section class="rh-card rh-section" data-dashboard-card="research-journey">
+            <div class="rh-section-head">
+                <div>
+                    <p class="rh-section-kicker">Alur Riset</p>
+                    <h2 class="rh-section-title">Continue Your Research Journey</h2>
+                </div>
+                <a href="{{ route('filament.admin.resources.projects.research-projects.index') }}" class="rh-link">Open Projects</a>
+            </div>
+
+            @if (! empty($onboardingChecklist))
+                <p class="rh-item-copy" style="margin-top: 0.75rem;">
+                    Welcome to MyRiset. Mulai dari langkah kecil yang paling penting, lalu biarkan workspace riset terbentuk bertahap.
+                </p>
+                <div class="rh-onboarding-list">
+                    @foreach ($onboardingChecklist as $item)
+                        <a href="{{ $item['url'] }}" class="rh-onboarding-item">
+                            <span class="rh-item-title">{{ $loop->iteration }}. {{ $item['label'] }}</span>
+                            <span class="rh-item-copy">{{ $item['description'] }}</span>
+                        </a>
+                    @endforeach
+                </div>
+            @elseif ($journeyProjects->isEmpty())
+                <p class="rh-empty">
+                    Start your first research project.
+                </p>
+            @else
+                <div class="rh-journey-grid">
+                    @foreach ($journeyProjects as $journeyProject)
+                        <article class="rh-journey-tile">
+                            <div class="rh-journey-title-row">
+                                <div>
+                                    <h3 class="rh-item-title">{{ $journeyProject['title'] }}</h3>
+                                    <p class="rh-item-meta">{{ $journeyProject['status'] }}</p>
+                                </div>
+                                <span class="rh-pill">{{ $journeyProject['progress_percentage'] }}%</span>
+                            </div>
+                            <div class="rh-journey-progress" aria-label="Research journey progress">
+                                <span style="width: {{ $journeyProject['progress_percentage'] }}%;"></span>
+                            </div>
+                            <p class="rh-item-copy" style="margin-top: 0.8rem;">
+                                {{ $journeyProject['next_step']['description'] }}
+                            </p>
+                            <a href="{{ $journeyProject['url'] }}" class="rh-link">Open Journey</a>
                         </article>
                     @endforeach
                 </div>

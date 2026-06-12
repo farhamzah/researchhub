@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminAnalysisExportController;
+use App\Http\Controllers\AdminProjectJourneyController;
 use App\Http\Controllers\AdminProjectSupervisionController;
 use App\Http\Controllers\AdminProjectTimelineController;
 use App\Http\Controllers\AdminProjectValidatorController;
@@ -47,6 +48,9 @@ Route::middleware('auth')->group(function (): void {
 
     Route::get('/admin/projects/{researchProject}/timeline', [AdminProjectTimelineController::class, 'index'])
         ->name('admin.projects.timeline.index');
+
+    Route::get('/admin/projects/{researchProject}/journey', [AdminProjectJourneyController::class, 'show'])
+        ->name('admin.projects.journey.show');
     Route::post('/admin/projects/{researchProject}/timeline/milestones', [AdminProjectTimelineController::class, 'storeMilestone'])
         ->name('admin.projects.timeline.milestones.store');
     Route::put('/admin/projects/{researchProject}/timeline/milestones/{milestone}', [AdminProjectTimelineController::class, 'updateMilestone'])

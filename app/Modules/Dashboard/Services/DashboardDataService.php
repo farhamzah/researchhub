@@ -17,6 +17,7 @@ use App\Models\Survey;
 use App\Models\SurveyValidationAssignment;
 use App\Models\SurveyValidationRound;
 use App\Models\User;
+use App\Modules\Projects\Services\ProjectResearchJourneyService;
 use App\Modules\Projects\Services\ProjectTimelineProgressService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -26,6 +27,7 @@ class DashboardDataService
 {
     public function __construct(
         private readonly ProjectTimelineProgressService $timelineProgress,
+        private readonly ProjectResearchJourneyService $researchJourney,
     ) {}
 
     /**
@@ -46,6 +48,8 @@ class DashboardDataService
                     : 'Connect Google Drive before storing research files.',
             ],
             'activeProjects' => $this->activeProjects($user),
+            'journeyProjects' => $this->journeyProjects($user),
+            'onboardingChecklist' => $this->onboardingChecklist($visibleProjectIds),
             'timelineSummary' => $this->timelineSummary($visibleProjectIds),
             'recentDocuments' => $this->recentDocuments($user),
             'recentSurveys' => $this->recentSurveys($user),
@@ -57,6 +61,72 @@ class DashboardDataService
             'recentSupervisionFeedback' => $this->recentSupervisionFeedback($visibleProjectIds),
             'timelineRisks' => $this->timelineRisks($visibleProjectIds),
             'quickActions' => $this->quickActions(),
+        ];
+    }
+
+    /**
+     * @return Collection<int, array<string, mixed>>
+     */
+    private function journeyProjects(User $user): Collection
+    {
+        return ResearchProject::query()
+            ->visibleTo($user)
+            ->with([
+                'documents.category',
+                'surveys.questions',
+                'surveys.indicators',
+                'surveys.questionScorings',
+                'surveys.responses',
+                'surveys.analysisResults',
+                'surveys.validationRounds.assignments.scores',
+                'analysisResults',
+                'milestones',
+                'timelineTasks',
+                'supervisionSessions.followUpItems',
+            ])
+            ->orderByRaw("case when status = 'active' then 0 when status = 'draft' then 1 else 2 end")
+            ->latest('updated_at')
+            ->limit(3)
+            ->get()
+            ->map(fn (ResearchProject $project): array => $this->researchJourney->summary($project));
+    }
+
+    /**
+     * @param  Collection<int, string>  $visibleProjectIds
+     * @return array<int, array<string, string>>
+     */
+    private function onboardingChecklist(Collection $visibleProjectIds): array
+    {
+        if ($visibleProjectIds->isNotEmpty()) {
+            return [];
+        }
+
+        return [
+            [
+                'label' => 'Buat project riset pertama',
+                'description' => 'Mulai dari workspace utama untuk disertasi atau penelitian.',
+                'url' => route('filament.admin.resources.projects.research-projects.index'),
+            ],
+            [
+                'label' => 'Tambahkan dokumen riset',
+                'description' => 'Simpan proposal, bab, instrumen, atau draft artikel sebagai metadata aman.',
+                'url' => route('filament.admin.resources.documents.index'),
+            ],
+            [
+                'label' => 'Bangun instrumen survey',
+                'description' => 'Siapkan pertanyaan, skoring, dan indikator saat sudah siap mengumpulkan data.',
+                'url' => route('filament.admin.resources.surveys.index'),
+            ],
+            [
+                'label' => 'Tambahkan validator ahli',
+                'description' => 'Kelola calon validator sebelum membagikan link validasi.',
+                'url' => route('filament.admin.resources.expert-validators.index'),
+            ],
+            [
+                'label' => 'Mulai log bimbingan',
+                'description' => 'Catat feedback pembimbing dan tindak lanjut revisi sejak awal.',
+                'url' => route('filament.admin.resources.projects.research-projects.index'),
+            ],
         ];
     }
 

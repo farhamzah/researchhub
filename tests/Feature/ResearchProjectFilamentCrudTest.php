@@ -44,6 +44,7 @@ class ResearchProjectFilamentCrudTest extends TestCase
             ->assertSee('Manual Timeline Test')
             ->assertTableActionVisible('edit', $project)
             ->assertTableActionVisible('timeline', $project)
+            ->assertTableActionVisible('bootstrapDriveFolders', $project)
             ->assertTableActionHasUrl('timeline', route('admin.projects.timeline.index', ['researchProject' => $project]), $project)
             ->callAction(TestAction::make('edit')->table($project), [
                 'title' => 'Manual Timeline Test Updated',

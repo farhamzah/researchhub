@@ -4,7 +4,6 @@ namespace App\Modules\DriveIntegration\Actions;
 
 use App\Models\DriveConnection;
 use App\Models\DriveFolder;
-use App\Models\ResearchProject;
 use App\Models\User;
 use App\Modules\AuditLogs\Services\ActivityLogger;
 use App\Modules\DriveIntegration\DTOs\DriveFolderBootstrapResult;
@@ -12,65 +11,54 @@ use App\Modules\DriveIntegration\DTOs\DriveFolderData;
 use App\Modules\DriveIntegration\Services\GoogleDriveFolderService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Gate;
 use RuntimeException;
 use Throwable;
 
-class BootstrapResearchHubDriveFoldersAction
+class BootstrapMyRisetDriveFoldersAction
 {
     public function __construct(
         private readonly GoogleDriveFolderService $folderService,
         private readonly ActivityLogger $activityLogger,
-        private readonly BootstrapMyRisetDriveFoldersAction $bootstrapMyRisetDriveFolders,
     ) {}
 
-    /**
-     * @return array<int, DriveFolder>
-     */
-    public function handle(User $user, ResearchProject $project, ?Request $request = null): array
+    public function handle(User $user, ?Request $request = null): DriveFolderBootstrapResult
     {
-        return $this->handleResult($user, $project, $request)->folders;
-    }
-
-    public function handleResult(User $user, ResearchProject $project, ?Request $request = null): DriveFolderBootstrapResult
-    {
-        Gate::forUser($user)->authorize('bootstrapDriveFolders', $project);
+        $this->activityLogger->log(
+            'drive_folders.bootstrap_started',
+            $user,
+            null,
+            null,
+            ['provider' => DriveConnection::PROVIDER_GOOGLE],
+            $request,
+        );
 
         try {
-            $this->bootstrapMyRisetDriveFolders->handle($user, $request);
-
-            $result = DB::transaction(function () use ($user, $project): DriveFolderBootstrapResult {
+            $result = DB::transaction(function () use ($user): DriveFolderBootstrapResult {
                 $connection = $this->connectedGoogleDrive($user);
-                $projectsFolder = $this->bootstrapMyRisetDriveFolders->projectsFolder($user);
-
-                if ($projectsFolder === null) {
-                    throw new RuntimeException('MyRiset Projects folder is not available.');
-                }
-
+                $folders = [];
                 $createdKeys = [];
                 $reusedKeys = [];
-                $projectFolder = $this->existingFindOrCreateProjectFolder(
+
+                $rootFolder = $this->existingFindOrCreateGlobalFolder(
                     $user,
-                    $project,
                     $connection,
-                    DriveFolder::TYPE_PROJECT_ROOT,
-                    $project->title,
-                    $projectsFolder,
-                    $projectsFolder->path.'/'.$project->title,
+                    DriveFolder::TYPE_RESEARCHHUB_ROOT,
+                    (string) config('researchhub_drive.root_folder_name', 'MyRiset'),
+                    null,
+                    (string) config('researchhub_drive.root_folder_name', 'MyRiset'),
                     $createdKeys,
                     $reusedKeys,
                 );
-                $folders = [$projectFolder];
+                $folders[] = $rootFolder;
 
-                foreach (config('researchhub_drive.project_folders', []) as $folderDefinition) {
-                    $folders[] = $this->existingFindOrCreateProjectFolder(
+                foreach (config('researchhub_drive.global_folders', []) as $folderDefinition) {
+                    $folders[] = $this->existingFindOrCreateGlobalFolder(
                         $user,
-                        $project,
                         $connection,
                         (string) $folderDefinition['type'],
                         (string) $folderDefinition['name'],
-                        $projectFolder,
-                        $projectFolder->path.'/'.$folderDefinition['name'],
+                        $rootFolder,
+                        $rootFolder->path.'/'.(string) $folderDefinition['name'],
                         $createdKeys,
                         $reusedKeys,
                     );
@@ -80,10 +68,10 @@ class BootstrapResearchHubDriveFoldersAction
             });
 
             $this->activityLogger->log(
-                'drive_project_folders.created',
+                'drive_folders.bootstrap_completed',
                 $user,
-                $project,
-                $project,
+                null,
+                null,
                 [
                     'provider' => DriveConnection::PROVIDER_GOOGLE,
                     'folder_count' => count($result->folders),
@@ -93,27 +81,13 @@ class BootstrapResearchHubDriveFoldersAction
                 $request,
             );
 
-            if ($result->reusedCount() > 0) {
-                $this->activityLogger->log(
-                    'drive_project_folders.reused',
-                    $user,
-                    $project,
-                    $project,
-                    [
-                        'provider' => DriveConnection::PROVIDER_GOOGLE,
-                        'folder_keys_reused' => $result->reusedKeys,
-                    ],
-                    $request,
-                );
-            }
-
             return $result;
         } catch (Throwable $exception) {
             $this->activityLogger->log(
                 'drive_folders.bootstrap_failed',
                 $user,
-                $project,
-                $project,
+                null,
+                null,
                 [
                     'provider' => DriveConnection::PROVIDER_GOOGLE,
                     'reason' => class_basename($exception),
@@ -123,6 +97,15 @@ class BootstrapResearchHubDriveFoldersAction
 
             throw $exception;
         }
+    }
+
+    public function projectsFolder(User $user): ?DriveFolder
+    {
+        return DriveFolder::query()
+            ->where('user_id', $user->getKey())
+            ->whereNull('project_id')
+            ->where('folder_type', DriveFolder::TYPE_PROJECTS_ROOT)
+            ->first();
     }
 
     private function connectedGoogleDrive(User $user): DriveConnection
@@ -144,20 +127,19 @@ class BootstrapResearchHubDriveFoldersAction
      * @param  array<int, string>  $createdKeys
      * @param  array<int, string>  $reusedKeys
      */
-    private function existingFindOrCreateProjectFolder(
+    private function existingFindOrCreateGlobalFolder(
         User $user,
-        ResearchProject $project,
         DriveConnection $connection,
         string $folderType,
         string $folderName,
-        DriveFolder $parentFolder,
+        ?DriveFolder $parentFolder,
         string $path,
         array &$createdKeys,
         array &$reusedKeys,
     ): DriveFolder {
         $existing = DriveFolder::query()
             ->where('user_id', $user->getKey())
-            ->where('project_id', $project->getKey())
+            ->whereNull('project_id')
             ->where('folder_type', $folderType)
             ->first();
 
@@ -167,15 +149,15 @@ class BootstrapResearchHubDriveFoldersAction
             return $existing;
         }
 
-        $folder = $this->folderService->findFolder($connection, $folderName, $parentFolder->drive_folder_id);
+        $folder = $this->folderService->findFolder($connection, $folderName, $parentFolder?->drive_folder_id);
         $wasCreated = false;
 
         if ($folder === null) {
-            $folder = $this->folderService->createFolder($connection, $folderName, $parentFolder->drive_folder_id);
+            $folder = $this->folderService->createFolder($connection, $folderName, $parentFolder?->drive_folder_id);
             $wasCreated = true;
         }
 
-        $driveFolder = $this->persistFolder($user, $project, $folderType, $folder, $path);
+        $driveFolder = $this->persistFolder($user, $folderType, $folder, $path);
 
         if ($wasCreated) {
             $createdKeys[] = $folderType;
@@ -188,14 +170,13 @@ class BootstrapResearchHubDriveFoldersAction
 
     private function persistFolder(
         User $user,
-        ?ResearchProject $project,
         string $folderType,
         DriveFolderData $folder,
         string $path,
     ): DriveFolder {
         return DriveFolder::create([
             'user_id' => $user->getKey(),
-            'project_id' => $project?->getKey(),
+            'project_id' => null,
             'folder_type' => $folderType,
             'drive_folder_id' => $folder->driveFolderId,
             'name' => $folder->name,

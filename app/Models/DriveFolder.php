@@ -13,44 +13,41 @@ class DriveFolder extends Model
 
     public const TYPE_RESEARCHHUB_ROOT = 'researchhub_root';
 
+    public const TYPE_PROJECTS_ROOT = 'projects_root';
+
+    public const TYPE_TEMPLATES = 'templates';
+
+    public const TYPE_GLOBAL_REPORTS = 'global_reports';
+
+    public const TYPE_GLOBAL_EXPORTS = 'global_exports';
+
     public const TYPE_PROJECT_ROOT = 'project_root';
 
-    public const TYPE_PROPOSAL = 'proposal';
+    public const TYPE_DOCUMENTS = 'documents';
 
-    public const TYPE_BAB_I_II_III = 'bab_i_ii_iii';
+    public const TYPE_SURVEYS = 'surveys';
 
-    public const TYPE_BAB_IV_V = 'bab_iv_v';
+    public const TYPE_VALIDATION = 'validation';
 
-    public const TYPE_ETHICS_AND_PERMITS = 'ethics_and_permits';
+    public const TYPE_SUPERVISION = 'supervision';
 
-    public const TYPE_INSTRUMENTS = 'instruments';
+    public const TYPE_REPORTS = 'reports';
 
-    public const TYPE_SURVEY = 'survey';
-
-    public const TYPE_DATA = 'data';
-
-    public const TYPE_ANALYSIS = 'analysis';
-
-    public const TYPE_PRESENTATION = 'presentation';
-
-    public const TYPE_PUBLICATION = 'publication';
-
-    public const TYPE_APPENDIX = 'appendix';
+    public const TYPE_EXPORTS = 'exports';
 
     public const TYPES = [
         self::TYPE_RESEARCHHUB_ROOT,
+        self::TYPE_PROJECTS_ROOT,
+        self::TYPE_TEMPLATES,
+        self::TYPE_GLOBAL_REPORTS,
+        self::TYPE_GLOBAL_EXPORTS,
         self::TYPE_PROJECT_ROOT,
-        self::TYPE_PROPOSAL,
-        self::TYPE_BAB_I_II_III,
-        self::TYPE_BAB_IV_V,
-        self::TYPE_ETHICS_AND_PERMITS,
-        self::TYPE_INSTRUMENTS,
-        self::TYPE_SURVEY,
-        self::TYPE_DATA,
-        self::TYPE_ANALYSIS,
-        self::TYPE_PRESENTATION,
-        self::TYPE_PUBLICATION,
-        self::TYPE_APPENDIX,
+        self::TYPE_DOCUMENTS,
+        self::TYPE_SURVEYS,
+        self::TYPE_VALIDATION,
+        self::TYPE_SUPERVISION,
+        self::TYPE_REPORTS,
+        self::TYPE_EXPORTS,
     ];
 
     public $incrementing = false;

@@ -4,6 +4,7 @@ namespace App\Modules\DriveIntegration\Controllers;
 
 use App\Models\DriveConnection;
 use App\Modules\AuditLogs\Services\ActivityLogger;
+use App\Modules\DriveIntegration\Actions\BootstrapMyRisetDriveFoldersAction;
 use App\Modules\DriveIntegration\Actions\ConnectGoogleDriveAction;
 use App\Modules\DriveIntegration\Actions\DisconnectGoogleDriveAction;
 use App\Modules\DriveIntegration\Services\GoogleDriveOAuthService;
@@ -11,6 +12,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Str;
+use Throwable;
 
 class GoogleDriveOAuthController extends Controller
 {
@@ -71,7 +73,7 @@ class GoogleDriveOAuthController extends Controller
             $connect->handle($request->user(), $token, $profile, $scopes, $request);
 
             return redirect()->route('drive.google.status')->with('status', 'google-drive-connected');
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             $activityLogger->log(
                 'drive.connection_failed',
                 $request->user(),
@@ -97,6 +99,23 @@ class GoogleDriveOAuthController extends Controller
         return redirect()->route('drive.google.status')->with('status', 'google-drive-disconnected');
     }
 
+    public function bootstrapFolders(Request $request, BootstrapMyRisetDriveFoldersAction $bootstrapFolders): RedirectResponse
+    {
+        try {
+            $result = $bootstrapFolders->handle($request->user(), $request);
+
+            return redirect()
+                ->route('filament.admin.pages.settings.google-drive')
+                ->with('status', "myriset-drive-folders-ready:{$result->createdCount()}:{$result->reusedCount()}");
+        } catch (Throwable) {
+            return redirect()
+                ->route('filament.admin.pages.settings.google-drive')
+                ->withErrors([
+                    'google_drive' => 'MyRiset Drive folders could not be prepared. Check your Google Drive connection and try again.',
+                ]);
+        }
+    }
+
     /**
      * @param  array<string, mixed>  $token
      * @return array<int, string>
@@ -112,7 +131,7 @@ class GoogleDriveOAuthController extends Controller
         return array_values(array_filter(explode(' ', (string) $scope)));
     }
 
-    private function safeFailureReason(\Throwable $exception): string
+    private function safeFailureReason(Throwable $exception): string
     {
         return class_basename($exception);
     }

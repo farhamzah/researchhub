@@ -13,6 +13,16 @@
             'Credentials missing' => 'drive-badge drive-badge-warning',
             default => 'drive-badge drive-badge-info',
         };
+        $folderStatusClass = match ($folderBootstrapStatus) {
+            'Ready' => 'drive-badge drive-badge-success',
+            'Partially created' => 'drive-badge drive-badge-warning',
+            default => 'drive-badge drive-badge-muted',
+        };
+
+        $folderStatusMessage = session('status');
+        $folderStatusParts = is_string($folderStatusMessage) && str_starts_with($folderStatusMessage, 'myriset-drive-folders-ready:')
+            ? explode(':', $folderStatusMessage)
+            : null;
     @endphp
 
     <style>
@@ -537,6 +547,72 @@
 
                 <div class="drive-alert drive-alert-info">
                     JSON status endpoint for diagnostics: <code>{{ $statusUrl }}</code>. It never returns access tokens or refresh tokens.
+                </div>
+            </section>
+
+            <section class="drive-card" data-testid="drive-folder-bootstrap-card" aria-labelledby="drive-folder-bootstrap-card-title">
+                <div class="drive-header-row">
+                    <div>
+                        <p class="drive-eyebrow">Drive Folder Bootstrap</p>
+                        <h3 id="drive-folder-bootstrap-card-title" class="drive-card-title">Create MyRiset folder structure</h3>
+                    </div>
+                    <span class="{{ $folderStatusClass }}">{{ $folderBootstrapStatus }}</span>
+                </div>
+
+                <p class="drive-copy">
+                    Prepare standard folders in the connected user's Google Drive. The action reuses stored folder IDs and searches by name before creating new folders.
+                </p>
+
+                <dl class="drive-facts">
+                    <div class="drive-fact">
+                        <dt class="drive-fact-label">Root folder name</dt>
+                        <dd class="drive-fact-value">{{ $rootFolderName }}</dd>
+                    </div>
+                    <div class="drive-fact">
+                        <dt class="drive-fact-label">Root folder ID</dt>
+                        <dd class="drive-fact-value">{{ $rootFolderIdPreview }}</dd>
+                    </div>
+                    <div class="drive-fact">
+                        <dt class="drive-fact-label">Global folders</dt>
+                        <dd class="drive-fact-value">{{ $globalFolderCount }} / {{ $expectedGlobalFolderCount }}</dd>
+                    </div>
+                    <div class="drive-fact">
+                        <dt class="drive-fact-label">Project folders</dt>
+                        <dd class="drive-fact-value">{{ $projectFolderCount }}</dd>
+                    </div>
+                    <div class="drive-fact">
+                        <dt class="drive-fact-label">Last bootstrap</dt>
+                        <dd class="drive-fact-value">{{ $lastBootstrapAt ?: 'Not available' }}</dd>
+                    </div>
+                    <div class="drive-fact">
+                        <dt class="drive-fact-label">Privacy boundary</dt>
+                        <dd class="drive-fact-value">Current user Drive only</dd>
+                    </div>
+                </dl>
+
+                @if ($folderStatusParts)
+                    <div class="drive-alert drive-alert-info">
+                        MyRiset Drive folders are ready. Created {{ $folderStatusParts[1] ?? 0 }} folder(s), reused {{ $folderStatusParts[2] ?? 0 }} folder(s).
+                    </div>
+                @endif
+
+                <div class="drive-actions">
+                    @if ($isConnected)
+                        <form method="POST" action="{{ $bootstrapFoldersUrl }}">
+                            @csrf
+                            <button type="submit" class="drive-button drive-button-primary">
+                                Create MyRiset Folders
+                            </button>
+                        </form>
+                    @else
+                        <button type="button" disabled class="drive-button drive-button-disabled" aria-disabled="true">
+                            Connect Google Drive first
+                        </button>
+                    @endif
+
+                    <a href="{{ $refreshUrl }}" class="drive-button drive-button-secondary">
+                        Refresh Folder Status
+                    </a>
                 </div>
             </section>
 

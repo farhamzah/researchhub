@@ -35,6 +35,8 @@ Route::middleware('auth')->group(function (): void {
         ->name('drive.google.callback');
     Route::post('/settings/drive/google/disconnect', [GoogleDriveOAuthController::class, 'disconnect'])
         ->name('drive.google.disconnect');
+    Route::post('/settings/drive/google/bootstrap-folders', [GoogleDriveOAuthController::class, 'bootstrapFolders'])
+        ->name('drive.google.bootstrap-folders');
 
     Route::get('/admin/documents/{document}/review-links', [AdminDocumentReviewLinkController::class, 'index'])
         ->name('admin.documents.review-links.index');

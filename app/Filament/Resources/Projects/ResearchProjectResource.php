@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Projects;
 
 use App\Filament\Resources\Projects\Pages\ManageResearchProjects;
 use App\Models\ResearchProject;
+use App\Modules\DriveIntegration\Actions\BootstrapResearchHubDriveFoldersAction;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
@@ -12,6 +13,7 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -19,6 +21,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Throwable;
 use UnitEnum;
 
 class ResearchProjectResource extends Resource
@@ -118,6 +121,31 @@ class ResearchProjectResource extends Resource
                     ->icon('heroicon-o-chat-bubble-left-right')
                     ->visible(fn (ResearchProject $record): bool => auth()->user()?->can('viewSupervision', $record) ?? false)
                     ->url(fn (ResearchProject $record): string => route('admin.projects.supervision.index', ['researchProject' => $record])),
+                Action::make('bootstrapDriveFolders')
+                    ->label('Create Drive Folders')
+                    ->icon('heroicon-o-cloud-arrow-up')
+                    ->requiresConfirmation()
+                    ->modalHeading('Create MyRiset Drive folders?')
+                    ->modalDescription('This creates or reuses the standard project folder structure in your connected Google Drive. No folders are shared publicly.')
+                    ->visible(fn (ResearchProject $record): bool => auth()->user()?->can('bootstrapDriveFolders', $record) ?? false)
+                    ->action(function (ResearchProject $record): void {
+                        try {
+                            $result = app(BootstrapResearchHubDriveFoldersAction::class)
+                                ->handleResult(auth()->user(), $record, request());
+
+                            Notification::make()
+                                ->title('MyRiset Drive folders are ready')
+                                ->body("Created {$result->createdCount()} folder(s), reused {$result->reusedCount()} folder(s).")
+                                ->success()
+                                ->send();
+                        } catch (Throwable) {
+                            Notification::make()
+                                ->title('Drive folders could not be prepared')
+                                ->body('Connect Google Drive first, then try again. No tokens or secrets were exposed.')
+                                ->danger()
+                                ->send();
+                        }
+                    }),
                 DeleteAction::make()
                     ->visible(fn (ResearchProject $record): bool => auth()->user()?->can('delete', $record) ?? false),
             ]);

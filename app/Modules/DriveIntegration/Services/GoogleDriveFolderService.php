@@ -43,6 +43,42 @@ class GoogleDriveFolderService
         );
     }
 
+    public function findFolder(DriveConnection $connection, string $name, ?string $parentFolderId = null): ?DriveFolderData
+    {
+        if (blank($connection->access_token)) {
+            throw new RuntimeException('Google Drive connection is missing an access token.');
+        }
+
+        $query = [
+            "mimeType = '".self::FOLDER_MIME_TYPE."'",
+            'trashed = false',
+            "name = '".$this->escapeQueryValue($name)."'",
+        ];
+
+        if (filled($parentFolderId)) {
+            $query[] = "'".$this->escapeQueryValue($parentFolderId)."' in parents";
+        }
+
+        $folders = $this->drive($connection)->files->listFiles([
+            'q' => implode(' and ', $query),
+            'fields' => 'files(id,name,webViewLink)',
+            'pageSize' => 1,
+            'spaces' => 'drive',
+        ]);
+
+        $match = $folders->getFiles()[0] ?? null;
+
+        if ($match === null || blank($match->getId())) {
+            return null;
+        }
+
+        return new DriveFolderData(
+            driveFolderId: $match->getId(),
+            name: $match->getName() ?: $name,
+            webViewLink: $match->getWebViewLink(),
+        );
+    }
+
     private function drive(DriveConnection $connection): Drive
     {
         $client = new Client;
@@ -57,5 +93,10 @@ class GoogleDriveFolderService
         ]);
 
         return new Drive($client);
+    }
+
+    private function escapeQueryValue(string $value): string
+    {
+        return str_replace(['\\', "'"], ['\\\\', "\\'"], $value);
     }
 }

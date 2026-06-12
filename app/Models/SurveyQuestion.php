@@ -79,4 +79,9 @@ class SurveyQuestion extends Model
     {
         return $this->hasOne(SurveyQuestionScoring::class);
     }
+
+    public function validationScores(): HasMany
+    {
+        return $this->hasMany(SurveyValidationScore::class);
+    }
 }

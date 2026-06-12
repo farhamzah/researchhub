@@ -68,6 +68,11 @@ class SurveyPolicy
         return $this->ownsSurveyProject($user, $survey);
     }
 
+    public function manageValidation(User $user, Survey $survey): bool
+    {
+        return $user->can('surveys.manage_validation') && $this->canManageSurvey($user, $survey);
+    }
+
     private function canManageSurvey(User $user, Survey $survey): bool
     {
         return $this->ownsSurveyProject($user, $survey)

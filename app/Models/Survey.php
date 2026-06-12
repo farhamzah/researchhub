@@ -125,6 +125,11 @@ class Survey extends Model
         return $this->hasMany(SurveyQuestionScoring::class);
     }
 
+    public function validationRounds(): HasMany
+    {
+        return $this->hasMany(SurveyValidationRound::class);
+    }
+
     public function respondents(): HasMany
     {
         return $this->hasMany(Respondent::class);

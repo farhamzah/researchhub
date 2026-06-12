@@ -8,7 +8,9 @@ use App\Http\Controllers\AdminSurveyBuilderController;
 use App\Http\Controllers\AdminSurveyResponseController;
 use App\Http\Controllers\AdminSurveyResponseExportController;
 use App\Http\Controllers\AdminSurveyScoringController;
+use App\Http\Controllers\AdminSurveyValidationController;
 use App\Http\Controllers\PublicSurveyController;
+use App\Http\Controllers\PublicSurveyValidationController;
 use App\Modules\DriveIntegration\Controllers\GoogleDriveOAuthController;
 use App\Modules\ReviewLinks\Controllers\AdminDocumentReviewLinkController;
 use App\Modules\ReviewLinks\Controllers\PublicReviewLinkController;
@@ -115,6 +117,19 @@ Route::middleware('auth')->group(function (): void {
         ->name('admin.surveys.scoring.indicators.delete');
     Route::put('/admin/surveys/{survey}/scoring/questions/{question}', [AdminSurveyScoringController::class, 'updateQuestionScoring'])
         ->name('admin.surveys.scoring.questions.update');
+
+    Route::get('/admin/surveys/{survey}/validation', [AdminSurveyValidationController::class, 'index'])
+        ->name('admin.surveys.validation.index');
+    Route::post('/admin/surveys/{survey}/validation/rounds', [AdminSurveyValidationController::class, 'storeRound'])
+        ->name('admin.surveys.validation.rounds.store');
+    Route::put('/admin/surveys/{survey}/validation/rounds/{round}', [AdminSurveyValidationController::class, 'updateRound'])
+        ->name('admin.surveys.validation.rounds.update');
+    Route::post('/admin/surveys/{survey}/validation/rounds/{round}/assignments', [AdminSurveyValidationController::class, 'storeAssignment'])
+        ->name('admin.surveys.validation.assignments.store');
+    Route::post('/admin/surveys/{survey}/validation/assignments/{assignment}/generate-link', [AdminSurveyValidationController::class, 'generateLink'])
+        ->name('admin.surveys.validation.assignments.generate-link');
+    Route::post('/admin/surveys/{survey}/validation/assignments/{assignment}/revoke-link', [AdminSurveyValidationController::class, 'revokeLink'])
+        ->name('admin.surveys.validation.assignments.revoke-link');
 });
 
 Route::middleware('throttle:review-links')->group(function (): void {
@@ -137,4 +152,8 @@ Route::middleware('throttle:surveys')->group(function (): void {
         ->name('survey.show');
     Route::post('/survey/{survey:slug}/responses', [PublicSurveyController::class, 'store'])
         ->name('survey.responses.store');
+    Route::get('/validation/survey/{token}', [PublicSurveyValidationController::class, 'show'])
+        ->name('validation.survey.show');
+    Route::post('/validation/survey/{token}', [PublicSurveyValidationController::class, 'store'])
+        ->name('validation.survey.store');
 });

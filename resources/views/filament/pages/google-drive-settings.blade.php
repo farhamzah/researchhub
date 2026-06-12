@@ -1,89 +1,222 @@
 <x-filament-panels::page>
-    <div class="space-y-6">
-        @if (! $credentialsConfigured)
-            <div class="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                Google OAuth credentials are not configured. Add safe values to the local environment before testing the live OAuth redirect.
-            </div>
-        @endif
+    @php
+        $connectionBadge = $isConnected
+            ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+            : 'border-slate-200 bg-slate-50 text-slate-700';
 
-        <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-            <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        $readinessBadge = $credentialsConfigured
+            ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+            : 'border-amber-200 bg-amber-50 text-amber-800';
+
+        $healthBadge = match ($healthStatus) {
+            'Healthy' => 'border-emerald-200 bg-emerald-50 text-emerald-700',
+            'Token expired', 'Connection failed' => 'border-red-200 bg-red-50 text-red-700',
+            'Credentials missing' => 'border-amber-200 bg-amber-50 text-amber-800',
+            default => 'border-blue-200 bg-blue-50 text-blue-700',
+        };
+    @endphp
+
+    <div class="space-y-6">
+        <section class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div>
-                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Connection status</p>
-                    <h2 class="mt-1 text-2xl font-semibold text-gray-950 dark:text-white">
-                        {{ $isConnected ? 'Connected' : 'Not connected' }}
-                    </h2>
-                    <p class="mt-2 max-w-2xl text-sm text-gray-600 dark:text-gray-300">
-                        Live Google OAuth requires configured Google Cloud credentials and a redirect URI that matches this application.
+                    <p class="text-sm font-semibold uppercase tracking-wide text-slate-500">Google Drive Integration</p>
+                    <h2 class="mt-2 text-2xl font-semibold text-slate-950">Connection Status</h2>
+                    <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+                        Connect ResearchHub to your own Google Drive account so future document workflows can store file metadata safely without exposing tokens or secrets.
                     </p>
                 </div>
 
-                <div class="flex shrink-0 gap-3">
+                <div class="flex flex-wrap gap-2">
+                    <span class="inline-flex items-center rounded-full border px-3 py-1 text-sm font-semibold {{ $connectionBadge }}">
+                        {{ $isConnected ? 'Connected' : 'Not connected' }}
+                    </span>
+                    <span class="inline-flex items-center rounded-full border px-3 py-1 text-sm font-semibold {{ $healthBadge }}">
+                        {{ $healthStatus }}
+                    </span>
+                </div>
+            </div>
+
+            <dl class="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+                <div class="rounded-md border border-slate-100 bg-slate-50 p-4">
+                    <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Google account</dt>
+                    <dd class="mt-2 break-words text-sm font-semibold text-slate-950">
+                        {{ $connection?->email ?: 'Not connected' }}
+                    </dd>
+                </div>
+
+                <div class="rounded-md border border-slate-100 bg-slate-50 p-4">
+                    <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Last connected</dt>
+                    <dd class="mt-2 text-sm font-semibold text-slate-950">
+                        {{ $connection?->last_connected_at?->format('Y-m-d H:i') ?: 'Not available' }}
+                    </dd>
+                </div>
+
+                <div class="rounded-md border border-slate-100 bg-slate-50 p-4">
+                    <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Token expiry</dt>
+                    <dd class="mt-2 text-sm font-semibold {{ $tokenExpired ? 'text-red-700' : 'text-slate-950' }}">
+                        {{ $connection?->token_expires_at?->format('Y-m-d H:i') ?: 'Not available' }}
+                    </dd>
+                </div>
+
+                <div class="rounded-md border border-slate-100 bg-slate-50 p-4">
+                    <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Stored status</dt>
+                    <dd class="mt-2 text-sm font-semibold text-slate-950">
+                        {{ ucfirst($connection?->status ?: 'disconnected') }}
+                    </dd>
+                </div>
+
+                <div class="rounded-md border border-slate-100 bg-slate-50 p-4">
+                    <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Privacy boundary</dt>
+                    <dd class="mt-2 text-sm font-semibold text-slate-950">
+                        Current user only
+                    </dd>
+                </div>
+            </dl>
+
+            @if ($connection?->last_error)
+                <div class="mt-5 rounded-md border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-800">
+                    Last connection error: {{ $connection->last_error }}
+                </div>
+            @endif
+        </section>
+
+        <section class="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+            <div class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                        <p class="text-sm font-semibold uppercase tracking-wide text-slate-500">OAuth Setup</p>
+                        <h3 class="mt-2 text-xl font-semibold text-slate-950">Configuration Readiness</h3>
+                    </div>
+                    <span class="inline-flex w-fit items-center rounded-full border px-3 py-1 text-sm font-semibold {{ $readinessBadge }}">
+                        {{ $credentialsConfigured ? 'Ready' : 'Not configured' }}
+                    </span>
+                </div>
+
+                <dl class="mt-6 grid gap-4 sm:grid-cols-2">
+                    <div class="rounded-md border border-slate-100 bg-slate-50 p-4">
+                        <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Client ID configured</dt>
+                        <dd class="mt-2 text-sm font-semibold {{ $clientIdConfigured ? 'text-emerald-700' : 'text-amber-800' }}">
+                            {{ $clientIdConfigured ? 'Yes' : 'No' }}
+                        </dd>
+                        <dd class="mt-1 break-words text-xs text-slate-500">
+                            {{ $maskedClientId }}
+                        </dd>
+                    </div>
+
+                    <div class="rounded-md border border-slate-100 bg-slate-50 p-4">
+                        <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Client secret configured</dt>
+                        <dd class="mt-2 text-sm font-semibold {{ $clientSecretConfigured ? 'text-emerald-700' : 'text-amber-800' }}">
+                            {{ $clientSecretConfigured ? 'Yes' : 'No' }}
+                        </dd>
+                        <dd class="mt-1 text-xs text-slate-500">
+                            Value hidden for security.
+                        </dd>
+                    </div>
+                </dl>
+
+                <div class="mt-5 space-y-4">
+                    <div>
+                        <p class="text-sm font-semibold text-slate-700">Redirect URI to add in Google Cloud Console</p>
+                        <code class="mt-2 block overflow-x-auto rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800">{{ $configuredRedirectUri }}</code>
+                        @if ($configuredRedirectUri !== $routeRedirectUri)
+                            <p class="mt-2 text-xs leading-5 text-amber-700">
+                                Current route URL resolves to {{ $routeRedirectUri }}. Make sure APP_URL and GOOGLE_REDIRECT_URI match the local URL you use in the browser.
+                            </p>
+                        @else
+                            <p class="mt-2 text-xs leading-5 text-slate-500">
+                                Make sure APP_URL matches the local URL you use in the browser.
+                            </p>
+                        @endif
+                    </div>
+
+                    <div>
+                        <p class="text-sm font-semibold text-slate-700">Required OAuth scope</p>
+                        <div class="mt-2 space-y-2">
+                            @forelse ($requiredScopes as $scope)
+                                <code class="block overflow-x-auto rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800">{{ $scope }}</code>
+                            @empty
+                                <p class="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800">
+                                    No Google Drive scope is configured.
+                                </p>
+                            @endforelse
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+                <p class="text-sm font-semibold uppercase tracking-wide text-slate-500">Actions</p>
+                <h3 class="mt-2 text-xl font-semibold text-slate-950">Manage Connection</h3>
+                <p class="mt-2 text-sm leading-6 text-slate-600">
+                    Connect is available only after OAuth credentials are configured. Refresh is always safe and only reloads this status page.
+                </p>
+
+                <div class="mt-6 flex flex-col gap-3">
                     @if ($isConnected)
                         <form method="POST" action="{{ $disconnectUrl }}">
                             @csrf
                             <button
                                 type="submit"
-                                class="inline-flex items-center rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                                onclick="return confirm('Disconnect Google Drive for this user? Local OAuth tokens will be cleared from ResearchHub.')"
+                                class="inline-flex w-full items-center justify-center rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
                             >
-                                Disconnect Google Drive
+                                Disconnect / Revoke Local Connection
                             </button>
                         </form>
                     @else
-                        <a
-                            href="{{ $connectUrl }}"
-                            class="inline-flex items-center rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-                        >
-                            Connect Google Drive
-                        </a>
+                        @if ($credentialsConfigured)
+                            <a
+                                href="{{ $connectUrl }}"
+                                class="inline-flex w-full items-center justify-center rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                            >
+                                Connect Google Drive
+                            </a>
+                        @else
+                            <button
+                                type="button"
+                                disabled
+                                class="inline-flex w-full cursor-not-allowed items-center justify-center rounded-md bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-500"
+                            >
+                                Connect Google Drive unavailable
+                            </button>
+                        @endif
                     @endif
+
+                    <a
+                        href="{{ $refreshUrl }}"
+                        class="inline-flex w-full items-center justify-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                    >
+                        Refresh Status
+                    </a>
                 </div>
+
+                @unless ($credentialsConfigured)
+                    <div class="mt-5 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
+                        OAuth credentials are missing. Add safe local values to `.env`, run `php artisan optimize:clear`, then return here.
+                    </div>
+                @endunless
             </div>
+        </section>
 
-            <dl class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <div class="rounded-md border border-gray-100 p-4 dark:border-gray-800">
-                    <dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Email</dt>
-                    <dd class="mt-2 text-sm font-medium text-gray-950 dark:text-white">
-                        {{ $connection?->email ?: 'Not available' }}
-                    </dd>
-                </div>
+        <section class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+            <p class="text-sm font-semibold uppercase tracking-wide text-slate-500">Local Development Setup</p>
+            <h3 class="mt-2 text-xl font-semibold text-slate-950">Safe Setup Instructions</h3>
 
-                <div class="rounded-md border border-gray-100 p-4 dark:border-gray-800">
-                    <dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Last connected</dt>
-                    <dd class="mt-2 text-sm font-medium text-gray-950 dark:text-white">
-                        {{ $connection?->last_connected_at?->format('Y-m-d H:i') ?: 'Not available' }}
-                    </dd>
-                </div>
+            <ol class="mt-5 grid gap-3 text-sm leading-6 text-slate-700 md:grid-cols-2">
+                <li class="rounded-md border border-slate-100 bg-slate-50 p-4"><span class="font-semibold text-slate-950">1.</span> Create or open a Google Cloud project.</li>
+                <li class="rounded-md border border-slate-100 bg-slate-50 p-4"><span class="font-semibold text-slate-950">2.</span> Enable the Google Drive API.</li>
+                <li class="rounded-md border border-slate-100 bg-slate-50 p-4"><span class="font-semibold text-slate-950">3.</span> Configure the OAuth consent screen.</li>
+                <li class="rounded-md border border-slate-100 bg-slate-50 p-4"><span class="font-semibold text-slate-950">4.</span> Create an OAuth client with type Web application.</li>
+                <li class="rounded-md border border-slate-100 bg-slate-50 p-4"><span class="font-semibold text-slate-950">5.</span> Add the redirect URI shown on this page.</li>
+                <li class="rounded-md border border-slate-100 bg-slate-50 p-4"><span class="font-semibold text-slate-950">6.</span> Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to local `.env`.</li>
+                <li class="rounded-md border border-slate-100 bg-slate-50 p-4"><span class="font-semibold text-slate-950">7.</span> Run `php artisan optimize:clear` after changing environment values.</li>
+                <li class="rounded-md border border-slate-100 bg-slate-50 p-4"><span class="font-semibold text-slate-950">8.</span> Return here and click Connect Google Drive.</li>
+            </ol>
 
-                <div class="rounded-md border border-gray-100 p-4 dark:border-gray-800">
-                    <dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Token expiry</dt>
-                    <dd class="mt-2 text-sm font-medium text-gray-950 dark:text-white">
-                        {{ $connection?->token_expires_at?->format('Y-m-d H:i') ?: 'Not available' }}
-                    </dd>
-                </div>
-
-                <div class="rounded-md border border-gray-100 p-4 dark:border-gray-800">
-                    <dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Status</dt>
-                    <dd class="mt-2 text-sm font-medium text-gray-950 dark:text-white">
-                        {{ $connection?->status ?: 'Not connected' }}
-                    </dd>
-                </div>
-            </dl>
-        </div>
-
-        <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-            <h3 class="text-base font-semibold text-gray-950 dark:text-white">Required scope</h3>
-            <div class="mt-3 space-y-2">
-                @foreach ($requiredScopes as $scope)
-                    <code class="block rounded-md bg-gray-100 px-3 py-2 text-sm text-gray-800 dark:bg-gray-800 dark:text-gray-100">{{ $scope }}</code>
-                @endforeach
+            <div class="mt-5 rounded-md border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-900">
+                ResearchHub requests only the Drive file scope for files created or opened by the app. Do not paste OAuth secrets into tickets, chats, screenshots, or source files.
             </div>
-        </div>
-
-        @if ($connection?->last_error)
-            <div class="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-900">
-                {{ $connection->last_error }}
-            </div>
-        @endif
+        </section>
     </div>
 </x-filament-panels::page>

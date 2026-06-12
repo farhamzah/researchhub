@@ -3,12 +3,18 @@
 namespace App\Filament\Resources\Surveys;
 
 use App\Filament\Resources\Surveys\Pages\ManageSurveys;
+use App\Models\ResearchProject;
 use App\Models\Survey;
 use App\Modules\Surveys\Actions\CloseSurveyAction;
 use App\Modules\Surveys\Actions\PublishSurveyAction;
 use BackedEnum;
 use Filament\Actions\Action;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\EditAction;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -17,6 +23,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Validation\ValidationException;
 use UnitEnum;
 
 class SurveyResource extends Resource
@@ -33,15 +40,44 @@ class SurveyResource extends Resource
     {
         return $schema
             ->components([
+                Select::make('project_id')
+                    ->label('Research Project')
+                    ->options(fn (): array => self::manageableProjectOptions())
+                    ->searchable()
+                    ->required(),
                 TextInput::make('title')
+                    ->label('Title')
                     ->required()
                     ->maxLength(255),
+                Textarea::make('description')
+                    ->label('Description')
+                    ->rows(4)
+                    ->maxLength(5000)
+                    ->columnSpanFull(),
+                Select::make('status')
+                    ->label('Status')
+                    ->options(self::statusOptions())
+                    ->default(Survey::STATUS_DRAFT)
+                    ->required()
+                    ->in(Survey::STATUSES),
+                Select::make('identity_mode')
+                    ->label('Identity Mode')
+                    ->options(self::identityModeOptions())
+                    ->default(Survey::IDENTITY_HIDDEN)
+                    ->required()
+                    ->in(Survey::IDENTITY_MODES),
+                Toggle::make('is_public')
+                    ->label('Public survey link')
+                    ->helperText('Only published public surveys can receive public responses.')
+                    ->default(false),
             ]);
     }
 
     public static function table(Table $table): Table
     {
         return $table
+            ->emptyStateHeading('No surveys yet')
+            ->emptyStateDescription('Create your first research survey to collect responses, evaluate instruments, and generate descriptive analysis.')
             ->recordTitleAttribute('title')
             ->columns([
                 TextColumn::make('title')
@@ -53,10 +89,18 @@ class SurveyResource extends Resource
                     ->sortable(),
                 TextColumn::make('status')
                     ->badge()
+                    ->formatStateUsing(fn (string $state): string => self::statusOptions()[$state] ?? ucfirst(str_replace('_', ' ', $state)))
+                    ->color(fn (string $state): string => match ($state) {
+                        Survey::STATUS_PUBLISHED => 'success',
+                        Survey::STATUS_CLOSED => 'warning',
+                        Survey::STATUS_ARCHIVED => 'gray',
+                        default => 'gray',
+                    })
                     ->sortable(),
                 TextColumn::make('identity_mode')
                     ->label('Identity')
                     ->badge()
+                    ->formatStateUsing(fn (string $state): string => self::identityModeOptions()[$state] ?? ucfirst(str_replace('_', ' ', $state)))
                     ->sortable(),
                 IconColumn::make('is_public')
                     ->label('Public')
@@ -71,13 +115,16 @@ class SurveyResource extends Resource
             ->filters([
                 SelectFilter::make('project_id')
                     ->label('Project')
-                    ->relationship('project', 'title'),
+                    ->options(fn (): array => self::visibleProjectOptions()),
                 SelectFilter::make('status')
-                    ->options(array_combine(Survey::STATUSES, Survey::STATUSES)),
+                    ->options(self::statusOptions()),
                 SelectFilter::make('identity_mode')
-                    ->options(array_combine(Survey::IDENTITY_MODES, Survey::IDENTITY_MODES)),
+                    ->options(self::identityModeOptions()),
             ])
             ->recordActions([
+                EditAction::make()
+                    ->mutateDataUsing(fn (array $data): array => self::validatedProjectScopedData($data))
+                    ->visible(fn (Survey $record): bool => auth()->user()?->can('update', $record) ?? false),
                 Action::make('publish')
                     ->label('Publish')
                     ->icon('heroicon-o-paper-airplane')
@@ -111,6 +158,13 @@ class SurveyResource extends Resource
                     ->icon('heroicon-o-pencil-square')
                     ->visible(fn (Survey $record): bool => auth()->user()?->can('update', $record) ?? false)
                     ->url(fn (Survey $record): string => route('admin.surveys.builder.index', ['survey' => $record])),
+                Action::make('scoring')
+                    ->label('Scoring')
+                    ->icon('heroicon-o-adjustments-horizontal')
+                    ->visible(fn (Survey $record): bool => auth()->user()?->can('manageScoring', $record) ?? false)
+                    ->url(fn (Survey $record): string => route('admin.surveys.scoring.index', ['survey' => $record])),
+                DeleteAction::make()
+                    ->visible(fn (Survey $record): bool => auth()->user()?->can('delete', $record) ?? false),
             ]);
     }
 
@@ -135,16 +189,99 @@ class SurveyResource extends Resource
 
     public static function canCreate(): bool
     {
-        return false;
+        return auth()->user()?->can('create', Survey::class) ?? false;
     }
 
     public static function canEdit(mixed $record): bool
     {
-        return false;
+        return auth()->user()?->can('update', $record) ?? false;
     }
 
     public static function canDelete(mixed $record): bool
     {
         return auth()->user()?->can('delete', $record) ?? false;
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    public static function validatedProjectScopedData(array $data): array
+    {
+        $projectId = $data['project_id'] ?? null;
+        $project = filled($projectId) ? ResearchProject::query()->find($projectId) : null;
+        $user = auth()->user();
+
+        if (! $user || ! $project || ! $user->can('update', $project)) {
+            throw ValidationException::withMessages([
+                'project_id' => 'Select a research project you are allowed to manage.',
+            ]);
+        }
+
+        return $data;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function visibleProjectOptions(): array
+    {
+        $user = auth()->user();
+
+        if (! $user) {
+            return [];
+        }
+
+        return ResearchProject::query()
+            ->visibleTo($user)
+            ->orderBy('title')
+            ->pluck('title', 'id')
+            ->all();
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function manageableProjectOptions(): array
+    {
+        $user = auth()->user();
+
+        if (! $user) {
+            return [];
+        }
+
+        return ResearchProject::query()
+            ->visibleTo($user)
+            ->orderBy('title')
+            ->get()
+            ->filter(fn (ResearchProject $project): bool => $user->can('update', $project))
+            ->pluck('title', 'id')
+            ->all();
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function statusOptions(): array
+    {
+        return [
+            Survey::STATUS_DRAFT => 'Draft',
+            Survey::STATUS_PUBLISHED => 'Published',
+            Survey::STATUS_CLOSED => 'Closed',
+            Survey::STATUS_ARCHIVED => 'Archived',
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function identityModeOptions(): array
+    {
+        return [
+            Survey::IDENTITY_FULL => 'Full Identity',
+            Survey::IDENTITY_HIDDEN => 'Hidden Identity',
+            Survey::IDENTITY_ANONYMOUS => 'Anonymous',
+            Survey::IDENTITY_PSEUDONYM => 'Pseudonym',
+        ];
     }
 }

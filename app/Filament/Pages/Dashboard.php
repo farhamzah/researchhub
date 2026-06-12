@@ -21,7 +21,7 @@ class Dashboard extends BaseDashboard
 
     protected static ?string $navigationLabel = 'Dashboard';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = -100;
 
     protected static ?string $title = 'Dashboard';
 

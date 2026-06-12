@@ -108,6 +108,11 @@ class ResearchProjectResource extends Resource
                     ->icon('heroicon-o-calendar-days')
                     ->visible(fn (ResearchProject $record): bool => auth()->user()?->can('viewTimeline', $record) ?? false)
                     ->url(fn (ResearchProject $record): string => route('admin.projects.timeline.index', ['researchProject' => $record])),
+                Action::make('validators')
+                    ->label('Validators')
+                    ->icon('heroicon-o-academic-cap')
+                    ->visible(fn (ResearchProject $record): bool => auth()->user()?->can('update', $record) ?? false)
+                    ->url(fn (ResearchProject $record): string => route('admin.projects.validators.index', ['researchProject' => $record])),
                 DeleteAction::make()
                     ->visible(fn (ResearchProject $record): bool => auth()->user()?->can('delete', $record) ?? false),
             ]);

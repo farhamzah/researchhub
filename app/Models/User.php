@@ -115,6 +115,11 @@ class User extends Authenticatable implements FilamentUser
         return $this->hasMany(ResearchLink::class, 'created_by');
     }
 
+    public function expertValidators(): HasMany
+    {
+        return $this->hasMany(ExpertValidator::class, 'created_by');
+    }
+
     public function createdSurveys(): HasMany
     {
         return $this->hasMany(Survey::class, 'created_by');

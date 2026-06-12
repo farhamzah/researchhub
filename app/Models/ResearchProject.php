@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
@@ -104,6 +105,27 @@ class ResearchProject extends Model
     public function researchLinks(): HasMany
     {
         return $this->hasMany(ResearchLink::class, 'research_project_id');
+    }
+
+    public function expertValidatorAssignments(): HasMany
+    {
+        return $this->hasMany(ExpertValidatorProject::class, 'research_project_id');
+    }
+
+    public function expertValidators(): BelongsToMany
+    {
+        return $this->belongsToMany(ExpertValidator::class, 'expert_validator_project', 'research_project_id', 'expert_validator_id')
+            ->withPivot([
+                'id',
+                'role',
+                'expertise_scope',
+                'status',
+                'invited_at',
+                'accepted_at',
+                'notes',
+                'created_by',
+            ])
+            ->withTimestamps();
     }
 
     public function surveys(): HasMany

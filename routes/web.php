@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminAnalysisExportController;
 use App\Http\Controllers\AdminProjectTimelineController;
+use App\Http\Controllers\AdminProjectValidatorController;
 use App\Http\Controllers\AdminSurveyAnalysisController;
 use App\Http\Controllers\AdminSurveyBuilderController;
 use App\Http\Controllers\AdminSurveyResponseController;
@@ -51,6 +52,15 @@ Route::middleware('auth')->group(function (): void {
         ->name('admin.projects.timeline.tasks.update');
     Route::delete('/admin/projects/{researchProject}/timeline/tasks/{task}', [AdminProjectTimelineController::class, 'deleteTask'])
         ->name('admin.projects.timeline.tasks.delete');
+
+    Route::get('/admin/projects/{researchProject}/validators', [AdminProjectValidatorController::class, 'index'])
+        ->name('admin.projects.validators.index');
+    Route::post('/admin/projects/{researchProject}/validators', [AdminProjectValidatorController::class, 'store'])
+        ->name('admin.projects.validators.store');
+    Route::put('/admin/projects/{researchProject}/validators/{assignment}', [AdminProjectValidatorController::class, 'update'])
+        ->name('admin.projects.validators.update');
+    Route::delete('/admin/projects/{researchProject}/validators/{assignment}', [AdminProjectValidatorController::class, 'destroy'])
+        ->name('admin.projects.validators.destroy');
 
     Route::get('/admin/surveys/{survey}/responses', [AdminSurveyResponseController::class, 'index'])
         ->name('admin.surveys.responses.index');

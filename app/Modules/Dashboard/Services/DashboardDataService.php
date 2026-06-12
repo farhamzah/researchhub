@@ -10,7 +10,12 @@ use App\Models\ProjectTimelineTask;
 use App\Models\ResearchLink;
 use App\Models\ResearchProject;
 use App\Models\ReviewLink;
+use App\Models\SupervisionFeedback;
+use App\Models\SupervisionFollowUpItem;
+use App\Models\SupervisionSession;
 use App\Models\Survey;
+use App\Models\SurveyValidationAssignment;
+use App\Models\SurveyValidationRound;
 use App\Models\User;
 use App\Modules\Projects\Services\ProjectTimelineProgressService;
 use Illuminate\Database\Eloquent\Builder;
@@ -46,6 +51,11 @@ class DashboardDataService
             'recentSurveys' => $this->recentSurveys($user),
             'recentAnalysisResults' => $this->recentAnalysisResults($user),
             'pinnedResearchLinks' => $this->pinnedResearchLinks($user),
+            'actionCenterItems' => $this->actionCenterItems($visibleProjectIds),
+            'pendingFollowUps' => $this->pendingFollowUps($visibleProjectIds),
+            'validationPending' => $this->validationPending($visibleProjectIds),
+            'recentSupervisionFeedback' => $this->recentSupervisionFeedback($visibleProjectIds),
+            'timelineRisks' => $this->timelineRisks($visibleProjectIds),
             'quickActions' => $this->quickActions(),
         ];
     }
@@ -275,6 +285,278 @@ class DashboardDataService
                 'category' => ResearchLink::CATEGORY_LABELS[$link->category] ?? $this->label($link->category),
                 'domain' => parse_url($link->url, PHP_URL_HOST) ?: 'Unknown domain',
                 'url' => $link->url,
+            ]);
+    }
+
+    /**
+     * @param  Collection<int, string>  $visibleProjectIds
+     * @return Collection<int, array<string, mixed>>
+     */
+    private function actionCenterItems(Collection $visibleProjectIds): Collection
+    {
+        return collect()
+            ->merge($this->pendingFollowUps($visibleProjectIds)->take(2)->map(fn (array $item): array => [
+                'title' => $item['title'],
+                'context' => $item['project'].' | '.$item['session'],
+                'badge' => $item['status'],
+                'date_label' => $item['due_date'] ? 'Due '.$item['due_date'] : null,
+                'is_risk' => $item['is_overdue'],
+                'url' => $item['url'],
+                'action_label' => 'Open Supervision',
+            ]))
+            ->merge($this->validationPending($visibleProjectIds)->take(2)->map(fn (array $item): array => [
+                'title' => $item['survey'],
+                'context' => $item['project'],
+                'badge' => $item['progress_label'],
+                'date_label' => $item['round_status'],
+                'is_risk' => false,
+                'url' => $item['url'],
+                'action_label' => 'Open Validation',
+            ]))
+            ->merge($this->recentSupervisionFeedback($visibleProjectIds)->take(2)->map(fn (array $item): array => [
+                'title' => $item['title'],
+                'context' => $item['project'],
+                'badge' => $item['decision'],
+                'date_label' => $item['submitted_at'] ? 'Submitted '.$item['submitted_at'] : null,
+                'is_risk' => in_array($item['status_key'], [SupervisionSession::STATUS_REVISION_NEEDED, SupervisionSession::STATUS_FEEDBACK_SUBMITTED], true),
+                'url' => $item['url'],
+                'action_label' => 'Open Supervision',
+            ]))
+            ->merge($this->timelineRisks($visibleProjectIds)->take(2)->map(fn (array $item): array => [
+                'title' => $item['title'],
+                'context' => $item['project'],
+                'badge' => $item['status'],
+                'date_label' => $item['planned_end_date'] ? 'Due '.$item['planned_end_date'] : null,
+                'is_risk' => true,
+                'url' => $item['url'],
+                'action_label' => 'Open Timeline',
+            ]))
+            ->merge($this->surveysWithoutQuestions($visibleProjectIds)->take(1)->map(fn (array $item): array => [
+                'title' => $item['title'],
+                'context' => $item['project'],
+                'badge' => 'No Questions',
+                'date_label' => null,
+                'is_risk' => false,
+                'url' => $item['url'],
+                'action_label' => 'Open Builder',
+            ]))
+            ->merge($this->projectsWithoutTarget($visibleProjectIds)->take(1)->map(fn (array $item): array => [
+                'title' => $item['title'],
+                'context' => 'Project setup',
+                'badge' => 'No Target',
+                'date_label' => null,
+                'is_risk' => false,
+                'url' => $item['url'],
+                'action_label' => 'Open Projects',
+            ]))
+            ->take(8)
+            ->values();
+    }
+
+    /**
+     * @param  Collection<int, string>  $visibleProjectIds
+     * @return Collection<int, array<string, mixed>>
+     */
+    private function pendingFollowUps(Collection $visibleProjectIds): Collection
+    {
+        $projectIds = $visibleProjectIds->all();
+
+        if ($projectIds === []) {
+            return collect();
+        }
+
+        return SupervisionFollowUpItem::query()
+            ->whereHas('session', fn (Builder $query) => $query->whereIn('research_project_id', $projectIds))
+            ->whereIn('status', [
+                SupervisionFollowUpItem::STATUS_TODO,
+                SupervisionFollowUpItem::STATUS_IN_PROGRESS,
+                SupervisionFollowUpItem::STATUS_WAITING_SUPERVISOR,
+            ])
+            ->with(['session.project'])
+            ->orderByRaw('case when due_date is null then 1 else 0 end')
+            ->orderBy('due_date')
+            ->latest('updated_at')
+            ->limit(5)
+            ->get()
+            ->map(fn (SupervisionFollowUpItem $item): array => [
+                'title' => $item->title,
+                'project' => $item->session?->project?->title ?? 'No project',
+                'session' => $item->session?->title ?? 'No session',
+                'status' => SupervisionFollowUpItem::STATUS_LABELS[$item->status] ?? $this->label($item->status),
+                'priority' => SupervisionFollowUpItem::PRIORITY_LABELS[$item->priority] ?? $this->label($item->priority),
+                'due_date' => $item->due_date?->toFormattedDateString(),
+                'is_overdue' => $item->due_date !== null && $item->due_date->isBefore(today()),
+                'url' => $item->session?->project
+                    ? route('admin.projects.supervision.index', ['researchProject' => $item->session->project])
+                    : route('filament.admin.resources.projects.research-projects.index'),
+            ]);
+    }
+
+    /**
+     * @param  Collection<int, string>  $visibleProjectIds
+     * @return Collection<int, array<string, mixed>>
+     */
+    private function validationPending(Collection $visibleProjectIds): Collection
+    {
+        $projectIds = $visibleProjectIds->all();
+
+        if ($projectIds === []) {
+            return collect();
+        }
+
+        return SurveyValidationRound::query()
+            ->whereIn('research_project_id', $projectIds)
+            ->whereHas('assignments', fn (Builder $query) => $query->whereIn('status', [
+                SurveyValidationAssignment::STATUS_PENDING,
+                SurveyValidationAssignment::STATUS_LINK_GENERATED,
+                SurveyValidationAssignment::STATUS_OPENED,
+                SurveyValidationAssignment::STATUS_EXPIRED,
+                SurveyValidationAssignment::STATUS_REVOKED,
+            ]))
+            ->with(['project', 'survey'])
+            ->withCount([
+                'assignments as total_assignments_count',
+                'assignments as submitted_assignments_count' => fn (Builder $query) => $query->where('status', SurveyValidationAssignment::STATUS_SUBMITTED),
+            ])
+            ->latest('updated_at')
+            ->limit(5)
+            ->get()
+            ->map(fn (SurveyValidationRound $round): array => [
+                'survey' => $round->survey?->title ?? $round->title,
+                'round' => $round->title,
+                'project' => $round->project?->title ?? 'No project',
+                'round_status' => SurveyValidationRound::STATUS_LABELS[$round->status] ?? $this->label($round->status),
+                'progress_label' => $round->submitted_assignments_count.' / '.$round->total_assignments_count.' submitted',
+                'url' => $round->survey
+                    ? route('admin.surveys.validation.index', ['survey' => $round->survey])
+                    : route('filament.admin.resources.surveys.index'),
+            ]);
+    }
+
+    /**
+     * @param  Collection<int, string>  $visibleProjectIds
+     * @return Collection<int, array<string, mixed>>
+     */
+    private function recentSupervisionFeedback(Collection $visibleProjectIds): Collection
+    {
+        $projectIds = $visibleProjectIds->all();
+
+        if ($projectIds === []) {
+            return collect();
+        }
+
+        return SupervisionSession::query()
+            ->whereIn('research_project_id', $projectIds)
+            ->whereIn('status', [
+                SupervisionSession::STATUS_FEEDBACK_SUBMITTED,
+                SupervisionSession::STATUS_REVISION_NEEDED,
+                SupervisionSession::STATUS_OPENED,
+            ])
+            ->whereHas('feedback')
+            ->with(['project', 'feedback' => fn ($query) => $query->latest()])
+            ->latest('submitted_at')
+            ->latest('updated_at')
+            ->limit(5)
+            ->get()
+            ->map(function (SupervisionSession $session): array {
+                $feedback = $session->feedback->first();
+
+                return [
+                    'title' => $session->title,
+                    'project' => $session->project?->title ?? 'No project',
+                    'status' => SupervisionSession::STATUS_LABELS[$session->status] ?? $this->label($session->status),
+                    'status_key' => $session->status,
+                    'decision' => $feedback
+                        ? (SupervisionFeedback::DECISION_LABELS[$feedback->decision] ?? $this->label($feedback->decision))
+                        : 'Feedback',
+                    'submitted_at' => $session->submitted_at?->toFormattedDateString() ?? $feedback?->created_at?->toFormattedDateString(),
+                    'url' => $session->project
+                        ? route('admin.projects.supervision.index', ['researchProject' => $session->project])
+                        : route('filament.admin.resources.projects.research-projects.index'),
+                ];
+            });
+    }
+
+    /**
+     * @param  Collection<int, string>  $visibleProjectIds
+     * @return Collection<int, array<string, mixed>>
+     */
+    private function timelineRisks(Collection $visibleProjectIds): Collection
+    {
+        $projectIds = $visibleProjectIds->all();
+
+        if ($projectIds === []) {
+            return collect();
+        }
+
+        return ProjectTimelineTask::query()
+            ->whereIn('research_project_id', $projectIds)
+            ->whereNotIn('status', [ProjectMilestone::STATUS_COMPLETED, ProjectMilestone::STATUS_CANCELLED])
+            ->whereNotNull('planned_end_date')
+            ->whereDate('planned_end_date', '<', today())
+            ->with(['project', 'milestone'])
+            ->orderBy('planned_end_date')
+            ->limit(5)
+            ->get()
+            ->map(fn (ProjectTimelineTask $task): array => [
+                'title' => $task->title,
+                'project' => $task->project?->title ?? 'No project',
+                'milestone' => $task->milestone?->title,
+                'planned_end_date' => $task->planned_end_date?->toFormattedDateString(),
+                'status' => $this->label($task->status),
+                'url' => $task->project
+                    ? route('admin.projects.timeline.index', ['researchProject' => $task->project])
+                    : route('filament.admin.resources.projects.research-projects.index'),
+            ]);
+    }
+
+    /**
+     * @param  Collection<int, string>  $visibleProjectIds
+     * @return Collection<int, array<string, mixed>>
+     */
+    private function surveysWithoutQuestions(Collection $visibleProjectIds): Collection
+    {
+        $projectIds = $visibleProjectIds->all();
+
+        if ($projectIds === []) {
+            return collect();
+        }
+
+        return Survey::query()
+            ->whereIn('project_id', $projectIds)
+            ->with('project')
+            ->whereDoesntHave('questions')
+            ->latest('updated_at')
+            ->limit(3)
+            ->get()
+            ->map(fn (Survey $survey): array => [
+                'title' => $survey->title,
+                'project' => $survey->project?->title ?? 'No project',
+                'url' => route('admin.surveys.builder.index', ['survey' => $survey]),
+            ]);
+    }
+
+    /**
+     * @param  Collection<int, string>  $visibleProjectIds
+     * @return Collection<int, array<string, mixed>>
+     */
+    private function projectsWithoutTarget(Collection $visibleProjectIds): Collection
+    {
+        $projectIds = $visibleProjectIds->all();
+
+        if ($projectIds === []) {
+            return collect();
+        }
+
+        return ResearchProject::query()
+            ->whereIn('id', $projectIds)
+            ->whereNull('target_finished_at')
+            ->latest('updated_at')
+            ->limit(3)
+            ->get()
+            ->map(fn (ResearchProject $project): array => [
+                'title' => $project->title,
+                'url' => route('filament.admin.resources.projects.research-projects.index'),
             ]);
     }
 

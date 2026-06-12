@@ -48,6 +48,11 @@ class Dashboard extends BaseDashboard
                 'recentSurveys' => collect(),
                 'recentAnalysisResults' => collect(),
                 'pinnedResearchLinks' => collect(),
+                'actionCenterItems' => collect(),
+                'pendingFollowUps' => collect(),
+                'validationPending' => collect(),
+                'recentSupervisionFeedback' => collect(),
+                'timelineRisks' => collect(),
                 'quickActions' => [],
             ];
         }

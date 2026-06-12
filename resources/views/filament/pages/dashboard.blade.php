@@ -258,6 +258,21 @@
             white-space: nowrap;
         }
 
+        .rh-pill-risk {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .rh-pill-warn {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .rh-item-risk {
+            border-color: #fecaca;
+            background: #fff7f7;
+        }
+
         .rh-link {
             color: #1d4ed8;
             font-size: 0.8rem;
@@ -366,6 +381,17 @@
             font-weight: 850;
         }
 
+        .rh-action-center {
+            padding: 1.15rem;
+        }
+
+        .rh-action-center-grid {
+            margin-top: 1rem;
+            display: grid;
+            gap: 0.85rem;
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+        }
+
         @media (min-width: 64rem) {
             .rh-hero-grid {
                 grid-template-columns: minmax(0, 1fr) 19rem;
@@ -413,7 +439,186 @@
             @endforeach
         </section>
 
+        <section class="rh-card rh-action-center" data-dashboard-card="action-center">
+            <div class="rh-section-head">
+                <div>
+                    <p class="rh-section-kicker">Action Center</p>
+                    <h2 class="rh-section-title">Yang Perlu Dikerjakan Sekarang</h2>
+                </div>
+                <a href="{{ route('filament.admin.resources.projects.research-projects.index') }}" class="rh-link">Open Projects</a>
+            </div>
+
+            @if ($actionCenterItems->isEmpty())
+                <p class="rh-empty">
+                    Belum ada tindak lanjut, validasi, feedback bimbingan, atau risiko timeline yang perlu ditangani.
+                </p>
+            @else
+                <div class="rh-action-center-grid">
+                    @foreach ($actionCenterItems as $item)
+                        <article class="rh-item {{ $item['is_risk'] ? 'rh-item-risk' : '' }}">
+                            <div class="rh-item-top">
+                                <div>
+                                    <h3 class="rh-item-title">{{ $item['title'] }}</h3>
+                                    <p class="rh-item-meta">{{ $item['context'] }}</p>
+                                    @if ($item['date_label'])
+                                        <p class="rh-item-meta">{{ $item['date_label'] }}</p>
+                                    @endif
+                                </div>
+                                <span class="rh-pill {{ $item['is_risk'] ? 'rh-pill-risk' : '' }}">{{ $item['badge'] }}</span>
+                            </div>
+                            <a href="{{ $item['url'] }}" class="rh-link">{{ $item['action_label'] }}</a>
+                        </article>
+                    @endforeach
+                </div>
+            @endif
+        </section>
+
         <div class="rh-grid">
+            <section class="rh-card rh-section" data-dashboard-card="pending-follow-ups">
+                <div class="rh-section-head">
+                    <div>
+                        <p class="rh-section-kicker">Tindak Lanjut</p>
+                        <h2 class="rh-section-title">Pending Follow-Up</h2>
+                    </div>
+                </div>
+
+                @forelse ($pendingFollowUps as $item)
+                    @if ($loop->first)
+                        <div class="rh-list">
+                    @endif
+                    <article class="rh-item {{ $item['is_overdue'] ? 'rh-item-risk' : '' }}">
+                        <div class="rh-item-top">
+                            <div>
+                                <h3 class="rh-item-title">{{ $item['title'] }}</h3>
+                                <p class="rh-item-meta">{{ $item['project'] }} | {{ $item['session'] }}</p>
+                                <p class="rh-item-meta">
+                                    @if ($item['due_date'])
+                                        Due {{ $item['due_date'] }}
+                                    @else
+                                        No due date
+                                    @endif
+                                </p>
+                            </div>
+                            <span class="rh-pill {{ $item['is_overdue'] ? 'rh-pill-risk' : 'rh-pill-warn' }}">{{ $item['priority'] }}</span>
+                        </div>
+                        <p class="rh-item-meta">Status: {{ $item['status'] }}</p>
+                        <a href="{{ $item['url'] }}" class="rh-link">Open Supervision</a>
+                    </article>
+                    @if ($loop->last)
+                        </div>
+                    @endif
+                @empty
+                    <p class="rh-empty">
+                        Tidak ada follow-up revisi yang sedang berjalan.
+                    </p>
+                @endforelse
+            </section>
+
+            <section class="rh-card rh-section" data-dashboard-card="validation-pending">
+                <div class="rh-section-head">
+                    <div>
+                        <p class="rh-section-kicker">Validasi Ahli</p>
+                        <h2 class="rh-section-title">Expert Validation Pending</h2>
+                    </div>
+                    <a href="{{ route('filament.admin.resources.surveys.index') }}" class="rh-link">Open Surveys</a>
+                </div>
+
+                @forelse ($validationPending as $item)
+                    @if ($loop->first)
+                        <div class="rh-list">
+                    @endif
+                    <article class="rh-item">
+                        <div class="rh-item-top">
+                            <div>
+                                <h3 class="rh-item-title">{{ $item['survey'] }}</h3>
+                                <p class="rh-item-meta">{{ $item['project'] }} | {{ $item['round'] }}</p>
+                            </div>
+                            <span class="rh-pill">{{ $item['round_status'] }}</span>
+                        </div>
+                        <p class="rh-item-meta">{{ $item['progress_label'] }}</p>
+                        <a href="{{ $item['url'] }}" class="rh-link">Open Validation</a>
+                    </article>
+                    @if ($loop->last)
+                        </div>
+                    @endif
+                @empty
+                    <p class="rh-empty">
+                        Tidak ada validasi ahli yang sedang menunggu submit.
+                    </p>
+                @endforelse
+            </section>
+
+            <section class="rh-card rh-section" data-dashboard-card="supervision-feedback">
+                <div class="rh-section-head">
+                    <div>
+                        <p class="rh-section-kicker">Bimbingan</p>
+                        <h2 class="rh-section-title">Supervisor Feedback</h2>
+                    </div>
+                </div>
+
+                @forelse ($recentSupervisionFeedback as $item)
+                    @if ($loop->first)
+                        <div class="rh-list">
+                    @endif
+                    <article class="rh-item {{ in_array($item['status_key'], [\App\Models\SupervisionSession::STATUS_REVISION_NEEDED, \App\Models\SupervisionSession::STATUS_FEEDBACK_SUBMITTED], true) ? 'rh-item-risk' : '' }}">
+                        <div class="rh-item-top">
+                            <div>
+                                <h3 class="rh-item-title">{{ $item['title'] }}</h3>
+                                <p class="rh-item-meta">{{ $item['project'] }}</p>
+                                @if ($item['submitted_at'])
+                                    <p class="rh-item-meta">Submitted {{ $item['submitted_at'] }}</p>
+                                @endif
+                            </div>
+                            <span class="rh-pill">{{ $item['decision'] }}</span>
+                        </div>
+                        <p class="rh-item-meta">Status: {{ $item['status'] }}</p>
+                        <a href="{{ $item['url'] }}" class="rh-link">Open Supervision</a>
+                    </article>
+                    @if ($loop->last)
+                        </div>
+                    @endif
+                @empty
+                    <p class="rh-empty">
+                        Belum ada feedback bimbingan yang perlu ditindaklanjuti.
+                    </p>
+                @endforelse
+            </section>
+
+            <section class="rh-card rh-section" data-dashboard-card="timeline-risks">
+                <div class="rh-section-head">
+                    <div>
+                        <p class="rh-section-kicker">Timeline Terlambat</p>
+                        <h2 class="rh-section-title">Timeline Risks</h2>
+                    </div>
+                </div>
+
+                @forelse ($timelineRisks as $item)
+                    @if ($loop->first)
+                        <div class="rh-list">
+                    @endif
+                    <article class="rh-item rh-item-risk">
+                        <div class="rh-item-top">
+                            <div>
+                                <h3 class="rh-item-title">{{ $item['title'] }}</h3>
+                                <p class="rh-item-meta">
+                                    {{ $item['project'] }} @if ($item['milestone']) | {{ $item['milestone'] }} @endif
+                                </p>
+                                <p class="rh-item-meta">Due {{ $item['planned_end_date'] }}</p>
+                            </div>
+                            <span class="rh-pill rh-pill-risk">{{ $item['status'] }}</span>
+                        </div>
+                        <a href="{{ $item['url'] }}" class="rh-link">Open Timeline</a>
+                    </article>
+                    @if ($loop->last)
+                        </div>
+                    @endif
+                @empty
+                    <p class="rh-empty">
+                        Tidak ada timeline task yang terlambat.
+                    </p>
+                @endforelse
+            </section>
+
             <section class="rh-card rh-section" data-dashboard-card="active-projects">
                 <div class="rh-section-head">
                     <div>

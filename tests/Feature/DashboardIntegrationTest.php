@@ -7,12 +7,19 @@ use App\Models\AnalysisResult;
 use App\Models\Document;
 use App\Models\DocumentCategory;
 use App\Models\DriveConnection;
+use App\Models\ExpertValidator;
 use App\Models\ProjectMilestone;
 use App\Models\ProjectTimelineTask;
 use App\Models\ResearchLink;
 use App\Models\ResearchProject;
+use App\Models\SupervisionFeedback;
+use App\Models\SupervisionFollowUpItem;
+use App\Models\SupervisionReviewLink;
+use App\Models\SupervisionSession;
 use App\Models\Survey;
 use App\Models\SurveyResponse;
+use App\Models\SurveyValidationAssignment;
+use App\Models\SurveyValidationRound;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -76,6 +83,62 @@ class DashboardIntegrationTest extends TestCase
             'weight' => 1,
         ]);
 
+        $validator = ExpertValidator::create([
+            'created_by' => $owner->id,
+            'name' => 'Dashboard Validator',
+            'email' => 'validator-dashboard@example.test',
+            'phone' => '08123456789',
+            'institution' => 'Private Lab',
+            'is_active' => true,
+        ]);
+        $round = SurveyValidationRound::create([
+            'survey_id' => $survey->id,
+            'research_project_id' => $project->id,
+            'created_by' => $owner->id,
+            'title' => 'Instrument Validation Round',
+            'status' => SurveyValidationRound::STATUS_OPEN,
+        ]);
+        SurveyValidationAssignment::create([
+            'survey_validation_round_id' => $round->id,
+            'expert_validator_id' => $validator->id,
+            'status' => SurveyValidationAssignment::STATUS_OPENED,
+            'token_hash' => SurveyValidationAssignment::hashToken('raw-validation-dashboard-token'),
+            'opened_at' => now()->subDay(),
+            'created_by' => $owner->id,
+        ]);
+
+        $session = SupervisionSession::create([
+            'research_project_id' => $project->id,
+            'created_by' => $owner->id,
+            'title' => 'Bab 2 Supervision Feedback',
+            'meeting_type' => SupervisionSession::MEETING_CHAPTER_REVIEW,
+            'status' => SupervisionSession::STATUS_REVISION_NEEDED,
+            'submitted_at' => now()->subDay(),
+        ]);
+        $reviewLink = SupervisionReviewLink::create([
+            'supervision_session_id' => $session->id,
+            'expert_validator_id' => $validator->id,
+            'created_by' => $owner->id,
+            'status' => SupervisionReviewLink::STATUS_SUBMITTED,
+            'token_hash' => SupervisionReviewLink::hashToken('raw-supervision-dashboard-token'),
+            'submitted_at' => now()->subDay(),
+        ]);
+        SupervisionFeedback::create([
+            'supervision_review_link_id' => $reviewLink->id,
+            'supervision_session_id' => $session->id,
+            'decision' => SupervisionFeedback::DECISION_MAJOR_REVISION,
+            'general_feedback' => 'Private long feedback should stay out of dashboard cards.',
+        ]);
+        SupervisionFollowUpItem::create([
+            'supervision_session_id' => $session->id,
+            'created_by' => $owner->id,
+            'assigned_to' => $owner->id,
+            'title' => 'Revise conceptual framework',
+            'status' => SupervisionFollowUpItem::STATUS_IN_PROGRESS,
+            'priority' => SupervisionFollowUpItem::PRIORITY_HIGH,
+            'due_date' => today()->subDay(),
+        ]);
+
         ResearchLink::create([
             'research_project_id' => $project->id,
             'created_by' => $owner->id,
@@ -120,10 +183,34 @@ class DashboardIntegrationTest extends TestCase
             ->assertSeeText('Delayed Tasks')
             ->assertSeeText('Upcoming 14 Days')
             ->assertSeeText('Upcoming Supervisor Review')
+            ->assertSeeText('Action Center')
+            ->assertSeeText('Yang Perlu Dikerjakan Sekarang')
+            ->assertSeeText('Pending Follow-Up')
+            ->assertSeeText('Revise conceptual framework')
+            ->assertSeeText('Expert Validation Pending')
+            ->assertSeeText('Instrument Validation Round')
+            ->assertSeeText('0 / 1 submitted')
+            ->assertSeeText('Supervisor Feedback')
+            ->assertSeeText('Bab 2 Supervision Feedback')
+            ->assertSeeText('Major Revision')
+            ->assertSeeText('Timeline Risks')
+            ->assertSeeText('Delayed Literature Review')
+            ->assertSee('data-dashboard-card="action-center"', false)
+            ->assertSee('data-dashboard-card="pending-follow-ups"', false)
+            ->assertSee('data-dashboard-card="validation-pending"', false)
+            ->assertSee('data-dashboard-card="supervision-feedback"', false)
+            ->assertSee('data-dashboard-card="timeline-risks"', false)
             ->assertSeeText('Pinned Journal Index')
             ->assertSeeText('Journal')
             ->assertSeeText('journal.example.test')
             ->assertDontSeeText('secret-dashboard-token')
+            ->assertDontSee('raw-validation-dashboard-token')
+            ->assertDontSee(SurveyValidationAssignment::hashToken('raw-validation-dashboard-token'))
+            ->assertDontSee('raw-supervision-dashboard-token')
+            ->assertDontSee(SupervisionReviewLink::hashToken('raw-supervision-dashboard-token'))
+            ->assertDontSeeText('validator-dashboard@example.test')
+            ->assertDontSeeText('08123456789')
+            ->assertDontSeeText('Private long feedback should stay out of dashboard cards.')
             ->assertSeeText('Connected')
             ->assertSeeText('Descriptive Analysis Draft')
             ->assertSee('target="_blank"', false)
@@ -191,6 +278,56 @@ class DashboardIntegrationTest extends TestCase
             'result_payload' => ['private' => true],
         ]);
 
+        $otherValidator = ExpertValidator::create([
+            'created_by' => $other->id,
+            'name' => 'Other User Validator',
+            'email' => 'other-validator@example.test',
+            'is_active' => true,
+        ]);
+        $otherRound = SurveyValidationRound::create([
+            'survey_id' => $survey->id,
+            'research_project_id' => $otherProject->id,
+            'created_by' => $other->id,
+            'title' => 'Other User Validation Round',
+            'status' => SurveyValidationRound::STATUS_OPEN,
+        ]);
+        SurveyValidationAssignment::create([
+            'survey_validation_round_id' => $otherRound->id,
+            'expert_validator_id' => $otherValidator->id,
+            'status' => SurveyValidationAssignment::STATUS_OPENED,
+            'token_hash' => SurveyValidationAssignment::hashToken('other-raw-validation-token'),
+            'created_by' => $other->id,
+        ]);
+        $otherSession = SupervisionSession::create([
+            'research_project_id' => $otherProject->id,
+            'created_by' => $other->id,
+            'title' => 'Other User Supervision',
+            'status' => SupervisionSession::STATUS_REVISION_NEEDED,
+            'submitted_at' => now(),
+        ]);
+        $otherReviewLink = SupervisionReviewLink::create([
+            'supervision_session_id' => $otherSession->id,
+            'created_by' => $other->id,
+            'recipient_name' => 'Other Supervisor',
+            'status' => SupervisionReviewLink::STATUS_SUBMITTED,
+            'token_hash' => SupervisionReviewLink::hashToken('other-supervision-token'),
+            'submitted_at' => now(),
+        ]);
+        SupervisionFeedback::create([
+            'supervision_review_link_id' => $otherReviewLink->id,
+            'supervision_session_id' => $otherSession->id,
+            'decision' => SupervisionFeedback::DECISION_MAJOR_REVISION,
+            'general_feedback' => 'Other private supervision feedback',
+        ]);
+        SupervisionFollowUpItem::create([
+            'supervision_session_id' => $otherSession->id,
+            'created_by' => $other->id,
+            'title' => 'Other User Follow Up',
+            'status' => SupervisionFollowUpItem::STATUS_TODO,
+            'priority' => SupervisionFollowUpItem::PRIORITY_URGENT,
+            'due_date' => today()->subDay(),
+        ]);
+
         $this->actingAs($owner)
             ->get('/admin')
             ->assertOk()
@@ -200,11 +337,23 @@ class DashboardIntegrationTest extends TestCase
             ->assertDontSeeText('Other User Timeline Task')
             ->assertDontSeeText('Other User Pinned Link')
             ->assertDontSeeText('Other User Analysis')
+            ->assertDontSeeText('Other User Validation Round')
+            ->assertDontSeeText('Other User Supervision')
+            ->assertDontSeeText('Other User Follow Up')
+            ->assertDontSee('other-raw-validation-token')
+            ->assertDontSee(SurveyValidationAssignment::hashToken('other-raw-validation-token'))
+            ->assertDontSee('other-supervision-token')
+            ->assertDontSee(SupervisionReviewLink::hashToken('other-supervision-token'))
             ->assertDontSeeText('private.example.test')
             ->assertSeeText('No projects yet. Create your first research project')
             ->assertSeeText('No documents yet. Upload or create your first research document.')
             ->assertSeeText('No surveys yet. Create your first survey instrument.')
-            ->assertSeeText('No pinned research links yet.');
+            ->assertSeeText('No pinned research links yet.')
+            ->assertSeeText('Belum ada tindak lanjut, validasi, feedback bimbingan, atau risiko timeline yang perlu ditangani.')
+            ->assertSeeText('Tidak ada follow-up revisi yang sedang berjalan.')
+            ->assertSeeText('Tidak ada validasi ahli yang sedang menunggu submit.')
+            ->assertSeeText('Belum ada feedback bimbingan yang perlu ditindaklanjuti.')
+            ->assertSeeText('Tidak ada timeline task yang terlambat.');
     }
 
     private function adminUser(string $email): User

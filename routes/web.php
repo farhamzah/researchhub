@@ -9,6 +9,7 @@ use App\Http\Controllers\AdminSurveyResponseController;
 use App\Http\Controllers\AdminSurveyResponseExportController;
 use App\Http\Controllers\AdminSurveyScoringController;
 use App\Http\Controllers\AdminSurveyValidationController;
+use App\Http\Controllers\AdminSurveyValidationResultController;
 use App\Http\Controllers\PublicSurveyController;
 use App\Http\Controllers\PublicSurveyValidationController;
 use App\Modules\DriveIntegration\Controllers\GoogleDriveOAuthController;
@@ -124,6 +125,8 @@ Route::middleware('auth')->group(function (): void {
         ->name('admin.surveys.validation.rounds.store');
     Route::put('/admin/surveys/{survey}/validation/rounds/{round}', [AdminSurveyValidationController::class, 'updateRound'])
         ->name('admin.surveys.validation.rounds.update');
+    Route::get('/admin/surveys/{survey}/validation/rounds/{round}/results', AdminSurveyValidationResultController::class)
+        ->name('admin.surveys.validation.results.show');
     Route::post('/admin/surveys/{survey}/validation/rounds/{round}/assignments', [AdminSurveyValidationController::class, 'storeAssignment'])
         ->name('admin.surveys.validation.assignments.store');
     Route::post('/admin/surveys/{survey}/validation/assignments/{assignment}/generate-link', [AdminSurveyValidationController::class, 'generateLink'])

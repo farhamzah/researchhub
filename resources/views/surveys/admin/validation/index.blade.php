@@ -192,7 +192,12 @@
                     </details>
 
                     <div class="mt-5 rounded-md border border-gray-200 p-4">
-                        <h3 class="font-semibold">Assign Validator</h3>
+                        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <h3 class="font-semibold">Assign Validator</h3>
+                            <a href="{{ route('admin.surveys.validation.results.show', ['survey' => $survey, 'round' => $round]) }}" class="rounded-md border border-emerald-300 bg-white px-3 py-2 text-xs font-semibold text-emerald-800 shadow-sm hover:bg-emerald-50">
+                                View Results
+                            </a>
+                        </div>
                         @if ($availableValidators === [])
                             <p class="mt-3 rounded-md border border-dashed border-gray-300 bg-gray-50 p-4 text-sm text-gray-600">No active validators are available for this survey. Add a validator to the project or registry first.</p>
                         @else

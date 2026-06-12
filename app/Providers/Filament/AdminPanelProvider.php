@@ -32,6 +32,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->navigationGroups([
                 NavigationGroup::make('Workspace'),
+                NavigationGroup::make('Research Resources'),
                 NavigationGroup::make('Projects'),
                 NavigationGroup::make('Research Documents'),
                 NavigationGroup::make('Survey & Analysis'),

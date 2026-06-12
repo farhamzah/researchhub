@@ -101,6 +101,11 @@ class ResearchProject extends Model
         return $this->hasMany(ReviewLink::class, 'project_id');
     }
 
+    public function researchLinks(): HasMany
+    {
+        return $this->hasMany(ResearchLink::class, 'research_project_id');
+    }
+
     public function surveys(): HasMany
     {
         return $this->hasMany(Survey::class, 'project_id');

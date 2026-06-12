@@ -4,8 +4,10 @@ namespace Tests\Feature;
 
 use App\Models\ProjectMember;
 use App\Models\ResearchProject;
+use App\Models\Respondent;
 use App\Models\Survey;
 use App\Models\SurveyQuestion;
+use App\Models\SurveyResponse;
 use App\Models\User;
 use App\Modules\Surveys\Actions\CreateSurveyAction;
 use App\Modules\Surveys\Actions\PublishSurveyAction;
@@ -25,8 +27,14 @@ class SurveyQuestionManagementTest extends TestCase
             ->get(route('admin.surveys.builder.index', ['survey' => $survey]))
             ->assertOk()
             ->assertSee('Survey Builder')
+            ->assertSee('Question List')
+            ->assertSee('Identity Mode')
+            ->assertSee('Do not add sensitive personal data questions unless required by protocol and ethics approval')
+            ->assertSee('Add Question')
             ->assertSee('Preview Public Form')
-            ->assertSee('Responses');
+            ->assertSee('Open Responses')
+            ->assertSee('Open Analysis')
+            ->assertSee('Open Scoring');
 
         $this->actingAs($owner)
             ->post(route('admin.surveys.builder.pages.store', ['survey' => $survey]), [
@@ -57,6 +65,83 @@ class SurveyQuestionManagementTest extends TestCase
         $this->assertTrue($question->is_required);
         $this->assertDatabaseHas('activity_logs', ['action' => 'survey.page_created']);
         $this->assertDatabaseHas('activity_logs', ['action' => 'survey.question_created']);
+    }
+
+    public function test_authorized_user_can_create_structured_choice_likert_and_text_questions(): void
+    {
+        [$owner, $project, $survey] = $this->surveyFixture();
+
+        $this->actingAs($owner)
+            ->post(route('admin.surveys.builder.questions.store', ['survey' => $survey]), [
+                'label' => 'Preferred learning format',
+                'type' => SurveyQuestion::TYPE_MULTIPLE_CHOICE,
+                'choice_options' => ['Video', 'Worksheet', '', 'Discussion'],
+                'is_required' => '1',
+                'sort_order' => 1,
+            ])
+            ->assertRedirect(route('admin.surveys.builder.index', ['survey' => $survey]));
+
+        $this->actingAs($owner)
+            ->post(route('admin.surveys.builder.questions.store', ['survey' => $survey]), [
+                'label' => 'The application is easy to use',
+                'type' => SurveyQuestion::TYPE_LIKERT,
+                'likert_scale' => ['1', '2', '3', '4', '5'],
+                'sort_order' => 2,
+            ])
+            ->assertRedirect(route('admin.surveys.builder.index', ['survey' => $survey]));
+
+        $this->actingAs($owner)
+            ->post(route('admin.surveys.builder.questions.store', ['survey' => $survey]), [
+                'label' => 'Additional feedback',
+                'type' => SurveyQuestion::TYPE_SHORT_TEXT,
+                'sort_order' => 3,
+            ])
+            ->assertRedirect(route('admin.surveys.builder.index', ['survey' => $survey]));
+
+        $choice = $survey->questions()->where('question_key', 'preferred_learning_format')->firstOrFail();
+        $likert = $survey->questions()->where('question_key', 'the_application_is_easy_to_use')->firstOrFail();
+
+        $this->assertSame(['choices' => ['Video', 'Worksheet', 'Discussion']], $choice->options);
+        $this->assertSame(['scale' => ['1', '2', '3', '4', '5']], $likert->settings);
+        $this->assertSame([1, 2, 3], $survey->questions()->pluck('sort_order')->all());
+
+        $this->actingAs($owner)
+            ->get(route('admin.surveys.builder.index', ['survey' => $survey]))
+            ->assertOk()
+            ->assertSee('Preferred learning format')
+            ->assertSee('Multiple Choice')
+            ->assertSee('Required')
+            ->assertSee('The application is easy to use')
+            ->assertSee('Likert')
+            ->assertSee('Additional feedback')
+            ->assertSee('Short Text');
+    }
+
+    public function test_builder_does_not_expose_respondent_identity(): void
+    {
+        [$owner, $project, $survey] = $this->surveyFixture();
+        $respondent = Respondent::create([
+            'project_id' => $project->id,
+            'survey_id' => $survey->id,
+            'pseudonym_code' => 'R-001',
+            'name' => 'Sensitive Respondent',
+            'email' => 'sensitive@example.test',
+            'identifier' => 'PRIVATE-ID',
+        ]);
+        SurveyResponse::create([
+            'survey_id' => $survey->id,
+            'respondent_id' => $respondent->id,
+            'status' => SurveyResponse::STATUS_SUBMITTED,
+            'submitted_at' => now(),
+        ]);
+
+        $this->actingAs($owner)
+            ->get(route('admin.surveys.builder.index', ['survey' => $survey]))
+            ->assertOk()
+            ->assertSee('This survey already has responses')
+            ->assertDontSee('Sensitive Respondent')
+            ->assertDontSee('sensitive@example.test')
+            ->assertDontSee('PRIVATE-ID');
     }
 
     public function test_question_key_and_options_validation_are_enforced(): void

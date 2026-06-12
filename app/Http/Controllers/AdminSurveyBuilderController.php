@@ -24,12 +24,24 @@ class AdminSurveyBuilderController extends Controller
     {
         Gate::authorize('update', $survey);
 
-        $survey->load(['project', 'pages.questions', 'questions.page'])->loadCount('responses');
+        $survey->load([
+            'project',
+            'pages.questions.scoring.indicator',
+            'questions.page',
+            'questions.scoring.indicator',
+            'indicators.scale',
+        ])->loadCount('responses');
 
         return view('surveys.admin.builder.index', [
             'survey' => $survey,
             'questionTypes' => config('researchhub_surveys.question_types', []),
             'hasResponses' => $survey->responses_count > 0,
+            'optionQuestionTypes' => [
+                SurveyQuestion::TYPE_SINGLE_CHOICE,
+                SurveyQuestion::TYPE_MULTIPLE_CHOICE,
+                SurveyQuestion::TYPE_LIKERT,
+                SurveyQuestion::TYPE_LIKERT_MATRIX,
+            ],
         ]);
     }
 
@@ -136,6 +148,8 @@ class AdminSurveyBuilderController extends Controller
      */
     private function validateQuestion(Request $request, Survey $survey, ?SurveyQuestion $question = null): array
     {
+        $this->mergeStructuredQuestionOptions($request);
+
         return $request->validate([
             'page_id' => [
                 'nullable',
@@ -151,5 +165,59 @@ class AdminSurveyBuilderController extends Controller
             'is_required' => ['nullable', 'boolean'],
             'sort_order' => ['nullable', 'integer', 'min:0', 'max:100000'],
         ]);
+    }
+
+    private function mergeStructuredQuestionOptions(Request $request): void
+    {
+        $type = (string) $request->input('type');
+
+        if (in_array($type, [SurveyQuestion::TYPE_SINGLE_CHOICE, SurveyQuestion::TYPE_MULTIPLE_CHOICE], true)) {
+            $choices = $this->cleanList($request->input('choice_options', []));
+
+            if ($choices !== []) {
+                $request->merge([
+                    'options_json' => json_encode(['choices' => $choices], JSON_THROW_ON_ERROR),
+                ]);
+            }
+        }
+
+        if ($type === SurveyQuestion::TYPE_LIKERT) {
+            $scale = $this->cleanList($request->input('likert_scale', []));
+
+            if ($scale !== []) {
+                $request->merge([
+                    'settings_json' => json_encode(['scale' => $scale], JSON_THROW_ON_ERROR),
+                ]);
+            }
+        }
+
+        if ($type === SurveyQuestion::TYPE_LIKERT_MATRIX) {
+            $rows = $this->cleanList($request->input('matrix_rows', []));
+            $columns = $this->cleanList($request->input('matrix_columns', []));
+
+            if ($rows !== [] || $columns !== []) {
+                $request->merge([
+                    'options_json' => json_encode([
+                        'rows' => $rows,
+                        'columns' => $columns,
+                    ], JSON_THROW_ON_ERROR),
+                ]);
+            }
+        }
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function cleanList(mixed $values): array
+    {
+        if (! is_array($values)) {
+            return [];
+        }
+
+        return array_values(array_filter(array_map(
+            fn (mixed $value): string => trim((string) $value),
+            $values,
+        ), fn (string $value): bool => $value !== ''));
     }
 }

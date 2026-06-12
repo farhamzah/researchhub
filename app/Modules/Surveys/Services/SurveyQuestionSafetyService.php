@@ -34,6 +34,18 @@ class SurveyQuestionSafetyService
                 'type' => 'Question type cannot be changed after responses exist.',
             ]);
         }
+
+        if (array_key_exists('options_json', $attributes) && $this->jsonChanged($attributes['options_json'], $question->options)) {
+            throw ValidationException::withMessages([
+                'options' => 'Question options cannot be changed after responses exist.',
+            ]);
+        }
+
+        if (array_key_exists('settings_json', $attributes) && $this->jsonChanged($attributes['settings_json'], $question->settings)) {
+            throw ValidationException::withMessages([
+                'settings' => 'Question settings cannot be changed after responses exist.',
+            ]);
+        }
     }
 
     public function ensureQuestionDeleteIsSafe(SurveyQuestion $question): void
@@ -52,5 +64,20 @@ class SurveyQuestionSafetyService
                 'page' => 'Pages cannot be deleted after responses exist.',
             ]);
         }
+    }
+
+    private function jsonChanged(mixed $json, mixed $current): bool
+    {
+        if (blank($json)) {
+            $incoming = null;
+        } else {
+            try {
+                $incoming = json_decode((string) $json, true, flags: JSON_THROW_ON_ERROR);
+            } catch (\JsonException) {
+                return true;
+            }
+        }
+
+        return $incoming !== $current;
     }
 }

@@ -68,6 +68,39 @@ class SurveyQuestionEditSafetyTest extends TestCase
         $this->assertSame(9, $question->sort_order);
     }
 
+    public function test_options_and_settings_edits_are_blocked_after_responses_exist(): void
+    {
+        [$owner, $survey, $page, $question, $response] = $this->answeredSurveyFixture([
+            'type' => SurveyQuestion::TYPE_LIKERT,
+            'options' => ['choices' => ['1', '2', '3', '4', '5']],
+            'settings' => ['scale' => ['1', '2', '3', '4', '5']],
+        ]);
+
+        $this->actingAs($owner)
+            ->from(route('admin.surveys.builder.index', ['survey' => $survey]))
+            ->put(route('admin.surveys.builder.questions.update', ['survey' => $survey, 'question' => $question]), [
+                'question_key' => $question->question_key,
+                'type' => $question->type,
+                'label' => 'Updated label',
+                'options_json' => '{"choices":["1","2","3"]}',
+                'settings_json' => '{"scale":["1","2","3","4","5"]}',
+            ])
+            ->assertRedirect(route('admin.surveys.builder.index', ['survey' => $survey]))
+            ->assertSessionHasErrors('options');
+
+        $this->actingAs($owner)
+            ->from(route('admin.surveys.builder.index', ['survey' => $survey]))
+            ->put(route('admin.surveys.builder.questions.update', ['survey' => $survey, 'question' => $question]), [
+                'question_key' => $question->question_key,
+                'type' => $question->type,
+                'label' => 'Updated label',
+                'options_json' => '{"choices":["1","2","3","4","5"]}',
+                'settings_json' => '{"scale":["1","2","3"]}',
+            ])
+            ->assertRedirect(route('admin.surveys.builder.index', ['survey' => $survey]))
+            ->assertSessionHasErrors('settings');
+    }
+
     public function test_question_and_page_deletes_are_blocked_after_responses_exist(): void
     {
         [$owner, $survey, $page, $question, $response] = $this->answeredSurveyFixture();
@@ -91,7 +124,7 @@ class SurveyQuestionEditSafetyTest extends TestCase
     /**
      * @return array{0: User, 1: Survey, 2: SurveyPage, 3: SurveyQuestion, 4: SurveyResponse}
      */
-    private function answeredSurveyFixture(): array
+    private function answeredSurveyFixture(array $questionOverrides = []): array
     {
         $owner = User::factory()->create();
         $project = ResearchProject::create([
@@ -106,13 +139,13 @@ class SurveyQuestionEditSafetyTest extends TestCase
             'survey_id' => $survey->id,
             'title' => 'Page A',
         ]);
-        $question = SurveyQuestion::create([
+        $question = SurveyQuestion::create(array_merge([
             'survey_id' => $survey->id,
             'page_id' => $page->id,
             'question_key' => 'feedback',
             'type' => SurveyQuestion::TYPE_SHORT_TEXT,
             'label' => 'Feedback',
-        ]);
+        ], $questionOverrides));
         $response = SurveyResponse::create([
             'survey_id' => $survey->id,
             'status' => SurveyResponse::STATUS_SUBMITTED,

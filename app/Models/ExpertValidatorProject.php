@@ -18,11 +18,14 @@ class ExpertValidatorProject extends Model
 
     public const ROLE_INSTRUMENT = 'instrument_expert';
 
+    public const ROLE_SUPERVISOR = 'supervisor';
+
     public const ROLES = [
         self::ROLE_CONTENT,
         self::ROLE_METHODS,
         self::ROLE_LANGUAGE,
         self::ROLE_INSTRUMENT,
+        self::ROLE_SUPERVISOR,
     ];
 
     public const ROLE_LABELS = [
@@ -30,6 +33,7 @@ class ExpertValidatorProject extends Model
         self::ROLE_METHODS => 'Methods Expert',
         self::ROLE_LANGUAGE => 'Language Expert',
         self::ROLE_INSTRUMENT => 'Instrument Expert',
+        self::ROLE_SUPERVISOR => 'Supervisor',
     ];
 
     public const STATUS_INVITED = 'invited';

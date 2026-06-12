@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminAnalysisExportController;
+use App\Http\Controllers\AdminProjectSupervisionController;
 use App\Http\Controllers\AdminProjectTimelineController;
 use App\Http\Controllers\AdminProjectValidatorController;
 use App\Http\Controllers\AdminSurveyAnalysisController;
@@ -10,6 +11,7 @@ use App\Http\Controllers\AdminSurveyResponseExportController;
 use App\Http\Controllers\AdminSurveyScoringController;
 use App\Http\Controllers\AdminSurveyValidationController;
 use App\Http\Controllers\AdminSurveyValidationResultController;
+use App\Http\Controllers\PublicSupervisionReviewController;
 use App\Http\Controllers\PublicSurveyController;
 use App\Http\Controllers\PublicSurveyValidationController;
 use App\Modules\DriveIntegration\Controllers\GoogleDriveOAuthController;
@@ -64,6 +66,17 @@ Route::middleware('auth')->group(function (): void {
         ->name('admin.projects.validators.update');
     Route::delete('/admin/projects/{researchProject}/validators/{assignment}', [AdminProjectValidatorController::class, 'destroy'])
         ->name('admin.projects.validators.destroy');
+
+    Route::get('/admin/projects/{researchProject}/supervision', [AdminProjectSupervisionController::class, 'index'])
+        ->name('admin.projects.supervision.index');
+    Route::post('/admin/projects/{researchProject}/supervision/sessions', [AdminProjectSupervisionController::class, 'storeSession'])
+        ->name('admin.projects.supervision.sessions.store');
+    Route::put('/admin/projects/{researchProject}/supervision/sessions/{session}', [AdminProjectSupervisionController::class, 'updateSession'])
+        ->name('admin.projects.supervision.sessions.update');
+    Route::post('/admin/projects/{researchProject}/supervision/sessions/{session}/links', [AdminProjectSupervisionController::class, 'generateLink'])
+        ->name('admin.projects.supervision.links.generate');
+    Route::post('/admin/projects/{researchProject}/supervision/links/{reviewLink}/revoke', [AdminProjectSupervisionController::class, 'revokeLink'])
+        ->name('admin.projects.supervision.links.revoke');
 
     Route::get('/admin/surveys/{survey}/responses', [AdminSurveyResponseController::class, 'index'])
         ->name('admin.surveys.responses.index');
@@ -159,4 +172,11 @@ Route::middleware('throttle:surveys')->group(function (): void {
         ->name('validation.survey.show');
     Route::post('/validation/survey/{token}', [PublicSurveyValidationController::class, 'store'])
         ->name('validation.survey.store');
+});
+
+Route::middleware('throttle:review-links')->group(function (): void {
+    Route::get('/supervision/review/{token}', [PublicSupervisionReviewController::class, 'show'])
+        ->name('supervision.review.show');
+    Route::post('/supervision/review/{token}', [PublicSupervisionReviewController::class, 'store'])
+        ->name('supervision.review.store');
 });

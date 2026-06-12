@@ -75,6 +75,20 @@ class ResearchProjectPolicy
             || $researchProject->hasActiveMemberWithRole($user, config('project_roles.project_update_roles', []));
     }
 
+    public function viewSupervision(User $user, ResearchProject $researchProject): bool
+    {
+        return $this->view($user, $researchProject);
+    }
+
+    public function manageSupervision(User $user, ResearchProject $researchProject): bool
+    {
+        return $user->can('projects.manage_supervision')
+            && (
+                $this->ownsProject($user, $researchProject)
+                || $researchProject->hasActiveMemberWithRole($user, config('project_roles.project_update_roles', []))
+            );
+    }
+
     private function ownsProject(User $user, ResearchProject $researchProject): bool
     {
         return $researchProject->owner_id === $user->getKey();

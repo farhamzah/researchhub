@@ -153,6 +153,11 @@ class ResearchProject extends Model
         return $this->hasMany(ProjectTimelineTask::class, 'research_project_id')->orderBy('sort_order');
     }
 
+    public function supervisionSessions(): HasMany
+    {
+        return $this->hasMany(SupervisionSession::class, 'research_project_id')->latest();
+    }
+
     public function respondents(): HasMany
     {
         return $this->hasMany(Respondent::class, 'project_id');

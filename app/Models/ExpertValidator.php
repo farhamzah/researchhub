@@ -56,6 +56,11 @@ class ExpertValidator extends Model
         return $this->hasMany(SurveyValidationAssignment::class);
     }
 
+    public function supervisionReviewLinks(): HasMany
+    {
+        return $this->hasMany(SupervisionReviewLink::class);
+    }
+
     public function researchProjects(): BelongsToMany
     {
         return $this->belongsToMany(ResearchProject::class, 'expert_validator_project', 'expert_validator_id', 'research_project_id')

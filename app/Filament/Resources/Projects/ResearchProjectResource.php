@@ -113,6 +113,11 @@ class ResearchProjectResource extends Resource
                     ->icon('heroicon-o-academic-cap')
                     ->visible(fn (ResearchProject $record): bool => auth()->user()?->can('update', $record) ?? false)
                     ->url(fn (ResearchProject $record): string => route('admin.projects.validators.index', ['researchProject' => $record])),
+                Action::make('supervision')
+                    ->label('Supervision')
+                    ->icon('heroicon-o-chat-bubble-left-right')
+                    ->visible(fn (ResearchProject $record): bool => auth()->user()?->can('viewSupervision', $record) ?? false)
+                    ->url(fn (ResearchProject $record): string => route('admin.projects.supervision.index', ['researchProject' => $record])),
                 DeleteAction::make()
                     ->visible(fn (ResearchProject $record): bool => auth()->user()?->can('delete', $record) ?? false),
             ]);

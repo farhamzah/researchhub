@@ -78,6 +78,21 @@
             </div>
         </section>
 
+        <div class="mb-6 grid gap-4 lg:grid-cols-2">
+            <x-academic-output-block
+                title="Project Progress Summary"
+                description="Narasi progres riset dari checklist alur, status, dan langkah berikutnya."
+                :narrative="$academicNarratives['projectProgress']"
+                source="Sumber: Research Journey"
+            />
+            <x-academic-output-block
+                title="Follow-Up Revision Summary"
+                description="Ringkasan tindak lanjut revisi lintas sesi bimbingan."
+                :narrative="$academicNarratives['followUp']"
+                source="Sumber: Research Journey"
+            />
+        </div>
+
         <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
             <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <div>

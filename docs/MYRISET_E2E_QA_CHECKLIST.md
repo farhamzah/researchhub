@@ -108,6 +108,17 @@ Do not use real personal data, real tokens, production Google credentials, or pr
 - Pass/fail: [ ]
 - Notes:
 
+## 8A. Academic Output Blocks QA
+
+- URL/path: `/admin/surveys/{survey}/builder`, `/admin/surveys/{survey}/validation/rounds/{round}/results`, `/admin/projects/{researchProject}/supervision`, `/admin/projects/{researchProject}/journey`
+- Expected screen: Copy-ready Academic Output blocks appear for Survey Instrument Summary, Expert Validation Summary, Aiken/CVI Interpretation, Survey Response / Analysis Summary, Supervision Summary, Follow-Up Revision Summary, and Project Progress Summary.
+- Expected action: Copy each narrative and confirm the text is clear academic Indonesian, deterministic, and based only on visible structured data.
+- Expected incomplete-data check: Confirm empty surveys, empty validation rounds, missing analysis results, and projects without follow-ups show cautious fallback text.
+- Expected safety check: Confirm narratives do not expose raw tokens, token hashes, public review URLs, respondent identity, validator contacts, private file paths, Drive IDs, Google OAuth data, or secrets.
+- Expected scope check: Confirm no AI generation, export workflow, Google Drive action, email, WhatsApp, migration, or scoring calculation is triggered by these blocks.
+- Pass/fail: [ ]
+- Notes:
+
 ## 9. Supervision Link Public Flow
 
 - URL/path: `/admin/projects/{researchProject}/supervision`

@@ -179,6 +179,14 @@
             </div>
         </section>
 
+        <x-academic-output-block
+            class="mt-6"
+            title="Survey Instrument Summary"
+            description="Narasi akademik non-AI berdasarkan struktur instrumen, indikator, tipe pertanyaan, dan konfigurasi skoring."
+            :narrative="$academicNarratives['surveyInstrument']"
+            source="Sumber: Survey Builder"
+        />
+
         <section id="indikator" class="mt-6 scroll-mt-6 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
             <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
@@ -560,6 +568,14 @@
                 </div>
             </div>
 
+            <x-academic-output-block
+                class="mt-5"
+                title="Expert Validation Summary"
+                description="Ringkasan aman berdasarkan putaran validasi ahli terbaru tanpa token, hash, atau kontak validator."
+                :narrative="$academicNarratives['expertValidation']"
+                source="Sumber: Expert Validation"
+            />
+
             <div class="mt-5 grid gap-4 lg:grid-cols-[0.35fr_0.65fr]">
                 <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
                     <p class="text-sm font-semibold text-slate-900">{{ $builderWizard['validation']['complete_count'] }} of {{ count($builderWizard['validation']['items']) }} checks complete</p>
@@ -616,6 +632,14 @@
                     <p class="mt-2 text-sm font-semibold">{{ $builderWizard['responses']['analysis_title'] ?: 'No analysis result yet' }}</p>
                 </div>
             </div>
+
+            <x-academic-output-block
+                class="mt-5"
+                title="Survey Response / Analysis Summary"
+                description="Narasi copy-ready dari jumlah respons dan hasil analisis terstruktur tanpa identitas responden."
+                :narrative="$academicNarratives['surveyAnalysis']"
+                source="Sumber: Respons & Analisis"
+            />
 
             @if ($builderWizard['responses']['analysis_summary'] !== [])
                 <div class="mt-5 grid gap-3 md:grid-cols-4">

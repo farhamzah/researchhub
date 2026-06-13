@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Survey;
 use App\Models\SurveyValidationRound;
+use App\Modules\AcademicOutputs\Services\AcademicNarrativeService;
 use App\Modules\AuditLogs\Services\ActivityLogger;
 use App\Modules\Validation\Services\SurveyValidationResultService;
 use Illuminate\Http\Request;
@@ -17,6 +18,7 @@ class AdminSurveyValidationResultController extends Controller
         SurveyValidationRound $round,
         Request $request,
         SurveyValidationResultService $resultService,
+        AcademicNarrativeService $academicNarratives,
         ActivityLogger $activityLogger,
     ): View {
         abort_unless($round->survey_id === $survey->getKey(), 404);
@@ -36,6 +38,10 @@ class AdminSurveyValidationResultController extends Controller
             'survey' => $survey,
             'round' => $result->round,
             'result' => $result,
+            'academicNarratives' => [
+                'expertValidation' => $academicNarratives->expertValidationSummary($round),
+                'validityInterpretation' => $academicNarratives->validityInterpretation($round),
+            ],
         ]);
     }
 }

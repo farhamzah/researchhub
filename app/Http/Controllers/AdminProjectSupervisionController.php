@@ -9,6 +9,7 @@ use App\Models\SupervisionReviewLink;
 use App\Models\SupervisionSession;
 use App\Models\SupervisionSessionResource;
 use App\Models\SurveyValidationRound;
+use App\Modules\AcademicOutputs\Services\AcademicNarrativeService;
 use App\Modules\AuditLogs\Services\ActivityLogger;
 use App\Modules\ResearchLinks\Services\ResearchLinkUrlSafetyService;
 use App\Modules\Supervision\Actions\CreateSupervisionSessionAction;
@@ -24,8 +25,11 @@ use Illuminate\View\View;
 
 class AdminProjectSupervisionController extends Controller
 {
-    public function index(ResearchProject $researchProject, Request $request): View
-    {
+    public function index(
+        ResearchProject $researchProject,
+        Request $request,
+        AcademicNarrativeService $academicNarratives,
+    ): View {
         Gate::authorize('viewSupervision', $researchProject);
 
         $researchProject->load([
@@ -42,6 +46,14 @@ class AdminProjectSupervisionController extends Controller
         return view('projects.admin.supervision.index', [
             'project' => $researchProject,
             'sessions' => $researchProject->supervisionSessions,
+            'academicNarratives' => [
+                'followUp' => $academicNarratives->followUpSummary($researchProject),
+            ],
+            'sessionNarratives' => $researchProject->supervisionSessions
+                ->mapWithKeys(fn (SupervisionSession $session): array => [
+                    $session->getKey() => $academicNarratives->supervisionSummary($session),
+                ])
+                ->all(),
             'availableValidators' => $this->availableValidators($researchProject, $request),
             'meetingTypeLabels' => SupervisionSession::MEETING_TYPE_LABELS,
             'sessionStatusLabels' => SupervisionSession::STATUS_LABELS,

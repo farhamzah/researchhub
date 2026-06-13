@@ -81,6 +81,14 @@
             </section>
         @endif
 
+        <x-academic-output-block
+            class="mb-8"
+            title="Follow-Up Revision Summary"
+            description="Narasi tindak lanjut revisi dari sesi bimbingan tanpa link publik, token, hash, atau kontak reviewer."
+            :narrative="$academicNarratives['followUp']"
+            source="Sumber: Supervision Follow-Up"
+        />
+
         @if ($canManageSupervision)
             <section class="mb-8 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
                 <h2 class="text-xl font-semibold">Create Supervision Session</h2>
@@ -145,10 +153,13 @@
                             </div>
                             <p class="mt-2 text-sm text-gray-600">{{ $meetingTypeLabels[$session->meeting_type] ?? $session->meeting_type }}{{ $session->target_date ? ' - Target '.$session->target_date->format('Y-m-d') : '' }}</p>
                         </div>
-                        <div class="w-full lg:w-[28rem]">
-                            <p class="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">Copy-Ready Summary</p>
-                            <textarea readonly rows="7" class="block w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-xs leading-5 shadow-sm">{{ $session->copyReadySummary() }}</textarea>
-                        </div>
+                        <x-academic-output-block
+                            class="w-full lg:w-[28rem]"
+                            title="Supervision Summary"
+                            description="Narasi singkat untuk log bimbingan akademik."
+                            :narrative="$sessionNarratives[$session->getKey()] ?? $session->copyReadySummary()"
+                            source="Sumber: Supervision Session Copy-Ready"
+                        />
                     </div>
 
                     <div class="mt-5 grid gap-4 md:grid-cols-2">

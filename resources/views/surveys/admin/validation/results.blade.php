@@ -124,6 +124,21 @@
             Thresholds are decision aids and should be confirmed by the researcher/supervisor. Default interpretation: valid if average Aiken's V and I-CVI are at least 0.80; revise for values around 0.60-0.79; reject when below 0.60.
         </section>
 
+        <div class="mb-6 grid gap-4 lg:grid-cols-2">
+            <x-academic-output-block
+                title="Expert Validation Summary"
+                description="Narasi akademik non-AI dari status putaran validasi ahli."
+                :narrative="$academicNarratives['expertValidation']"
+                source="Sumber: Validation Results"
+            />
+            <x-academic-output-block
+                title="Aiken/CVI Interpretation"
+                description="Interpretasi bantu untuk metrik Aiken's V, I-CVI, S-CVI/Ave, dan S-CVI/UA."
+                :narrative="$academicNarratives['validityInterpretation']"
+                source="Sumber: Validation Results"
+            />
+        </div>
+
         <section class="mb-6 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
             <h2 class="text-xl font-semibold">Validator Completion</h2>
             <div class="mt-5 overflow-x-auto">
@@ -240,11 +255,12 @@
             </div>
         </section>
 
-        <section class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 class="text-xl font-semibold">Copy-Ready Narrative</h2>
-            <p class="mt-1 text-sm text-gray-600">Use this draft as a starting point and verify interpretation with the researcher/supervisor.</p>
-            <textarea readonly rows="6" class="mt-4 block w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-sm leading-6 shadow-sm">{{ $result->narrative }}</textarea>
-        </section>
+        <x-academic-output-block
+            title="Copy-Ready Narrative"
+            description="Use this draft as a starting point and verify interpretation with the researcher/supervisor."
+            :narrative="$result->narrative"
+            source="Sumber: Validation Results"
+        />
     </main>
 </body>
 </html>

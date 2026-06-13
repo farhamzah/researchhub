@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Survey;
 use App\Models\SurveyPage;
 use App\Models\SurveyQuestion;
+use App\Models\SurveyValidationRound;
+use App\Modules\AcademicOutputs\Services\AcademicNarrativeService;
 use App\Modules\Surveys\Actions\CreateSurveyPageAction;
 use App\Modules\Surveys\Actions\CreateSurveyQuestionAction;
 use App\Modules\Surveys\Actions\DeleteSurveyPageAction;
@@ -21,8 +23,11 @@ use Illuminate\View\View;
 
 class AdminSurveyBuilderController extends Controller
 {
-    public function index(Survey $survey, SurveyBuilderReadinessService $readiness): View
-    {
+    public function index(
+        Survey $survey,
+        SurveyBuilderReadinessService $readiness,
+        AcademicNarrativeService $academicNarratives,
+    ): View {
         Gate::authorize('update', $survey);
 
         $survey->load([
@@ -38,9 +43,20 @@ class AdminSurveyBuilderController extends Controller
             'responses:id,survey_id,status,submitted_at',
         ])->loadCount('responses');
 
+        $latestValidationRound = $survey->validationRounds
+            ->sortByDesc('created_at')
+            ->first();
+
         return view('surveys.admin.builder.index', [
             'survey' => $survey,
             'builderWizard' => $readiness->build($survey),
+            'academicNarratives' => [
+                'surveyInstrument' => $academicNarratives->surveyInstrumentSummary($survey),
+                'expertValidation' => $latestValidationRound instanceof SurveyValidationRound
+                    ? $academicNarratives->expertValidationSummary($latestValidationRound)
+                    : 'Ringkasan validasi ahli belum tersedia karena survey ini belum memiliki putaran validasi.',
+                'surveyAnalysis' => $academicNarratives->surveyAnalysisSummary($survey),
+            ],
             'questionTypes' => config('researchhub_surveys.question_types', []),
             'hasResponses' => $survey->responses_count > 0,
             'optionQuestionTypes' => [

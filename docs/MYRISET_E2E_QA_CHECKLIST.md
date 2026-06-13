@@ -212,3 +212,16 @@ Do not use real personal data, real tokens, production Google credentials, or pr
 - Expected action: Skip real connection unless local Google Cloud OAuth credentials are configured. Confirm disconnected/readiness state is clear and no secret values are shown.
 - Pass/fail: [ ]
 - Notes:
+
+## 13. Production Readiness QA
+
+- Document check: Read `docs/MYRISET_PRODUCTION_DEPLOYMENT_CHECKLIST.md`.
+- Env guide check: Read `docs/MYRISET_PRODUCTION_ENV_GUIDE.md`.
+- Template check: Confirm `.env.production.example` contains placeholders only and no real secrets.
+- Command check: Run `php artisan myriset:production-check` locally with safe env values and confirm it does not print DB passwords or Google client secrets.
+- Debug check: Confirm the production guide requires `APP_DEBUG=false`.
+- Google Drive check: Confirm missing Google Drive OAuth is documented as optional warning only.
+- Seeder check: Confirm `MyRisetDemoSeeder` is explicitly marked not for production.
+- Safety check: Confirm no actual deployment, DNS change, server connection, migration, or destructive DB command is performed during readiness QA.
+- Pass/fail: [ ]
+- Notes:

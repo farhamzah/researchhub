@@ -141,18 +141,88 @@ class ProjectResearchJourneyService
      */
     private function documentsStep(ResearchProject $project): array
     {
-        $documentCount = $project->documents->count();
+        $documents = $project->documents;
+        $documentCount = $documents->count();
+        $approvedCount = $documents
+            ->whereIn('status', [Document::STATUS_APPROVED, Document::STATUS_FINAL])
+            ->count();
+        $underReviewCount = $documents
+            ->where('status', Document::STATUS_UNDER_REVIEW)
+            ->count();
+        $revisionNeededCount = $documents
+            ->where('status', Document::STATUS_REVISION_REQUIRED)
+            ->count();
+        $overdueRevisionCount = $documents
+            ->filter(fn (Document $document): bool => $document->isRevisionOverdue())
+            ->count();
+        $draftCount = $documents
+            ->where('status', Document::STATUS_DRAFT)
+            ->count();
+        $coreReadyCount = $documents
+            ->whereIn('document_type', [
+                Document::TYPE_PROPOSAL,
+                Document::TYPE_CHAPTER_1,
+                Document::TYPE_CHAPTER_2,
+                Document::TYPE_CHAPTER_3,
+                Document::TYPE_INSTRUMENT,
+            ])
+            ->whereIn('status', [Document::STATUS_APPROVED, Document::STATUS_FINAL, Document::STATUS_UNDER_REVIEW])
+            ->count();
+
+        $metrics = [
+            'Total documents' => $documentCount,
+            'Approved documents' => $approvedCount,
+            'Revision-needed documents' => $revisionNeededCount,
+            'Under-review documents' => $underReviewCount,
+            'Overdue revisions' => $overdueRevisionCount,
+        ];
+
+        if ($documentCount === 0) {
+            return $this->step(
+                'documents',
+                'Dokumen Riset',
+                self::STATUS_NOT_STARTED,
+                'Belum ada dokumen. Tambahkan proposal, bab, instrumen, atau draft artikel agar project punya bahan kerja.',
+                'Buka Dokumen',
+                route('filament.admin.resources.documents.index'),
+                $metrics,
+            );
+        }
+
+        if ($revisionNeededCount > 0 || $overdueRevisionCount > 0) {
+            return $this->step(
+                'documents',
+                'Dokumen Riset',
+                self::STATUS_NEEDS_ATTENTION,
+                'Ada dokumen akademik yang membutuhkan revisi atau sudah melewati batas revisi. Selesaikan next action dokumen sebelum lanjut ke validasi, bimbingan, atau pelaporan.',
+                'Periksa Revisi Dokumen',
+                route('filament.admin.resources.documents.index'),
+                $metrics,
+            );
+        }
+
+        if ($draftCount === $documentCount) {
+            return $this->step(
+                'documents',
+                'Dokumen Riset',
+                self::STATUS_IN_PROGRESS,
+                'Dokumen riset sudah dibuat, tetapi semuanya masih draft. Tandai versi yang sedang direview atau sudah approved agar progres akademik lebih jelas.',
+                'Lengkapi Status Dokumen',
+                route('filament.admin.resources.documents.index'),
+                $metrics,
+            );
+        }
 
         return $this->step(
             'documents',
             'Dokumen Riset',
-            $documentCount > 0 ? self::STATUS_COMPLETED : self::STATUS_NEEDS_ATTENTION,
-            $documentCount > 0
-                ? 'Dokumen riset sudah tersedia. Gunakan vault dokumen untuk proposal, bab, instrumen, artikel, dan file akademik.'
-                : 'Belum ada dokumen. Tambahkan proposal, bab, instrumen, atau draft artikel agar project punya bahan kerja.',
+            $coreReadyCount > 0 ? self::STATUS_COMPLETED : self::STATUS_IN_PROGRESS,
+            $coreReadyCount > 0
+                ? 'Dokumen inti riset sudah memiliki versi approved atau under review. Vault dokumen dapat dipakai untuk menjaga status, versi, dan next action akademik tetap rapi.'
+                : 'Dokumen riset sudah tersedia, tetapi tipe/status akademiknya belum cukup jelas untuk membaca kesiapan proposal, bab, instrumen, atau artikel.',
             'Buka Dokumen',
             route('filament.admin.resources.documents.index'),
-            ['Dokumen' => $documentCount],
+            $metrics,
         );
     }
 

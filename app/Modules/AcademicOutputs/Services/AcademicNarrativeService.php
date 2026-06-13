@@ -3,6 +3,7 @@
 namespace App\Modules\AcademicOutputs\Services;
 
 use App\Models\AnalysisResult;
+use App\Models\Document;
 use App\Models\ResearchProject;
 use App\Models\SupervisionFeedback;
 use App\Models\SupervisionFollowUpItem;
@@ -216,6 +217,56 @@ class AcademicNarrativeService
             $open,
             $priority,
             $this->series($nextItems, 'belum ada item terbuka'),
+        );
+    }
+
+    public function documentProgressSummary(ResearchProject $project): string
+    {
+        $project->loadMissing(['documents.category']);
+
+        $documents = $project->documents;
+
+        if ($documents->isEmpty()) {
+            return 'Project '.$project->title.' belum memiliki dokumen akademik yang tercatat. Tambahkan proposal, bab, instrumen, atau draft artikel agar progres dokumen dapat dipantau bersama status revisinya.';
+        }
+
+        $types = $documents
+            ->map(fn (Document $document): string => $document->documentTypeLabel())
+            ->unique()
+            ->take(6)
+            ->values();
+        $revisionDocuments = $documents
+            ->filter(fn (Document $document): bool => $document->needsRevision() || $document->isRevisionOverdue())
+            ->take(3);
+        $underReviewCount = $documents->where('status', Document::STATUS_UNDER_REVIEW)->count();
+        $approvedCount = $documents
+            ->whereIn('status', [Document::STATUS_APPROVED, Document::STATUS_FINAL])
+            ->count();
+        $nextActions = $revisionDocuments
+            ->pluck('next_action')
+            ->filter()
+            ->values();
+
+        if ($revisionDocuments->isNotEmpty()) {
+            return sprintf(
+                'Dokumen project %s terdiri atas %d dokumen, termasuk %s. Saat ini %d dokumen sudah approved/final dan %d dokumen sedang under review. Perhatian utama ada pada %s, dengan tindak lanjut terdekat: %s. Ringkasan ini bersifat operasional untuk membantu prioritas revisi dokumen, bukan penilaian final kualitas akademik.',
+                $project->title,
+                $documents->count(),
+                $this->series($types, 'dokumen belum diklasifikasikan'),
+                $approvedCount,
+                $underReviewCount,
+                $this->series($revisionDocuments->pluck('title')->values(), 'dokumen revisi belum ditentukan'),
+                $this->series($nextActions, 'lengkapi next action pada dokumen revisi'),
+            );
+        }
+
+        return sprintf(
+            'Dokumen project %s terdiri atas %d dokumen, termasuk %s. Sebanyak %d dokumen sudah approved/final dan %d dokumen sedang under review. Belum ada dokumen yang ditandai membutuhkan revisi atau melewati batas revisi, sehingga fokus berikutnya adalah menjaga versi current dan melanjutkan review akademik sesuai arahan pembimbing/promotor.',
+            $project->title,
+            $documents->count(),
+            $this->series($types, 'dokumen belum diklasifikasikan'),
+            $approvedCount,
+            $underReviewCount,
         );
     }
 

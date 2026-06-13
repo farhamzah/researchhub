@@ -49,6 +49,8 @@ return [
 
     'status_values' => Document::STATUSES,
 
+    'type_values' => Document::TYPES,
+
     'visibility_values' => Document::VISIBILITIES,
 
     'storage_status_values' => DocumentVersion::STORAGE_STATUSES,

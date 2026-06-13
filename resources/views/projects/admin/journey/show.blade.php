@@ -78,12 +78,18 @@
             </div>
         </section>
 
-        <div class="mb-6 grid gap-4 lg:grid-cols-2">
+        <div class="mb-6 grid gap-4 lg:grid-cols-3">
             <x-academic-output-block
                 title="Project Progress Summary"
                 description="Narasi progres riset dari checklist alur, status, dan langkah berikutnya."
                 :narrative="$academicNarratives['projectProgress']"
                 source="Sumber: Research Journey"
+            />
+            <x-academic-output-block
+                title="Document Progress Summary"
+                description="Ringkasan status draft, review, revisi, dan next action dokumen."
+                :narrative="$academicNarratives['documentProgress']"
+                source="Sumber: Document Revision Flow"
             />
             <x-academic-output-block
                 title="Follow-Up Revision Summary"

@@ -22,6 +22,7 @@ class AdminProjectJourneyController extends Controller
             'journey' => $journeyService->build($researchProject),
             'academicNarratives' => [
                 'projectProgress' => $academicNarratives->projectProgressSummary($researchProject),
+                'documentProgress' => $academicNarratives->documentProgressSummary($researchProject),
                 'followUp' => $academicNarratives->followUpSummary($researchProject),
             ],
         ]);

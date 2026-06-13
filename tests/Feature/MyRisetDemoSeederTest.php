@@ -87,6 +87,28 @@ class MyRisetDemoSeederTest extends TestCase
         $this->assertSame(3, $session->followUpItems()->count());
 
         $this->assertSame(5, Document::query()->where('project_id', $project->id)->count());
+        $this->assertDatabaseHas('documents', [
+            'project_id' => $project->id,
+            'title' => 'Proposal Disertasi PharmVR',
+            'status' => Document::STATUS_UNDER_REVIEW,
+            'document_type' => Document::TYPE_PROPOSAL,
+            'version_label' => 'v02',
+        ]);
+        $this->assertDatabaseHas('documents', [
+            'project_id' => $project->id,
+            'title' => 'BAB I Pendahuluan',
+            'status' => Document::STATUS_APPROVED,
+            'document_type' => Document::TYPE_CHAPTER_1,
+            'version_label' => 'v03',
+        ]);
+        $this->assertDatabaseHas('documents', [
+            'project_id' => $project->id,
+            'title' => 'BAB III Metodologi Penelitian',
+            'status' => Document::STATUS_REVISION_REQUIRED,
+            'document_type' => Document::TYPE_CHAPTER_3,
+            'version_label' => 'v02',
+            'next_action' => 'Lengkapi referensi metodologi dan kirim ulang ke pembimbing.',
+        ]);
         $this->assertSame(5, ResearchLink::query()->where('research_project_id', $project->id)->where('is_pinned', true)->count());
         $this->assertSame(5, ProjectMilestone::query()->where('research_project_id', $project->id)->count());
         $this->assertSame(5, ProjectTimelineTask::query()->where('research_project_id', $project->id)->count());
@@ -107,6 +129,8 @@ class MyRisetDemoSeederTest extends TestCase
             ->assertOk()
             ->assertSeeText('Action Center')
             ->assertSeeText('Disertasi PharmVR')
+            ->assertSeeText('BAB III Metodologi Penelitian')
+            ->assertSeeText('Batas revisi')
             ->assertSeeText('Revisi butir angket tentang keterlibatan belajar')
             ->assertSeeText('Validasi Instrumen Angket Evaluasi PharmVR')
             ->assertSeeText('Bimbingan Proposal dan Validasi Instrumen PharmVR')

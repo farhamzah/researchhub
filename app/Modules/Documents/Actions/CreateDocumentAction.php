@@ -30,6 +30,7 @@ class CreateDocumentAction
 
         $status = (string) ($attributes['status'] ?? Document::STATUS_DRAFT);
         $visibility = (string) ($attributes['visibility'] ?? Document::VISIBILITY_PRIVATE);
+        $documentType = $attributes['document_type'] ?? null;
 
         if (! in_array($status, config('researchhub_documents.status_values', Document::STATUSES), true)) {
             throw new InvalidArgumentException('Invalid document status.');
@@ -37,6 +38,10 @@ class CreateDocumentAction
 
         if (! in_array($visibility, config('researchhub_documents.visibility_values', Document::VISIBILITIES), true)) {
             throw new InvalidArgumentException('Invalid document visibility.');
+        }
+
+        if (filled($documentType) && ! in_array($documentType, config('researchhub_documents.type_values', Document::TYPES), true)) {
+            throw new InvalidArgumentException('Invalid document type.');
         }
 
         $document = Document::create([
@@ -48,6 +53,15 @@ class CreateDocumentAction
             'description' => $attributes['description'] ?? null,
             'status' => $status,
             'visibility' => $visibility,
+            'document_type' => filled($documentType) ? (string) $documentType : null,
+            'version_label' => $attributes['version_label'] ?? null,
+            'version_number' => (int) ($attributes['version_number'] ?? 1),
+            'is_current' => (bool) ($attributes['is_current'] ?? true),
+            'reviewer_name' => $attributes['reviewer_name'] ?? null,
+            'reviewed_at' => $attributes['reviewed_at'] ?? null,
+            'revision_due_date' => $attributes['revision_due_date'] ?? null,
+            'next_action' => $attributes['next_action'] ?? null,
+            'revision_summary' => $attributes['revision_summary'] ?? null,
             'tags' => $attributes['tags'] ?? null,
         ]);
 
@@ -61,6 +75,8 @@ class CreateDocumentAction
                 'category' => $category->slug,
                 'status' => $document->status,
                 'visibility' => $document->visibility,
+                'document_type' => $document->document_type,
+                'version_label' => $document->version_label,
             ],
             $request,
         );

@@ -8,13 +8,17 @@ use App\Models\DocumentCategory;
 use App\Models\ResearchProject;
 use App\Modules\Documents\Actions\DeleteDocumentAction;
 use App\Modules\Documents\Actions\UpdateDocumentAction;
+use App\Modules\Documents\Services\DocumentFileNameSuggestionService;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -61,12 +65,53 @@ class DocumentResource extends Resource
                     ->default(Document::STATUS_DRAFT)
                     ->required()
                     ->in(Document::STATUSES),
+                Select::make('document_type')
+                    ->label('Academic document type')
+                    ->options(self::documentTypeOptions())
+                    ->searchable()
+                    ->nullable()
+                    ->in(Document::TYPES),
                 Select::make('visibility')
                     ->label('Visibility')
                     ->options(self::visibilityOptions())
                     ->default(Document::VISIBILITY_PRIVATE)
                     ->required()
                     ->in(Document::VISIBILITIES),
+                TextInput::make('version_label')
+                    ->label('Version label')
+                    ->placeholder('v01')
+                    ->maxLength(50),
+                TextInput::make('version_number')
+                    ->label('Version number')
+                    ->numeric()
+                    ->default(1)
+                    ->minValue(1)
+                    ->required(),
+                Toggle::make('is_current')
+                    ->label('Current active version')
+                    ->default(true),
+                TextInput::make('reviewer_name')
+                    ->label('Reviewer / supervisor')
+                    ->maxLength(255),
+                DatePicker::make('reviewed_at')
+                    ->label('Reviewed at'),
+                DatePicker::make('revision_due_date')
+                    ->label('Revision due date'),
+                Placeholder::make('suggested_file_name')
+                    ->label('Saran nama file')
+                    ->content(fn (?Document $record): string => $record
+                        ? app(DocumentFileNameSuggestionService::class)->suggest($record->loadMissing(['project', 'category']))
+                        : 'Simpan dokumen untuk membuat saran nama file akademik.'),
+                TextInput::make('next_action')
+                    ->label('Next action')
+                    ->placeholder('Kirim ulang ke pembimbing.')
+                    ->maxLength(255)
+                    ->columnSpanFull(),
+                Textarea::make('revision_summary')
+                    ->label('Revision summary')
+                    ->rows(3)
+                    ->maxLength(5000)
+                    ->columnSpanFull(),
                 Textarea::make('description')
                     ->label('Description / notes')
                     ->rows(3)
@@ -92,28 +137,18 @@ class DocumentResource extends Resource
                 TextColumn::make('category.name')
                     ->label('Category')
                     ->sortable(),
+                TextColumn::make('document_type')
+                    ->label('Type')
+                    ->badge()
+                    ->formatStateUsing(fn (?string $state): string => $state
+                        ? (Document::TYPE_LABELS[$state] ?? self::label($state))
+                        : 'Unclassified')
+                    ->color('gray')
+                    ->sortable(),
                 TextColumn::make('status')
                     ->badge()
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'draft' => 'Draft',
-                        'submitted' => 'Submitted',
-                        'under_review' => 'Under Review',
-                        'revision_required' => 'Revision Required',
-                        'approved' => 'Approved',
-                        'final' => 'Final',
-                        'archived' => 'Archived',
-                        default => ucfirst(str_replace('_', ' ', $state)),
-                    })
-                    ->color(fn (string $state): string => match ($state) {
-                        'draft' => 'gray',
-                        'submitted' => 'info',
-                        'under_review' => 'warning',
-                        'revision_required' => 'danger',
-                        'approved' => 'success',
-                        'final' => 'success',
-                        'archived' => 'gray',
-                        default => 'gray',
-                    })
+                    ->formatStateUsing(fn (string $state): string => Document::STATUS_LABELS[$state] ?? self::label($state))
+                    ->color(fn (string $state): string => Document::STATUS_COLORS[$state] ?? 'gray')
                     ->sortable(),
                 TextColumn::make('visibility')
                     ->badge()
@@ -132,9 +167,25 @@ class DocumentResource extends Resource
                         default => 'gray',
                     })
                     ->sortable(),
-                TextColumn::make('currentVersion.version_number')
+                TextColumn::make('version_label')
                     ->label('Version')
-                    ->placeholder('No version'),
+                    ->state(fn (Document $record): string => $record->versionDisplay())
+                    ->badge()
+                    ->color('info'),
+                TextColumn::make('is_current')
+                    ->label('Current')
+                    ->formatStateUsing(fn (bool $state): string => $state ? 'Current' : 'Older')
+                    ->badge()
+                    ->color(fn (bool $state): string => $state ? 'success' : 'gray'),
+                TextColumn::make('revision_due_date')
+                    ->label('Revision due')
+                    ->date()
+                    ->placeholder('No due date')
+                    ->sortable(),
+                TextColumn::make('next_action')
+                    ->label('Next action')
+                    ->limit(44)
+                    ->placeholder('No next action'),
                 TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable(),
@@ -148,6 +199,9 @@ class DocumentResource extends Resource
                     ->relationship('category', 'name'),
                 SelectFilter::make('status')
                     ->options(self::statusOptions()),
+                SelectFilter::make('document_type')
+                    ->label('Type')
+                    ->options(self::documentTypeOptions()),
             ])
             ->recordActions([
                 Action::make('reviewLinks')
@@ -270,7 +324,17 @@ class DocumentResource extends Resource
     public static function statusOptions(): array
     {
         return collect(Document::STATUSES)
-            ->mapWithKeys(fn (string $status): array => [$status => self::label($status)])
+            ->mapWithKeys(fn (string $status): array => [$status => Document::STATUS_LABELS[$status] ?? self::label($status)])
+            ->all();
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function documentTypeOptions(): array
+    {
+        return collect(Document::TYPES)
+            ->mapWithKeys(fn (string $type): array => [$type => Document::TYPE_LABELS[$type] ?? self::label($type)])
             ->all();
     }
 

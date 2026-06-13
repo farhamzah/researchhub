@@ -170,7 +170,7 @@ class ProjectResearchJourneyTest extends TestCase
         $journey = app(ProjectResearchJourneyService::class)->build($project->fresh());
         $steps = $journey['steps']->keyBy('key');
 
-        $this->assertSame(ProjectResearchJourneyService::STATUS_NEEDS_ATTENTION, $steps['documents']['status']);
+        $this->assertSame(ProjectResearchJourneyService::STATUS_NOT_STARTED, $steps['documents']['status']);
         $this->assertSame(ProjectResearchJourneyService::STATUS_NEEDS_ATTENTION, $steps['survey_instrument']['status']);
         $this->assertStringContainsString('belum punya pertanyaan', $steps['survey_instrument']['description']);
     }
@@ -217,12 +217,14 @@ class ProjectResearchJourneyTest extends TestCase
         $this->assertTrue($statuses->contains(ProjectResearchJourneyService::STATUS_COMPLETED));
         $this->assertTrue($statuses->contains(ProjectResearchJourneyService::STATUS_IN_PROGRESS));
         $this->assertTrue($statuses->contains(ProjectResearchJourneyService::STATUS_NEEDS_ATTENTION));
-        $this->assertSame('Timeline Riset', $journey['next_step']['label']);
+        $this->assertSame('Dokumen Riset', $journey['next_step']['label']);
 
         $this->actingAs($admin)
             ->get(route('admin.projects.journey.show', ['researchProject' => $project]))
             ->assertOk()
             ->assertSeeText('Disertasi PharmVR')
+            ->assertSeeText('Ada dokumen akademik yang membutuhkan revisi')
+            ->assertSeeText('Document Progress Summary')
             ->assertSeeText('Timeline memiliki tugas terlambat')
             ->assertSeeText('Respons & Analisis')
             ->assertSeeText('Laporan / Publikasi')

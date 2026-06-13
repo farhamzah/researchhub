@@ -58,6 +58,17 @@ Do not use real personal data, real tokens, production Google credentials, or pr
 - Pass/fail: [ ]
 - Notes:
 
+## 4A. Document Revision Flow QA
+
+- URL/path: `/admin/documents`, `/admin`, `/admin/projects/{researchProject}/journey`
+- Expected documents check: Open Documents and confirm status badges, document types, version labels, current markers, revision due dates, and next actions are visible.
+- Expected demo document check: Open or edit BAB III Metodologi Penelitian and verify revision summary, next action, revision due date, and suggested file name are readable.
+- Expected dashboard check: Confirm Dashboard Action Center shows at least one document revision item for Disertasi PharmVR without overcrowding the dashboard.
+- Expected journey check: Confirm Project Journey document step detects needs attention when BAB III requires revision.
+- Expected safety check: Confirm no private paths, Drive IDs, raw tokens, token hashes, public review URLs, respondent identity, validator contacts, OAuth data, or secrets are visible.
+- Pass/fail: [ ]
+- Notes:
+
 ## 5. Survey CRUD and Builder
 
 - URL/path: `/admin/surveys`

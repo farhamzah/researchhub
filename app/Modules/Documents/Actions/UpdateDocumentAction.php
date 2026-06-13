@@ -35,6 +35,7 @@ class UpdateDocumentAction
 
         $status = (string) ($attributes['status'] ?? $document->status);
         $visibility = (string) ($attributes['visibility'] ?? $document->visibility);
+        $documentType = $attributes['document_type'] ?? $document->document_type;
 
         if (! in_array($status, config('researchhub_documents.status_values', Document::STATUSES), true)) {
             throw new InvalidArgumentException('Invalid document status.');
@@ -44,9 +45,15 @@ class UpdateDocumentAction
             throw new InvalidArgumentException('Invalid document visibility.');
         }
 
+        if (filled($documentType) && ! in_array($documentType, config('researchhub_documents.type_values', Document::TYPES), true)) {
+            throw new InvalidArgumentException('Invalid document type.');
+        }
+
         $previousProjectId = $document->project_id;
         $previousStatus = $document->status;
         $previousVisibility = $document->visibility;
+        $previousVersionLabel = $document->version_label;
+        $previousVersionNumber = $document->version_number;
         $title = (string) $attributes['title'];
 
         $document->forceFill([
@@ -57,8 +64,50 @@ class UpdateDocumentAction
             'description' => $attributes['description'] ?? null,
             'status' => $status,
             'visibility' => $visibility,
+            'document_type' => filled($documentType) ? (string) $documentType : null,
+            'version_label' => $attributes['version_label'] ?? null,
+            'version_number' => (int) ($attributes['version_number'] ?? 1),
+            'is_current' => (bool) ($attributes['is_current'] ?? true),
+            'reviewer_name' => $attributes['reviewer_name'] ?? null,
+            'reviewed_at' => $attributes['reviewed_at'] ?? null,
+            'revision_due_date' => $attributes['revision_due_date'] ?? null,
+            'next_action' => $attributes['next_action'] ?? null,
+            'revision_summary' => $attributes['revision_summary'] ?? null,
             'tags' => $attributes['tags'] ?? null,
         ])->save();
+
+        if ($previousStatus !== $document->status) {
+            $this->activityLogger->log(
+                'document.status_updated',
+                $user,
+                $project,
+                $document,
+                [
+                    'document_id' => $document->getKey(),
+                    'research_project_id' => $project->getKey(),
+                    'old_status' => $previousStatus,
+                    'new_status' => $document->status,
+                    'version_label' => $document->version_label,
+                ],
+                $request,
+            );
+        }
+
+        if ($previousVersionLabel !== $document->version_label || $previousVersionNumber !== $document->version_number) {
+            $this->activityLogger->log(
+                'document.version_updated',
+                $user,
+                $project,
+                $document,
+                [
+                    'document_id' => $document->getKey(),
+                    'research_project_id' => $project->getKey(),
+                    'version_label' => $document->version_label,
+                    'version_number' => $document->version_number,
+                ],
+                $request,
+            );
+        }
 
         $this->activityLogger->log(
             'document.updated',
@@ -71,6 +120,8 @@ class UpdateDocumentAction
                 'project_changed' => $previousProjectId !== $project->getKey(),
                 'status_changed' => $previousStatus !== $document->status,
                 'visibility_changed' => $previousVisibility !== $document->visibility,
+                'document_type' => $document->document_type,
+                'version_label' => $document->version_label,
             ],
             $request,
         );

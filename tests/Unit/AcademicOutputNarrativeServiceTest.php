@@ -56,6 +56,7 @@ class AcademicOutputNarrativeServiceTest extends TestCase
         $this->assertStringContainsString('belum tersedia', $service->validityInterpretation($round));
         $this->assertStringContainsString('belum ada respons terkirim', $service->surveyAnalysisSummary($survey));
         $this->assertStringContainsString('Belum ada tindak lanjut revisi', $service->followUpSummary($project));
+        $this->assertStringContainsString('belum memiliki dokumen akademik', $service->documentProgressSummary($project));
         $this->assertStringContainsString('Bimbingan Awal', $service->supervisionSummary($session));
         $this->assertStringContainsString('Alur riset project', $service->projectProgressSummary($project));
     }
@@ -77,6 +78,7 @@ class AcademicOutputNarrativeServiceTest extends TestCase
             $service->surveyAnalysisSummary($survey),
             $service->supervisionSummary($session),
             $service->followUpSummary($project),
+            $service->documentProgressSummary($project),
             $service->projectProgressSummary($project),
         ];
 
@@ -85,6 +87,7 @@ class AcademicOutputNarrativeServiceTest extends TestCase
         $this->assertStringContainsString('Angket Evaluasi Pembelajaran PharmVR', $combined);
         $this->assertStringContainsString("Aiken's V", $combined);
         $this->assertStringContainsString('Disertasi PharmVR', $combined);
+        $this->assertStringContainsString('BAB III Metodologi Penelitian', $combined);
         $this->assertStringNotContainsString('token_hash', $combined);
         $this->assertStringNotContainsString('/validation/survey/', $combined);
         $this->assertStringNotContainsString('/supervision/review/', $combined);

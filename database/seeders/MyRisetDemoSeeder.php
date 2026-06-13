@@ -159,13 +159,55 @@ class MyRisetDemoSeeder extends Seeder
 
         $documents = [];
 
-        foreach ([
-            'Proposal Disertasi PharmVR',
-            'BAB I Pendahuluan',
-            'BAB III Metodologi Penelitian',
-            'Draft Artikel BMC Medical Education',
-            'Instrumen Validasi Ahli',
-        ] as $index => $title) {
+        $documentRows = [
+            'Proposal Disertasi PharmVR' => [
+                'document_type' => Document::TYPE_PROPOSAL,
+                'status' => Document::STATUS_UNDER_REVIEW,
+                'version_label' => 'v02',
+                'version_number' => 2,
+                'revision_due_date' => today()->addDays(5),
+                'revision_summary' => 'Proposal sudah masuk review pembimbing/promotor untuk struktur latar belakang dan rumusan masalah.',
+                'next_action' => 'Tunggu masukan pembimbing lalu siapkan revisi proposal.',
+            ],
+            'BAB I Pendahuluan' => [
+                'document_type' => Document::TYPE_CHAPTER_1,
+                'status' => Document::STATUS_APPROVED,
+                'version_label' => 'v03',
+                'version_number' => 3,
+                'revision_due_date' => null,
+                'revision_summary' => 'BAB I sudah disetujui sebagai dasar pendahuluan penelitian PharmVR.',
+                'next_action' => 'Gunakan BAB I sebagai rujukan konsisten untuk bab metodologi dan artikel.',
+            ],
+            'BAB III Metodologi Penelitian' => [
+                'document_type' => Document::TYPE_CHAPTER_3,
+                'status' => Document::STATUS_REVISION_REQUIRED,
+                'version_label' => 'v02',
+                'version_number' => 2,
+                'revision_due_date' => today()->addDays(7),
+                'revision_summary' => 'Metodologi perlu memperjelas desain uji coba, kriteria responden, dan prosedur validasi instrumen.',
+                'next_action' => 'Lengkapi referensi metodologi dan kirim ulang ke pembimbing.',
+            ],
+            'Draft Artikel BMC Medical Education' => [
+                'document_type' => Document::TYPE_JOURNAL_ARTICLE,
+                'status' => Document::STATUS_DRAFT,
+                'version_label' => 'v01',
+                'version_number' => 1,
+                'revision_due_date' => null,
+                'revision_summary' => 'Draft awal artikel baru memuat kerangka introduction dan metode.',
+                'next_action' => 'Lanjutkan setelah data uji coba dan analisis deskriptif lebih lengkap.',
+            ],
+            'Instrumen Validasi Ahli' => [
+                'document_type' => Document::TYPE_INSTRUMENT,
+                'status' => Document::STATUS_UNDER_REVIEW,
+                'version_label' => 'v02',
+                'version_number' => 2,
+                'revision_due_date' => today()->addDays(10),
+                'revision_summary' => 'Instrumen validasi sudah dibagikan untuk review ahli dan menunggu masukan akhir.',
+                'next_action' => 'Pantau validasi ahli dan revisi butir yang perlu diperjelas.',
+            ],
+        ];
+
+        foreach ($documentRows as $title => $row) {
             $documents[$title] = Document::query()->updateOrCreate(
                 [
                     'project_id' => $project->id,
@@ -176,8 +218,17 @@ class MyRisetDemoSeeder extends Seeder
                     'owner_id' => $admin->id,
                     'title' => $title,
                     'description' => 'Metadata-only demo document untuk pengujian MyRiset.',
-                    'status' => $index === 0 ? Document::STATUS_UNDER_REVIEW : Document::STATUS_DRAFT,
+                    'status' => $row['status'],
                     'visibility' => Document::VISIBILITY_PROJECT,
+                    'document_type' => $row['document_type'],
+                    'version_label' => $row['version_label'],
+                    'version_number' => $row['version_number'],
+                    'is_current' => true,
+                    'reviewer_name' => 'Demo Supervisor',
+                    'reviewed_at' => now()->subDays(2),
+                    'revision_due_date' => $row['revision_due_date'],
+                    'next_action' => $row['next_action'],
+                    'revision_summary' => $row['revision_summary'],
                     'tags' => ['demo', 'pharmvr'],
                 ],
             );

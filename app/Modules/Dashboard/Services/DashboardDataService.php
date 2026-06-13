@@ -365,6 +365,15 @@ class DashboardDataService
     private function actionCenterItems(Collection $visibleProjectIds): Collection
     {
         return collect()
+            ->merge($this->documentRevisionItems($visibleProjectIds)->take(3)->map(fn (array $item): array => [
+                'title' => $item['title'],
+                'context' => trim($item['project'].' | '.($item['next_action'] ?: 'Review document status')),
+                'badge' => $item['status'],
+                'date_label' => $item['due_date'] ? 'Batas revisi: '.$item['due_date'] : null,
+                'is_risk' => $item['is_overdue'] || $item['needs_revision'],
+                'url' => $item['url'],
+                'action_label' => 'Open Documents',
+            ]))
             ->merge($this->pendingFollowUps($visibleProjectIds)->take(2)->map(fn (array $item): array => [
                 'title' => $item['title'],
                 'context' => $item['project'].' | '.$item['session'],
@@ -421,6 +430,49 @@ class DashboardDataService
             ]))
             ->take(8)
             ->values();
+    }
+
+    /**
+     * @param  Collection<int, string>  $visibleProjectIds
+     * @return Collection<int, array<string, mixed>>
+     */
+    private function documentRevisionItems(Collection $visibleProjectIds): Collection
+    {
+        $projectIds = $visibleProjectIds->all();
+
+        if ($projectIds === []) {
+            return collect();
+        }
+
+        return Document::query()
+            ->whereIn('project_id', $projectIds)
+            ->where(function (Builder $query): void {
+                $query
+                    ->where('status', Document::STATUS_REVISION_REQUIRED)
+                    ->orWhere('status', Document::STATUS_UNDER_REVIEW)
+                    ->orWhere(function (Builder $dueQuery): void {
+                        $dueQuery
+                            ->whereNotNull('revision_due_date')
+                            ->whereDate('revision_due_date', '<', today());
+                    });
+            })
+            ->with('project')
+            ->orderByRaw('case when revision_due_date is null then 1 else 0 end')
+            ->orderBy('revision_due_date')
+            ->latest('updated_at')
+            ->limit(5)
+            ->get()
+            ->map(fn (Document $document): array => [
+                'title' => $document->title,
+                'project' => $document->project?->title ?? 'No project',
+                'status' => $document->statusLabel(),
+                'status_key' => $document->status,
+                'due_date' => $document->revision_due_date?->toFormattedDateString(),
+                'is_overdue' => $document->isRevisionOverdue(),
+                'needs_revision' => $document->needsRevision(),
+                'next_action' => $document->next_action,
+                'url' => route('filament.admin.resources.documents.index'),
+            ]);
     }
 
     /**

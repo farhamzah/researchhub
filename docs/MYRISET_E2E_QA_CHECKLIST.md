@@ -219,6 +219,8 @@ Do not use real personal data, real tokens, production Google credentials, or pr
 - Env guide check: Read `docs/MYRISET_PRODUCTION_ENV_GUIDE.md`.
 - Template check: Confirm `.env.production.example` contains placeholders only and no real secrets.
 - Command check: Run `php artisan myriset:production-check` locally with safe env values and confirm it does not print DB passwords or Google client secrets.
+- First admin check: Confirm `php artisan myriset:create-admin --email=admin@myriset.net --name="MyRiset Admin"` is documented as CLI-only and prompts for a hidden password.
+- Existing user check: Confirm the command does not overwrite existing users by default and requires `--promote-existing` or `--reset-password` for explicit changes.
 - Debug check: Confirm the production guide requires `APP_DEBUG=false`.
 - Google Drive check: Confirm missing Google Drive OAuth is documented as optional warning only.
 - Seeder check: Confirm `MyRisetDemoSeeder` is explicitly marked not for production.

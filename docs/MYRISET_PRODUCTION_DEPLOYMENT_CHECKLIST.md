@@ -104,8 +104,7 @@ php artisan optimize
 - Do not run `MyRisetDemoSeeder` in production.
 - Do not seed fake/demo projects, validators, respondents, survey answers, or public links.
 - Baseline role/permission/category seeders may be run intentionally if the production setup requires them.
-- Create the first production admin intentionally through a safe command or controlled setup process.
-- TODO: Add a dedicated production-safe first-admin setup flow if required by deployment operations.
+- Create the first production admin intentionally through the CLI-only command in the First Admin Setup section.
 
 ## 10. Queue, Scheduler, and Logs
 
@@ -166,10 +165,32 @@ https://www.googleapis.com/auth/drive.file
 - Database credentials are strong and unique.
 - Backups are configured.
 - Admin password changed from local/demo values.
+- First admin was created with `php artisan myriset:create-admin`; no password was stored in docs, chat, shell history, or source control.
 - OAuth secrets stored only on the server.
 - Authorization tests pass before release.
 
-## 13. Backup Checklist
+## 13. First Admin Setup
+
+After migrations and baseline role/permission seeding are complete, create the first production admin through the CLI only:
+
+```bash
+php artisan myriset:create-admin --email=admin@myriset.net --name="MyRiset Admin"
+```
+
+Then enter the password interactively when prompted.
+
+Safety rules:
+
+- Do not pass the password as a command-line option.
+- Do not paste the password into chat.
+- Do not store the password in docs.
+- Do not commit the password or `.env`.
+- Do not run `MyRisetDemoSeeder` in production.
+- If the user already exists, the command will not overwrite the password by default.
+- Use `--promote-existing` only when you intentionally want to assign `super_admin` to an existing user.
+- Use `--reset-password` only when you intentionally want to set a new password through hidden prompts.
+
+## 14. Backup Checklist
 
 - Take a PostgreSQL backup before migration.
 - Configure scheduled database backups.
@@ -178,7 +199,7 @@ https://www.googleapis.com/auth/drive.file
 - Test restore into a non-production environment.
 - Keep backups encrypted and access controlled.
 
-## 14. Smoke Test Checklist
+## 15. Smoke Test Checklist
 
 After deployment:
 
@@ -197,7 +218,7 @@ After deployment:
 - Confirm HTTPS works and session cookies are secure.
 - Confirm no raw token, token hash, Drive ID, OAuth data, `.env`, or private path appears in page source.
 
-## 15. Rollback Checklist
+## 16. Rollback Checklist
 
 - Keep the previous release available if using release folders.
 - Back up the database before migration.
@@ -220,6 +241,7 @@ php artisan optimize
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
+php artisan myriset:create-admin --email=admin@myriset.net --name="MyRiset Admin"
 php artisan myriset:production-check
 ```
 

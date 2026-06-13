@@ -92,7 +92,22 @@ The command reports pass/warn/fail checks without printing secrets. Google Drive
 
 ## Production Admin
 
-Do not use local/demo credentials in production. Create the first production admin intentionally, rotate the password immediately, and assign the required role according to the role/permission policy.
+Do not use local/demo credentials in production. Create the first production admin intentionally through the CLI-only bootstrap command:
+
+```bash
+php artisan myriset:create-admin --email=admin@myriset.net --name="MyRiset Admin"
+```
+
+Enter the password interactively when prompted. The password is hidden and must not be passed as an option because command-line options can be stored in shell history, process history, or deployment logs.
+
+Existing-user behavior:
+
+- Existing users are not overwritten by default.
+- Use `--promote-existing` to assign the `super_admin` role to an existing user.
+- Use `--reset-password` to reset an existing user password through hidden prompts.
+- Use both flags only when both actions are intended.
+
+Never paste the password into chat, store it in docs, commit it, or reuse local demo credentials.
 
 ## Demo Data Warning
 

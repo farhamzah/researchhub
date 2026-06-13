@@ -18,6 +18,7 @@ class ProductionReadinessTest extends TestCase
             ->expectsOutputToContain('[PASS] APP_DEBUG=false')
             ->expectsOutputToContain('[PASS] APP_URL uses HTTPS.')
             ->expectsOutputToContain('[WARN] Google Drive OAuth is not configured. Drive features can remain disabled until OAuth is ready.')
+            ->expectsOutputToContain('super_admin')
             ->assertExitCode(0);
     }
 
@@ -54,11 +55,13 @@ class ProductionReadinessTest extends TestCase
         $this->assertStringContainsString('APP_DEBUG=false', $deploymentChecklist);
         $this->assertStringContainsString('php artisan migrate --force', $deploymentChecklist);
         $this->assertStringContainsString('Do not run `MyRisetDemoSeeder` in production.', $deploymentChecklist);
+        $this->assertStringContainsString('php artisan myriset:create-admin --email=admin@myriset.net --name="MyRiset Admin"', $deploymentChecklist);
         $this->assertStringContainsString('https://myriset.net/auth/google/drive/callback', $deploymentChecklist);
         $this->assertStringContainsString('Rollback Checklist', $deploymentChecklist);
 
         $this->assertStringContainsString('Generate `APP_KEY` on the server', $envGuide);
         $this->assertStringContainsString('Google Drive credentials can remain empty', $envGuide);
+        $this->assertStringContainsString('Enter the password interactively', $envGuide);
         $this->assertStringContainsString('php artisan db:seed --class=MyRisetDemoSeeder', $envGuide);
 
         $this->assertStringContainsString('APP_KEY=base64:GENERATE_ON_SERVER', $envTemplate);

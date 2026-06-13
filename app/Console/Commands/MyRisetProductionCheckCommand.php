@@ -2,8 +2,10 @@
 
 namespace App\Console\Commands;
 
+use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
+use Throwable;
 
 class MyRisetProductionCheckCommand extends Command
 {
@@ -26,6 +28,7 @@ class MyRisetProductionCheckCommand extends Command
         $this->checkWritablePaths();
         $this->checkStorageLink();
         $this->checkGoogleDriveConfig();
+        $this->checkSuperAdminUsers();
         $this->checkRuntimeDrivers();
 
         foreach ($this->results as $result) {
@@ -140,6 +143,24 @@ class MyRisetProductionCheckCommand extends Command
         $this->record('PASS', 'CACHE_STORE='.config('cache.default').'.');
         $this->record('PASS', 'SESSION_DRIVER='.config('session.driver').'.');
         $this->record('PASS', 'FILESYSTEM_DISK='.config('filesystems.default').'.');
+    }
+
+    private function checkSuperAdminUsers(): void
+    {
+        try {
+            $count = User::query()->role('super_admin')->count();
+        } catch (Throwable) {
+            $this->record('WARN', 'Could not verify super_admin users. Run migrations and role/permission seeders first.');
+
+            return;
+        }
+
+        $this->record(
+            $count > 0 ? 'PASS' : 'WARN',
+            $count > 0
+                ? "At least one super_admin user exists. super_admin users: {$count}."
+                : 'No super_admin user found. Run php artisan myriset:create-admin on the server.'
+        );
     }
 
     private function record(string $level, string $message): void

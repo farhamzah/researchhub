@@ -1,0 +1,215 @@
+<?php
+
+use App\Models\Document;
+use App\Models\ResearchLink;
+
+return [
+    'dissertation_thesis' => [
+        'name' => 'Disertasi / Tesis',
+        'default_title' => 'Riset Disertasi/Tesis Baru',
+        'description' => 'Struktur riset akademik lengkap dari proposal sampai publikasi.',
+        'best_for' => 'Mahasiswa magister/doktor yang perlu mengelola proposal, bab, instrumen, data, analisis, dan publikasi.',
+        'duration_days' => 180,
+        'milestones' => [
+            'Penyusunan Proposal',
+            'Pengembangan Instrumen',
+            'Validasi Ahli',
+            'Pengumpulan Data',
+            'Analisis Data',
+            'Penulisan Disertasi/Tesis',
+            'Publikasi',
+        ],
+        'tasks' => [
+            'Susun rumusan masalah dan tujuan penelitian',
+            'Lengkapi kerangka teori',
+            'Rancang metodologi penelitian',
+            'Susun instrumen penelitian',
+            'Siapkan validator ahli',
+            'Rencanakan pengumpulan data',
+            'Buat rencana analisis',
+        ],
+        'documents' => [
+            ['title' => 'Proposal Penelitian', 'type' => Document::TYPE_PROPOSAL],
+            ['title' => 'BAB I Pendahuluan', 'type' => Document::TYPE_CHAPTER_1],
+            ['title' => 'BAB II Tinjauan Pustaka', 'type' => Document::TYPE_CHAPTER_2],
+            ['title' => 'BAB III Metodologi Penelitian', 'type' => Document::TYPE_CHAPTER_3],
+            ['title' => 'Instrumen Penelitian', 'type' => Document::TYPE_INSTRUMENT],
+            ['title' => 'Draft Artikel Jurnal', 'type' => Document::TYPE_JOURNAL_ARTICLE],
+        ],
+        'research_links' => [
+            ['title' => 'Google Scholar', 'url' => 'https://scholar.google.com/', 'category' => ResearchLink::CATEGORY_REFERENCE],
+        ],
+    ],
+
+    'rd_addie' => [
+        'name' => 'R&D ADDIE',
+        'default_title' => 'Project R&D ADDIE Baru',
+        'description' => 'Template penelitian pengembangan dengan alur Analysis, Design, Development, Implementation, Evaluation.',
+        'best_for' => 'Peneliti yang mengembangkan media, model, modul, atau sistem pembelajaran.',
+        'duration_days' => 120,
+        'milestones' => [
+            'Analysis',
+            'Design',
+            'Development',
+            'Implementation',
+            'Evaluation',
+        ],
+        'tasks' => [
+            'Identifikasi kebutuhan pengguna',
+            'Susun tujuan pembelajaran',
+            'Rancang prototype',
+            'Lakukan validasi ahli materi/media',
+            'Lakukan uji coba terbatas',
+            'Analisis hasil evaluasi',
+        ],
+        'documents' => [
+            ['title' => 'Dokumen Analisis Kebutuhan', 'type' => Document::TYPE_OTHER],
+            ['title' => 'Desain Sistem Pembelajaran', 'type' => Document::TYPE_OTHER],
+            ['title' => 'Storyboard / Flow Pembelajaran', 'type' => Document::TYPE_OTHER],
+            ['title' => 'Instrumen Validasi Ahli', 'type' => Document::TYPE_INSTRUMENT],
+            ['title' => 'Instrumen Uji Coba Pengguna', 'type' => Document::TYPE_INSTRUMENT],
+            ['title' => 'Laporan Evaluasi', 'type' => Document::TYPE_ANALYSIS_REPORT],
+            ['title' => 'Draft Artikel R&D', 'type' => Document::TYPE_JOURNAL_ARTICLE],
+        ],
+        'survey' => [
+            'title' => 'Angket Evaluasi Media Pembelajaran',
+            'indicators' => ['Usability', 'Engagement', 'Material Relevance'],
+            'questions' => [
+                'Media pembelajaran mudah digunakan.',
+                'Media pembelajaran membantu saya memahami materi.',
+                'Interaksi dalam media meningkatkan keterlibatan belajar.',
+            ],
+        ],
+        'research_links' => [
+            ['title' => 'Google Scholar', 'url' => 'https://scholar.google.com/', 'category' => ResearchLink::CATEGORY_REFERENCE],
+        ],
+    ],
+
+    'instrument_validation' => [
+        'name' => 'Validasi Instrumen',
+        'default_title' => 'Project Validasi Instrumen Baru',
+        'description' => 'Template ringkas untuk menyusun blueprint, butir, validasi ahli, Aiken/CVI, dan revisi instrumen.',
+        'best_for' => 'Peneliti yang fokus mengembangkan dan memvalidasi instrumen penelitian.',
+        'duration_days' => 90,
+        'milestones' => [
+            'Penyusunan Konstruk',
+            'Penyusunan Butir Instrumen',
+            'Validasi Ahli',
+            'Revisi Instrumen',
+            'Finalisasi Instrumen',
+        ],
+        'tasks' => [
+            'Tentukan indikator',
+            'Susun butir instrumen',
+            'Tentukan skala penilaian',
+            'Pilih validator ahli',
+            'Analisis Aiken/CVI',
+            'Revisi butir instrumen',
+        ],
+        'documents' => [
+            ['title' => 'Blueprint Instrumen', 'type' => Document::TYPE_INSTRUMENT],
+            ['title' => 'Draft Instrumen', 'type' => Document::TYPE_INSTRUMENT],
+            ['title' => 'Rubrik Validasi Ahli', 'type' => Document::TYPE_INSTRUMENT],
+            ['title' => 'Laporan Validasi Isi', 'type' => Document::TYPE_VALIDATION_REPORT],
+            ['title' => 'Instrumen Final', 'type' => Document::TYPE_INSTRUMENT],
+        ],
+        'survey' => [
+            'title' => 'Instrumen Validasi Ahli',
+            'indicators' => ['Relevansi', 'Kejelasan', 'Bahasa', 'Kesesuaian'],
+            'questions' => [
+                'Butir instrumen relevan dengan indikator penelitian.',
+                'Kalimat butir instrumen mudah dipahami.',
+                'Skala penilaian sudah sesuai dengan tujuan validasi.',
+            ],
+        ],
+        'research_links' => [
+            ['title' => 'Google Scholar', 'url' => 'https://scholar.google.com/', 'category' => ResearchLink::CATEGORY_REFERENCE],
+        ],
+    ],
+
+    'journal_article' => [
+        'name' => 'Artikel Jurnal',
+        'default_title' => 'Project Artikel Jurnal Baru',
+        'description' => 'Template publikasi artikel dari pemilihan target jurnal sampai monitoring submission.',
+        'best_for' => 'Peneliti yang ingin mengelola draft manuskrip dan proses submission.',
+        'duration_days' => 60,
+        'milestones' => [
+            'Penentuan Target Jurnal',
+            'Penyusunan Manuskrip',
+            'Review Internal',
+            'Revisi Manuskrip',
+            'Submission',
+            'Monitoring',
+        ],
+        'tasks' => [
+            'Tentukan target jurnal',
+            'Sesuaikan format artikel',
+            'Lengkapi abstrak',
+            'Lengkapi metode',
+            'Lengkapi hasil dan diskusi',
+            'Cek referensi',
+            'Siapkan cover letter',
+        ],
+        'documents' => [
+            ['title' => 'Draft Manuskrip', 'type' => Document::TYPE_JOURNAL_ARTICLE],
+            ['title' => 'Cover Letter', 'type' => Document::TYPE_PUBLICATION_DRAFT],
+            ['title' => 'Checklist Author Guidelines', 'type' => Document::TYPE_PUBLICATION_DRAFT],
+            ['title' => 'Response to Reviewer', 'type' => Document::TYPE_PUBLICATION_DRAFT],
+            ['title' => 'Data/Analysis Summary', 'type' => Document::TYPE_ANALYSIS_REPORT],
+        ],
+        'research_links' => [
+            ['title' => 'Scopus', 'url' => 'https://www.scopus.com/', 'category' => ResearchLink::CATEGORY_JOURNAL],
+            ['title' => 'BMC Medical Education', 'url' => 'https://bmcmededuc.biomedcentral.com/', 'category' => ResearchLink::CATEGORY_JOURNAL],
+        ],
+    ],
+
+    'pharmvr_development_evaluation' => [
+        'name' => 'PharmVR Development & Evaluation',
+        'default_title' => 'Project PharmVR Development & Evaluation',
+        'description' => 'Template khusus pengembangan dan evaluasi PharmVR untuk pembelajaran farmasi industri.',
+        'best_for' => 'Riset PharmVR, CPOB/GMP, validasi ahli, uji coba mahasiswa, analisis, dan publikasi.',
+        'duration_days' => 180,
+        'milestones' => [
+            'Analysis Kebutuhan',
+            'Design Pembelajaran',
+            'Development PharmVR',
+            'Validasi Ahli',
+            'Uji Coba Mahasiswa',
+            'Analisis Hasil',
+            'Publikasi',
+        ],
+        'tasks' => [
+            'Susun analisis kebutuhan mahasiswa dan dosen',
+            'Rancang alur pembelajaran CPOB/GMP',
+            'Siapkan prototype PharmVR',
+            'Lakukan validasi ahli materi dan media',
+            'Lakukan uji coba terbatas',
+            'Analisis pre-test/post-test dan angket',
+            'Susun draft artikel jurnal',
+        ],
+        'documents' => [
+            ['title' => 'Proposal PharmVR', 'type' => Document::TYPE_PROPOSAL],
+            ['title' => 'BAB I Pendahuluan', 'type' => Document::TYPE_CHAPTER_1],
+            ['title' => 'BAB III Metodologi Penelitian', 'type' => Document::TYPE_CHAPTER_3],
+            ['title' => 'Instrumen Validasi Ahli', 'type' => Document::TYPE_INSTRUMENT],
+            ['title' => 'Angket Evaluasi Pembelajaran PharmVR', 'type' => Document::TYPE_INSTRUMENT],
+            ['title' => 'Laporan Analisis Hasil', 'type' => Document::TYPE_ANALYSIS_REPORT],
+            ['title' => 'Draft Artikel BMC Medical Education', 'type' => Document::TYPE_JOURNAL_ARTICLE],
+        ],
+        'survey' => [
+            'title' => 'Angket Evaluasi Pembelajaran PharmVR',
+            'indicators' => ['Usability', 'Engagement', 'CPOB/GMP Understanding', 'Material Relevance'],
+            'questions' => [
+                'PharmVR membantu saya memahami alur produksi sesuai prinsip CPOB.',
+                'Tampilan visual PharmVR mudah dipahami.',
+                'Interaksi dalam PharmVR meningkatkan keterlibatan belajar.',
+                'Materi PharmVR relevan dengan pembelajaran farmasi industri.',
+            ],
+        ],
+        'research_links' => [
+            ['title' => 'BPOM / JDIH CPOB', 'url' => 'https://jdih.pom.go.id/', 'category' => ResearchLink::CATEGORY_REGULATION],
+            ['title' => 'BMC Medical Education', 'url' => 'https://bmcmededuc.biomedcentral.com/', 'category' => ResearchLink::CATEGORY_JOURNAL],
+            ['title' => 'Google Scholar', 'url' => 'https://scholar.google.com/', 'category' => ResearchLink::CATEGORY_REFERENCE],
+        ],
+    ],
+];

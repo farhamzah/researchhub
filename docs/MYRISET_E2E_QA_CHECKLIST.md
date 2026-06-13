@@ -39,6 +39,20 @@ Do not use real personal data, real tokens, production Google credentials, or pr
 - Pass/fail: [ ]
 - Notes:
 
+## 3B. Project Template QA
+
+- URL/path: `/admin/projects/research-projects`, `/admin/projects/templates`
+- Expected action: Open Projects and click Create from Template / Buat dari Template.
+- Expected catalog check: Confirm Disertasi / Tesis, R&D ADDIE, Validasi Instrumen, Artikel Jurnal, and PharmVR Development & Evaluation are visible.
+- Expected preview check: Open a template preview and confirm project title, milestones, documents, starter survey, tasks, and research links are readable before submit.
+- Expected creation check: Create a project from the Disertasi / Tesis template and confirm MyRiset redirects to Project Journey.
+- Expected created data check: Verify milestones, timeline tasks, starter documents with v01 draft metadata, and Project Journey status are created.
+- Expected PharmVR quick check: Repeat with PharmVR Development & Evaluation and confirm starter survey/questions are created.
+- Expected dashboard check: Confirm Dashboard Continue Your Research Journey shows the templated project.
+- Expected safety check: Confirm no public links, raw tokens, token hashes, private file paths, Drive IDs, OAuth data, fake personal data, or respondent identity are created or visible.
+- Pass/fail: [ ]
+- Notes:
+
 ## 3A. Project Research Journey QA
 
 - URL/path: `/admin/projects/{researchProject}/journey`

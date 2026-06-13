@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdminAnalysisExportController;
 use App\Http\Controllers\AdminProjectJourneyController;
 use App\Http\Controllers\AdminProjectSupervisionController;
+use App\Http\Controllers\AdminProjectTemplateController;
 use App\Http\Controllers\AdminProjectTimelineController;
 use App\Http\Controllers\AdminProjectValidatorController;
 use App\Http\Controllers\AdminSurveyAnalysisController;
@@ -48,6 +49,13 @@ Route::middleware('auth')->group(function (): void {
 
     Route::get('/admin/projects/{researchProject}/timeline', [AdminProjectTimelineController::class, 'index'])
         ->name('admin.projects.timeline.index');
+
+    Route::get('/admin/projects/templates', [AdminProjectTemplateController::class, 'index'])
+        ->name('admin.projects.templates.index');
+    Route::get('/admin/projects/templates/{template}', [AdminProjectTemplateController::class, 'show'])
+        ->name('admin.projects.templates.show');
+    Route::post('/admin/projects/templates/{template}', [AdminProjectTemplateController::class, 'store'])
+        ->name('admin.projects.templates.store');
 
     Route::get('/admin/projects/{researchProject}/journey', [AdminProjectJourneyController::class, 'show'])
         ->name('admin.projects.journey.show');

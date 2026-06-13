@@ -68,6 +68,22 @@ Do not use real personal data, real tokens, production Google credentials, or pr
 - Pass/fail: [ ]
 - Notes:
 
+## 5A. Survey Builder Wizard QA
+
+- URL/path: `/admin/surveys/{survey}/builder`
+- Expected screen: Builder for Angket Evaluasi Pembelajaran PharmVR shows stepper tabs for Setup Survey, Indikator, Pertanyaan, Skoring, Preview, Validasi Ahli, and Respons & Analisis.
+- Expected setup check: Confirm title, project, status, identity mode, description, question count, response count, validation status, and analysis status are visible.
+- Expected indicator check: Confirm four indicators and the Evaluasi Pembelajaran PharmVR scale are visible.
+- Expected question check: Confirm question cards show order, type badge, required badge, indicator/scoring badge, option count, edit, duplicate, move, and delete lock state.
+- Expected scoring check: Confirm scoring summary shows scoreable questions, indicator coverage, missing scoring count, and indicators used.
+- Expected preview check: Confirm the admin-only preview looks like a respondent-facing survey and does not submit or create responses.
+- Expected validation check: Confirm readiness checklist includes title, description, questions, Likert options, scoring, indicators, validation round, submitted validation, and Aiken/CVI availability.
+- Expected response/analysis check: Confirm response count, completed count, last response, and analysis result status are visible.
+- Expected lock check: Confirm response lock warning appears when responses exist.
+- Expected safety check: Confirm no respondent identity, raw validation tokens, token hashes, public supervision URLs, private file paths, or Drive IDs appear.
+- Pass/fail: [ ]
+- Notes:
+
 ## 6. Expert Validator Registry
 
 - URL/path: `/admin/expert-validators`

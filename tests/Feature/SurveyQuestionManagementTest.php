@@ -31,7 +31,7 @@ class SurveyQuestionManagementTest extends TestCase
             ->assertSee('Identity Mode')
             ->assertSee('Do not add sensitive personal data questions unless required by protocol and ethics approval')
             ->assertSee('Add Question')
-            ->assertSee('Preview Public Form')
+            ->assertSee('Open Public Survey')
             ->assertSee('Open Responses')
             ->assertSee('Open Analysis')
             ->assertSee('Open Scoring');
@@ -138,7 +138,7 @@ class SurveyQuestionManagementTest extends TestCase
         $this->actingAs($owner)
             ->get(route('admin.surveys.builder.index', ['survey' => $survey]))
             ->assertOk()
-            ->assertSee('This survey already has responses')
+            ->assertSee('Survey ini sudah memiliki respons')
             ->assertDontSee('Sensitive Respondent')
             ->assertDontSee('sensitive@example.test')
             ->assertDontSee('PRIVATE-ID');

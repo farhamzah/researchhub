@@ -12,6 +12,7 @@ use App\Modules\Surveys\Actions\DeleteSurveyQuestionAction;
 use App\Modules\Surveys\Actions\DuplicateSurveyQuestionAction;
 use App\Modules\Surveys\Actions\UpdateSurveyPageAction;
 use App\Modules\Surveys\Actions\UpdateSurveyQuestionAction;
+use App\Modules\Surveys\Services\SurveyBuilderReadinessService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -20,7 +21,7 @@ use Illuminate\View\View;
 
 class AdminSurveyBuilderController extends Controller
 {
-    public function index(Survey $survey): View
+    public function index(Survey $survey, SurveyBuilderReadinessService $readiness): View
     {
         Gate::authorize('update', $survey);
 
@@ -28,12 +29,18 @@ class AdminSurveyBuilderController extends Controller
             'project',
             'pages.questions.scoring.indicator',
             'questions.page',
-            'questions.scoring.indicator',
+            'questions.scoring.indicator.scale',
+            'scales',
             'indicators.scale',
+            'indicators.questionScorings.question',
+            'validationRounds.assignments.scores',
+            'analysisResults',
+            'responses:id,survey_id,status,submitted_at',
         ])->loadCount('responses');
 
         return view('surveys.admin.builder.index', [
             'survey' => $survey,
+            'builderWizard' => $readiness->build($survey),
             'questionTypes' => config('researchhub_surveys.question_types', []),
             'hasResponses' => $survey->responses_count > 0,
             'optionQuestionTypes' => [

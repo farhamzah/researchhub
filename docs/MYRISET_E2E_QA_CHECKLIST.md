@@ -53,6 +53,18 @@ Do not use real personal data, real tokens, production Google credentials, or pr
 - Pass/fail: [ ]
 - Notes:
 
+## 3C. UI Consistency and Accessibility QA
+
+- URL/path: `/admin`, `/admin/projects/templates`, `/admin/projects/{researchProject}/journey`, `/admin/surveys/{survey}/builder`, `/validation/survey/{token}`, `/supervision/review/{token}`
+- Expected header check: Confirm major custom pages use one clear page title, short description, and obvious primary/secondary actions.
+- Expected card check: Confirm cards use light backgrounds, soft borders, readable spacing, and no nested-card clutter.
+- Expected badge check: Confirm statuses are readable text badges and do not rely on color alone.
+- Expected empty state check: Confirm empty states explain what to do next instead of only saying no data exists.
+- Expected accessibility check: Confirm public pages expose a skip link on keyboard focus, visible labels, readable contrast, and touch-friendly form controls.
+- Expected safety check: Confirm no raw tokens, token hashes, public review URLs, respondent identity, validator contacts, private file paths, Drive IDs, OAuth data, or secrets are visible.
+- Pass/fail: [ ]
+- Notes:
+
 ## 3A. Project Research Journey QA
 
 - URL/path: `/admin/projects/{researchProject}/journey`

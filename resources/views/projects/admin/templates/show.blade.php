@@ -8,21 +8,20 @@
 </head>
 <body class="bg-slate-50 text-slate-950 antialiased">
     <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div>
-                <p class="text-sm font-semibold uppercase tracking-wide text-blue-700">Template Preview</p>
-                <h1 class="mt-2 text-3xl font-semibold">{{ $template['name'] }}</h1>
-                <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600">{{ $template['description'] }}</p>
-            </div>
-            <div class="flex flex-wrap gap-2">
-                <a href="{{ route('admin.projects.templates.index') }}" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">
+        <x-myriset.page-header
+            eyebrow="Template Preview"
+            :title="$template['name']"
+            :description="$template['description']"
+        >
+            <x-slot:actions>
+                <x-myriset.action-link :href="route('admin.projects.templates.index')">
                     Pilih Template Lain
-                </a>
-                <a href="{{ route('filament.admin.resources.projects.research-projects.index') }}" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">
+                </x-myriset.action-link>
+                <x-myriset.action-link :href="route('filament.admin.resources.projects.research-projects.index')">
                     Projects
-                </a>
-            </div>
-        </div>
+                </x-myriset.action-link>
+            </x-slot:actions>
+        </x-myriset.page-header>
 
         @if ($errors->any())
             <div class="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
@@ -37,9 +36,7 @@
 
         <div class="grid gap-6 lg:grid-cols-[1fr_24rem]">
             <section class="grid gap-4">
-                <article class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                    <h2 class="text-lg font-semibold">Yang akan dibuat</h2>
-                    <p class="mt-2 text-sm text-slate-600">{{ $template['best_for'] }}</p>
+                <x-myriset.section-card title="Yang akan dibuat" :description="$template['best_for']">
                     <div class="mt-4 grid gap-3 sm:grid-cols-4">
                         <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
                             <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Milestone</p>
@@ -58,40 +55,36 @@
                             <p class="mt-1 text-2xl font-semibold">{{ is_array($template['survey']) ? '1' : '0' }}</p>
                         </div>
                     </div>
-                </article>
+                </x-myriset.section-card>
 
                 <div class="grid gap-4 lg:grid-cols-2">
-                    <article class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                        <h2 class="text-lg font-semibold">Milestones</h2>
+                    <x-myriset.section-card title="Milestones">
                         <ol class="mt-4 space-y-2 text-sm text-slate-700">
                             @foreach ($template['milestones'] as $milestone)
                                 <li>{{ $loop->iteration }}. {{ $milestone }}</li>
                             @endforeach
                         </ol>
-                    </article>
+                    </x-myriset.section-card>
 
-                    <article class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                        <h2 class="text-lg font-semibold">Timeline Tasks</h2>
+                    <x-myriset.section-card title="Timeline Tasks">
                         <ol class="mt-4 space-y-2 text-sm text-slate-700">
                             @foreach ($template['tasks'] as $task)
                                 <li>{{ $loop->iteration }}. {{ $task }}</li>
                             @endforeach
                         </ol>
-                    </article>
+                    </x-myriset.section-card>
                 </div>
 
                 <div class="grid gap-4 lg:grid-cols-2">
-                    <article class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                        <h2 class="text-lg font-semibold">Starter Documents</h2>
+                    <x-myriset.section-card title="Starter Documents">
                         <ul class="mt-4 space-y-2 text-sm text-slate-700">
                             @foreach ($template['documents'] as $document)
                                 <li>{{ $document['title'] }} <span class="text-slate-500">({{ \App\Models\Document::TYPE_LABELS[$document['type']] ?? 'Other' }}, v01 draft)</span></li>
                             @endforeach
                         </ul>
-                    </article>
+                    </x-myriset.section-card>
 
-                    <article class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                        <h2 class="text-lg font-semibold">Starter Survey & Links</h2>
+                    <x-myriset.section-card title="Starter Survey & Links">
                         @if (is_array($template['survey']))
                             <p class="mt-4 text-sm font-semibold text-slate-800">{{ $template['survey']['title'] }}</p>
                             <ul class="mt-2 space-y-2 text-sm text-slate-700">
@@ -111,11 +104,11 @@
                                 @endforeach
                             </ul>
                         @endif
-                    </article>
+                    </x-myriset.section-card>
                 </div>
             </section>
 
-            <aside class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <aside data-ui="myriset-section-card" class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                 <h2 class="text-lg font-semibold">Check answers</h2>
                 <p class="mt-2 text-sm leading-6 text-slate-600">
                     Isi detail project, lalu MyRiset akan membuat struktur starter dan membuka Alur Riset.
@@ -164,7 +157,7 @@
                         </label>
                     </div>
 
-                    <button type="submit" class="w-full rounded-md bg-blue-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-600">
+                    <button type="submit" class="w-full rounded-md bg-blue-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">
                         Buat Project dari Template
                     </button>
                 </form>

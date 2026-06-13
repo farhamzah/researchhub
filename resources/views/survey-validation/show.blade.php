@@ -2,7 +2,6 @@
 
 @php
     $statusLabel = 'Aktif';
-    $statusClass = 'border-emerald-200 bg-emerald-50 text-emerald-700';
     $criteria = [
         'Relevansi' => 'Kesesuaian butir dengan indikator.',
         'Kejelasan' => 'Kemudahan memahami redaksi butir.',
@@ -19,7 +18,7 @@
 @section('title', $round->title.' - MyRiset Validation')
 
 @section('content')
-    <section class="mb-6 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+    <section data-ui="myriset-page-header" class="mb-6 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
         <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div class="max-w-3xl">
                 <p class="text-sm font-semibold uppercase tracking-wide text-emerald-700">MyRiset Expert Validation</p>
@@ -27,9 +26,7 @@
                 <p class="mt-3 text-lg font-semibold text-slate-800">{{ $survey->title }}</p>
                 <p class="mt-1 text-sm leading-6 text-slate-600">{{ $project?->title ?? 'Research project' }}</p>
             </div>
-            <span class="inline-flex rounded-full border px-3 py-1 text-sm font-semibold {{ $statusClass }}">
-                Status: {{ $statusLabel }}
-            </span>
+            <x-myriset.status-badge status="active" :label="'Status: '.$statusLabel" />
         </div>
 
         <div class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -54,7 +51,7 @@
     </section>
 
     <section class="mb-6 grid gap-4 lg:grid-cols-[0.58fr_0.42fr]">
-        <div class="rounded-lg border border-blue-200 bg-blue-50 p-5 text-sm leading-6 text-blue-950">
+        <div data-ui="myriset-section-card" class="rounded-lg border border-blue-200 bg-blue-50 p-5 text-sm leading-6 text-blue-950">
             <h2 class="text-lg font-semibold">Petunjuk validasi</h2>
             <p class="mt-2">Bapak/Ibu diminta memberikan penilaian terhadap setiap butir instrumen berdasarkan kriteria yang tersedia.</p>
             <ul class="mt-3 list-disc space-y-1 pl-5">
@@ -66,7 +63,7 @@
                 <p class="mt-4 rounded-md border border-blue-200 bg-white/70 p-3">{{ $round->instructions }}</p>
             @endif
         </div>
-        <div class="rounded-lg border border-slate-200 bg-white p-5 text-sm leading-6 shadow-sm">
+        <div data-ui="myriset-section-card" class="rounded-lg border border-slate-200 bg-white p-5 text-sm leading-6 shadow-sm">
             <h2 class="text-lg font-semibold text-slate-950">Kriteria dan skala</h2>
             <dl class="mt-3 space-y-2">
                 @foreach ($criteria as $label => $description)
@@ -102,10 +99,11 @@
     @endif
 
     @if ($questions->isEmpty())
-        <section class="rounded-lg border border-dashed border-slate-300 bg-white p-8 text-center shadow-sm">
-            <h2 class="text-xl font-semibold">This survey has no questions yet.</h2>
-            <p class="mt-2 text-sm text-slate-600">Validation cannot be submitted until the researcher adds survey questions.</p>
-        </section>
+        <x-myriset.empty-state
+            class="bg-white shadow-sm"
+            title="This survey has no questions yet."
+            description="Validation cannot be submitted until the researcher adds survey questions."
+        />
     @else
         <form method="POST" class="space-y-6">
             @csrf

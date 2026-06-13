@@ -24,7 +24,7 @@
 </head>
 <body class="bg-gray-50 text-gray-950 antialiased">
     <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div class="mb-8 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div data-ui="myriset-page-header" class="mb-8 flex flex-col gap-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm lg:flex-row lg:items-start lg:justify-between">
             <div>
                 <p class="text-sm font-semibold uppercase tracking-wide text-emerald-700">MyRiset Admin</p>
                 <h1 class="mt-2 text-3xl font-semibold">Expert Validation Results</h1>
@@ -41,7 +41,7 @@
             </div>
         </div>
 
-        <section class="mb-6 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <section data-ui="myriset-section-card" class="mb-6 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
             <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Validation Round</p>
@@ -75,10 +75,11 @@
         </section>
 
         @if ($result->summary['submitted_count'] === 0)
-            <section class="mb-6 rounded-lg border border-dashed border-gray-300 bg-white p-8 text-center shadow-sm">
-                <h2 class="text-xl font-semibold">No submitted expert validation yet.</h2>
-                <p class="mt-2 text-sm text-gray-600">Generate validation links and wait for validators to submit their assessment.</p>
-            </section>
+            <x-myriset.empty-state
+                class="mb-6 bg-white shadow-sm"
+                title="No submitted expert validation yet."
+                description="Generate validation links and wait for validators to submit their assessment before reading Aiken/CVI results."
+            />
         @elseif ($result->summary['is_preliminary'])
             <section class="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
                 Results are preliminary because not all validators have submitted.

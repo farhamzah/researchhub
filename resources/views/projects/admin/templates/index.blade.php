@@ -8,22 +8,21 @@
 </head>
 <body class="bg-slate-50 text-slate-950 antialiased">
     <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div>
-                <p class="text-sm font-semibold uppercase tracking-wide text-blue-700">MyRiset Project Templates</p>
-                <h1 class="mt-2 text-3xl font-semibold">Buat Project dari Template</h1>
-                <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-                    Pilih struktur riset awal agar milestone, dokumen, task, dan instrumen starter langsung siap dipakai.
-                </p>
-            </div>
-            <a href="{{ route('filament.admin.resources.projects.research-projects.index') }}" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">
+        <x-myriset.page-header
+            eyebrow="MyRiset Project Templates"
+            title="Buat Project dari Template"
+            description="Pilih struktur riset awal agar milestone, dokumen, task, dan instrumen starter langsung siap dipakai."
+        >
+            <x-slot:actions>
+                <x-myriset.action-link :href="route('filament.admin.resources.projects.research-projects.index')">
                 Kembali ke Projects
-            </a>
-        </div>
+                </x-myriset.action-link>
+            </x-slot:actions>
+        </x-myriset.page-header>
 
         <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             @foreach ($templates as $template)
-                <article class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                <x-myriset.section-card class="h-full">
                     <div class="flex h-full flex-col">
                         <div>
                             <p class="text-xs font-semibold uppercase tracking-wide text-blue-700">Template</p>
@@ -53,12 +52,12 @@
                         </dl>
 
                         <div class="mt-5 flex flex-wrap gap-2">
-                            <a href="{{ route('admin.projects.templates.show', ['template' => $template['key']]) }}" class="rounded-md bg-blue-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-600">
+                            <x-myriset.action-link :href="route('admin.projects.templates.show', ['template' => $template['key']])" variant="primary">
                                 Gunakan Template
-                            </a>
+                            </x-myriset.action-link>
                         </div>
                     </div>
-                </article>
+                </x-myriset.section-card>
             @endforeach
         </section>
     </main>

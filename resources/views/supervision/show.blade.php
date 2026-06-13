@@ -2,13 +2,12 @@
 
 @php
     $statusLabel = 'Aktif';
-    $statusClass = 'border-emerald-200 bg-emerald-50 text-emerald-700';
 @endphp
 
 @section('title', 'Supervision Review - MyRiset')
 
 @section('content')
-    <section class="mb-6 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+    <section data-ui="myriset-page-header" class="mb-6 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
         <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div class="max-w-3xl">
                 <p class="text-sm font-semibold uppercase tracking-wide text-emerald-700">MyRiset Supervision Review</p>
@@ -16,9 +15,7 @@
                 <p class="mt-3 text-lg font-semibold text-slate-800">{{ $session->title }}</p>
                 <p class="mt-1 text-sm leading-6 text-slate-600">{{ $project->title }}</p>
             </div>
-            <span class="inline-flex rounded-full border px-3 py-1 text-sm font-semibold {{ $statusClass }}">
-                Status: {{ $statusLabel }}
-            </span>
+            <x-myriset.status-badge status="active" :label="'Status: '.$statusLabel" />
         </div>
 
         <div class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -42,7 +39,7 @@
         </div>
     </section>
 
-    <section class="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-5 text-sm leading-6 text-blue-950">
+    <section data-ui="myriset-section-card" class="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-5 text-sm leading-6 text-blue-950">
         <h2 class="text-lg font-semibold">Petunjuk bimbingan</h2>
         <p class="mt-2">Tuliskan masukan utama untuk membantu peneliti menentukan revisi berikutnya.</p>
         <ul class="mt-3 list-disc space-y-1 pl-5">
@@ -114,7 +111,7 @@
         </section>
     @endif
 
-    <section class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+    <section data-ui="myriset-section-card" class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
         <h2 class="text-xl font-semibold">Submit Supervisor Feedback</h2>
         <p class="mt-1 text-sm leading-6 text-slate-600">Tuliskan masukan utama untuk membantu peneliti menentukan revisi berikutnya.</p>
         <form method="POST" class="mt-5 grid gap-4">

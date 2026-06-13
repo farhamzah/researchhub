@@ -3,18 +3,6 @@
     use App\Models\SurveyQuestion;
 
     $label = fn (?string $value): string => str($value ?: 'not_set')->replace('_', ' ')->title()->toString();
-    $statusClass = match ($survey->status) {
-        Survey::STATUS_PUBLISHED => 'border-emerald-200 bg-emerald-50 text-emerald-700',
-        Survey::STATUS_CLOSED => 'border-amber-200 bg-amber-50 text-amber-800',
-        Survey::STATUS_ARCHIVED => 'border-slate-200 bg-slate-100 text-slate-700',
-        default => 'border-blue-200 bg-blue-50 text-blue-700',
-    };
-    $identityClass = match ($survey->identity_mode) {
-        Survey::IDENTITY_FULL => 'border-red-200 bg-red-50 text-red-700',
-        Survey::IDENTITY_ANONYMOUS => 'border-emerald-200 bg-emerald-50 text-emerald-700',
-        Survey::IDENTITY_PSEUDONYM => 'border-blue-200 bg-blue-50 text-blue-700',
-        default => 'border-slate-200 bg-slate-50 text-slate-700',
-    };
     $typeClass = fn (string $type): string => match ($type) {
         SurveyQuestion::TYPE_SINGLE_CHOICE, SurveyQuestion::TYPE_MULTIPLE_CHOICE => 'border-blue-200 bg-blue-50 text-blue-700',
         SurveyQuestion::TYPE_LIKERT, SurveyQuestion::TYPE_LIKERT_MATRIX => 'border-emerald-200 bg-emerald-50 text-emerald-700',
@@ -52,9 +40,6 @@
 
         return array_pad(array_slice(array_map('strval', is_array($columns) ? $columns : []), 0, 5), 5, '');
     };
-    $badgeClass = fn (string $status): string => str_contains(strtolower($status), 'perlu') || str_contains(strtolower($status), 'missing') || str_contains(strtolower($status), 'belum')
-        ? 'border-amber-200 bg-amber-50 text-amber-800'
-        : 'border-emerald-200 bg-emerald-50 text-emerald-700';
 @endphp
 
 <!DOCTYPE html>
@@ -67,7 +52,7 @@
 </head>
 <body class="bg-slate-50 text-slate-950 antialiased">
     <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <section class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+        <section data-ui="myriset-page-header" class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
             <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
                 <div class="max-w-3xl">
                     <p class="text-sm font-semibold uppercase tracking-wide text-emerald-700">MyRiset Admin</p>
@@ -98,7 +83,7 @@
                     <a href="#{{ $step['anchor'] }}" class="rounded-md border border-slate-200 bg-slate-50 p-3 text-sm hover:border-emerald-200 hover:bg-emerald-50">
                         <span class="block text-xs font-semibold uppercase tracking-wide text-slate-500">Step {{ $loop->iteration }}</span>
                         <span class="mt-1 block font-semibold text-slate-950">{{ $step['label'] }}</span>
-                        <span class="mt-2 inline-flex rounded-full border px-2 py-0.5 text-xs font-semibold {{ $badgeClass($step['status']) }}">{{ $step['status'] }}</span>
+                        <x-myriset.status-badge :status="$step['status']" :label="$step['status']" size="xs" class="mt-2" />
                     </a>
                 @endforeach
             </nav>
@@ -154,11 +139,11 @@
                 </div>
                 <div class="rounded-md border border-slate-100 bg-slate-50 p-4">
                     <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Status</p>
-                    <span class="mt-2 inline-flex rounded-full border px-3 py-1 text-sm font-semibold {{ $statusClass }}">{{ $label($survey->status) }}</span>
+                    <x-myriset.status-badge :status="$survey->status" :label="$label($survey->status)" class="mt-2" />
                 </div>
                 <div class="rounded-md border border-slate-100 bg-slate-50 p-4">
                     <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Identity Mode</p>
-                    <span class="mt-2 inline-flex rounded-full border px-3 py-1 text-sm font-semibold {{ $identityClass }}">{{ $label($survey->identity_mode) }}</span>
+                    <x-myriset.status-badge :status="$survey->identity_mode" :label="$label($survey->identity_mode)" class="mt-2" />
                 </div>
                 <div class="rounded-md border border-slate-100 bg-slate-50 p-4">
                     <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Questions / Responses</p>
@@ -220,10 +205,11 @@
                         </dl>
                     </article>
                 @empty
-                    <div class="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-8 text-center md:col-span-2 xl:col-span-4">
-                        <h3 class="text-lg font-semibold text-slate-950">Belum ada indikator</h3>
-                        <p class="mt-2 text-sm text-slate-600">Tambahkan indikator agar skoring dan analisis survey lebih mudah dibaca.</p>
-                    </div>
+                    <x-myriset.empty-state
+                        class="md:col-span-2 xl:col-span-4"
+                        title="Belum ada indikator"
+                        description="Tambahkan indikator agar skoring, validasi ahli, dan analisis survey lebih mudah dibaca oleh peneliti."
+                    />
                 @endforelse
             </div>
         </section>
@@ -409,11 +395,12 @@
                         </form>
                     </article>
                 @empty
-                    <div class="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-10 text-center">
-                        <h3 class="text-lg font-semibold text-slate-950">No questions yet</h3>
-                        <p class="mt-2 text-sm text-slate-600">Start with a short text, single choice, or Likert question to build your instrument.</p>
-                        <a href="#add-question" class="mt-4 inline-flex rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-600">Create Question</a>
-                    </div>
+                    <x-myriset.empty-state
+                        title="Belum ada pertanyaan"
+                        description="Mulai dengan pertanyaan short text, single choice, atau Likert agar instrumen survey siap dipreview sebelum dikirim ke responden."
+                        action-url="#add-question"
+                        action-label="Create Question"
+                    />
                 @endforelse
             </div>
         </section>
@@ -480,7 +467,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="px-4 py-8 text-center text-slate-500">No scoreable questions yet.</td>
+                                <td colspan="4" class="px-4 py-8 text-center text-slate-500">Belum ada pertanyaan yang bisa diskor. Tambahkan Likert atau pilihan berskala sebelum membuka analisis.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -542,7 +529,10 @@
                                 </div>
                             </article>
                         @empty
-                            <p class="rounded-md border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500">Preview will appear after at least one question is added.</p>
+                            <x-myriset.empty-state
+                                title="Preview belum tersedia"
+                                description="Preview responden akan muncul setelah minimal satu pertanyaan ditambahkan."
+                            />
                         @endforelse
                     </div>
                 </div>

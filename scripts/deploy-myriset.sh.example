@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Example only. Review on the VPS before use.
+# This script intentionally contains no server password, SSH host, private key,
+# database password, Google secret, or real environment values.
+
+APP_DIR="/var/www/myriset"
+PHP_FPM_SERVICE="php8.3-fpm"
+
+cd "$APP_DIR"
+
+CURRENT_COMMIT="$(git rev-parse HEAD)"
+echo "Current commit before update: ${CURRENT_COMMIT}"
+echo "Back up the PostgreSQL database before continuing when migrations are included."
+
+php artisan down || true
+
+git pull origin main
+
+composer install --no-dev --optimize-autoloader
+npm ci
+npm run build
+
+php artisan migrate --force
+php artisan optimize:clear
+php artisan optimize
+php artisan myriset:production-check
+
+php artisan up
+
+sudo systemctl reload "$PHP_FPM_SERVICE"
+sudo systemctl reload nginx
+
+echo "Deployment example complete. Run the smoke test checklist manually."

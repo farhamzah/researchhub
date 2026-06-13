@@ -227,3 +227,18 @@ Do not use real personal data, real tokens, production Google credentials, or pr
 - Safety check: Confirm no actual deployment, DNS change, server connection, migration, or destructive DB command is performed during readiness QA.
 - Pass/fail: [ ]
 - Notes:
+
+## 14. VPS Git Pull Deployment QA
+
+- Runbook check: Read `docs/MYRISET_VPS_DEPLOYMENT_RUNBOOK.md`.
+- Nginx check: Read `docs/MYRISET_NGINX_EXAMPLE.conf` and confirm root is `/var/www/myriset/public`.
+- Script check: Read `scripts/deploy-myriset.sh.example` and `scripts/health-check-myriset.sh.example`.
+- First clone check: Confirm first deployment uses `git clone git@github.com:farhamzah/researchhub.git /var/www/myriset`.
+- Future update check: Confirm later deployments use `git pull origin main`.
+- Certbot check: Confirm SSL is documented after DNS and HTTP readiness.
+- Admin creation check: Confirm `php artisan myriset:create-admin` happens after migrations and `RolePermissionSeeder`.
+- Smoke test check: Confirm login, dashboard, project template, project journey, documents, survey builder, public validation, public supervision, and production check are covered.
+- Rollback check: Confirm commit recording and database backup are required before updates with migrations.
+- Safety check: Confirm no real server connection, DNS change, production migration, private SSH key, `.env`, database password, Google client secret, demo seeder, `migrate:fresh`, `db:wipe`, or database drop command is performed during QA.
+- Pass/fail: [ ]
+- Notes:

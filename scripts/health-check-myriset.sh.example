@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Example only. Run from /var/www/myriset on the VPS after reviewing.
+# This script does not contain secrets and does not modify application state.
+
+APP_DIR="/var/www/myriset"
+APP_URL="https://myriset.net"
+
+cd "$APP_DIR"
+
+curl -I "$APP_URL"
+curl -I "$APP_URL/admin/login"
+php artisan myriset:production-check

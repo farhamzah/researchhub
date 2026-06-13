@@ -190,7 +190,33 @@ Safety rules:
 - Use `--promote-existing` only when you intentionally want to assign `super_admin` to an existing user.
 - Use `--reset-password` only when you intentionally want to set a new password through hidden prompts.
 
-## 14. Backup Checklist
+## 14. VPS Git Pull Deployment
+
+Use `docs/MYRISET_VPS_DEPLOYMENT_RUNBOOK.md` for the practical first VPS deployment flow.
+
+- First clone:
+
+```bash
+git clone git@github.com:farhamzah/researchhub.git /var/www/myriset
+```
+
+- Future git pull:
+
+```bash
+cd /var/www/myriset
+git pull origin main
+```
+
+- Nginx root must be `/var/www/myriset/public`.
+- Use `docs/MYRISET_NGINX_EXAMPLE.conf` as a placeholder-only example.
+- Enable HTTPS with Certbot only after DNS points to the VPS and HTTP works.
+- Run migrations and `RolePermissionSeeder` before creating the first admin.
+- Create the first admin with `php artisan myriset:create-admin`; enter the password interactively.
+- Run the Smoke test checklist after deployment.
+- Keep Rollback notes ready before updates, especially when migrations are included.
+- Do not run `MyRisetDemoSeeder`, `migrate:fresh`, `db:wipe`, or database drop commands in production.
+
+## 15. Backup Checklist
 
 - Take a PostgreSQL backup before migration.
 - Configure scheduled database backups.
@@ -199,7 +225,7 @@ Safety rules:
 - Test restore into a non-production environment.
 - Keep backups encrypted and access controlled.
 
-## 15. Smoke Test Checklist
+## 16. Smoke Test Checklist
 
 After deployment:
 
@@ -218,7 +244,7 @@ After deployment:
 - Confirm HTTPS works and session cookies are secure.
 - Confirm no raw token, token hash, Drive ID, OAuth data, `.env`, or private path appears in page source.
 
-## 16. Rollback Checklist
+## 17. Rollback Checklist
 
 - Keep the previous release available if using release folders.
 - Back up the database before migration.

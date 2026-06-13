@@ -1,18 +1,16 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Validation Link Unavailable - MyRiset</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-</head>
-<body class="bg-gray-50 text-gray-950 antialiased">
-    <main class="mx-auto flex min-h-screen max-w-2xl items-center px-4 py-10 sm:px-6 lg:px-8">
+@extends('layouts.public-review')
+
+@section('title', 'Validation Link Unavailable - MyRiset')
+
+@section('content')
+    <div class="mx-auto flex min-h-[70vh] max-w-2xl items-center">
         <section class="w-full rounded-lg border border-amber-200 bg-white p-8 text-center shadow-sm">
             <p class="text-sm font-semibold uppercase tracking-wide text-amber-700">MyRiset Expert Validation</p>
-            <h1 class="mt-3 text-3xl font-semibold">Link validasi tidak tersedia.</h1>
-            <p class="mt-3 text-gray-600">Link mungkin sudah kedaluwarsa, dicabut, belum dibuka untuk penilaian, atau sudah tidak aktif.</p>
+            <h1 class="mt-3 text-3xl font-semibold">Link validasi tidak aktif.</h1>
+            <p class="mt-2 text-sm font-semibold text-amber-700">Link validasi tidak tersedia</p>
+            <p class="mt-3 text-sm leading-6 text-slate-600">
+                Link ini mungkin sudah kedaluwarsa, sudah digunakan, atau telah dicabut oleh pengelola riset. Silakan hubungi peneliti atau pengelola riset untuk mendapatkan link baru.
+            </p>
         </section>
-    </main>
-</body>
-</html>
+    </div>
+@endsection

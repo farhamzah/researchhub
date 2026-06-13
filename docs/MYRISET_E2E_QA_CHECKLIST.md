@@ -135,6 +135,23 @@ Do not use real personal data, real tokens, production Google credentials, or pr
 - Pass/fail: [ ]
 - Notes:
 
+## 10B. Public Link UX QA
+
+- URL/path: `/validation/survey/{token}` and `/supervision/review/{token}`
+- Expected validation action: Generate/open one expert validation link from demo data.
+- Expected validation context check: Confirm MyRiset branding, project title, survey title, validation round, status badge, expiry/deadline, item count, instruction card, rating criteria explanation, and item scoring cards are visible.
+- Expected validation error check: Submit an incomplete validation form and confirm error messages reference the relevant butir/question number.
+- Expected validation submit check: Submit complete validation scores and confirm the thank-you page says the validation result has been received.
+- Expected validation unavailable check: Open expired/submitted/revoked validation links and confirm the message is friendly, generic, and safe.
+- Expected supervision action: Generate/open one supervision review link from demo data.
+- Expected supervision context check: Confirm MyRiset branding, project title, session title, meeting type, status badge, briefing cards, and feedback form are visible.
+- Expected resource check: Confirm only resources visible to supervisor appear, and hidden resources/private paths/Drive IDs do not appear.
+- Expected supervision error check: Submit incomplete feedback and confirm clear form errors.
+- Expected supervision submit check: Submit complete feedback and confirm the thank-you page says the guidance feedback has been received.
+- Expected safety check: Confirm no raw tokens, token hashes, public review URLs, internal IDs, respondent identity, validator contacts, private file paths, Drive IDs, OAuth data, or secrets appear.
+- Pass/fail: [ ]
+- Notes:
+
 ## 10A. Survey Analysis Demo
 
 - URL/path: `/admin/surveys`

@@ -9,6 +9,8 @@ use App\Modules\Validation\Services\SurveyValidationTokenResolver;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Collection;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class PublicSurveyValidationController extends Controller
@@ -72,8 +74,71 @@ class PublicSurveyValidationController extends Controller
             ], 403);
         }
 
-        $submitScores->handle($assignment, $request->input('scores', []), $request);
+        try {
+            $submitScores->handle(
+                $assignment,
+                $this->normalizePublicScores($assignment, $request->input('scores', [])),
+                $request,
+            );
+        } catch (ValidationException $exception) {
+            throw ValidationException::withMessages($this->publicErrorMessages($assignment, $exception));
+        }
 
         return redirect()->route('validation.survey.show', ['token' => $token]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function normalizePublicScores(mixed $assignment, mixed $scores): array
+    {
+        if (! is_array($scores)) {
+            return [];
+        }
+
+        return $this->publicQuestions($assignment)
+            ->mapWithKeys(function (SurveyQuestion $question, int $index) use ($scores): array {
+                $legacyKey = $question->getKey();
+                $publicKey = (string) $index;
+
+                return [
+                    $legacyKey => $scores[$legacyKey] ?? $scores[$publicKey] ?? $scores[$index] ?? [],
+                ];
+            })
+            ->all();
+    }
+
+    /**
+     * @return array<string, array<int, string>>
+     */
+    private function publicErrorMessages(mixed $assignment, ValidationException $exception): array
+    {
+        $questionIndex = $this->publicQuestions($assignment)
+            ->values()
+            ->mapWithKeys(fn (SurveyQuestion $question, int $index): array => [$question->getKey() => (string) $index]);
+
+        return collect($exception->errors())
+            ->mapWithKeys(function (array $messages, string $field) use ($questionIndex): array {
+                $publicField = preg_replace_callback(
+                    '/^scores\.([^.]+)/',
+                    fn (array $matches): string => 'scores.'.($questionIndex[$matches[1]] ?? $matches[1]),
+                    $field,
+                );
+
+                return [$publicField ?: $field => $messages];
+            })
+            ->all();
+    }
+
+    /**
+     * @return Collection<int, SurveyQuestion>
+     */
+    private function publicQuestions(mixed $assignment): Collection
+    {
+        return $assignment->round->survey->questions()
+            ->where('type', '!=', SurveyQuestion::TYPE_HIDDEN)
+            ->orderBy('sort_order')
+            ->get()
+            ->values();
     }
 }

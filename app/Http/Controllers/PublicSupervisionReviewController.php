@@ -68,6 +68,14 @@ class PublicSupervisionReviewController extends Controller
             'revision_notes' => ['nullable', 'string', 'max:10000'],
             'recommended_next_steps' => ['nullable', 'string', 'max:10000'],
             'supervisor_note' => ['nullable', 'string', 'max:10000'],
+        ], [
+            'decision.required' => 'Pilih keputusan atau rekomendasi bimbingan.',
+            'decision.in' => 'Pilih keputusan bimbingan yang tersedia.',
+            'general_feedback.required' => 'Tuliskan masukan umum bimbingan.',
+            'general_feedback.max' => 'Masukan umum terlalu panjang.',
+            'revision_notes.max' => 'Catatan revisi terlalu panjang.',
+            'recommended_next_steps.max' => 'Rekomendasi tindak lanjut terlalu panjang.',
+            'supervisor_note.max' => 'Catatan tambahan terlalu panjang.',
         ]);
 
         $submitFeedback->handle($reviewLink, $data, $request);

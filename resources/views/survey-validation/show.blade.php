@@ -1,133 +1,199 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $round->title }} - MyRiset Validation</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-</head>
-<body class="bg-gray-50 text-gray-950 antialiased">
-    <main class="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-        <header class="mb-8 border-b border-gray-200 pb-6">
-            <p class="text-sm font-semibold uppercase tracking-wide text-emerald-700">MyRiset Expert Validation</p>
-            <h1 class="mt-2 text-3xl font-semibold">{{ $round->title }}</h1>
-            <p class="mt-3 text-base leading-7 text-gray-600">{{ $survey->title }}</p>
-            <p class="mt-1 text-sm text-gray-500">{{ $project?->title ?? 'Research project' }}</p>
-        </header>
+@extends('layouts.public-review')
 
-        <section class="mb-6 grid gap-4 md:grid-cols-3">
-            <div class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-                <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Validator</p>
-                <p class="mt-2 font-semibold">{{ $validator->name }}</p>
-                <p class="mt-1 text-sm text-gray-500">{{ $assignment->role ?: 'Expert validator' }}</p>
+@php
+    $statusLabel = 'Aktif';
+    $statusClass = 'border-emerald-200 bg-emerald-50 text-emerald-700';
+    $criteria = [
+        'Relevansi' => 'Kesesuaian butir dengan indikator.',
+        'Kejelasan' => 'Kemudahan memahami redaksi butir.',
+        'Kebahasaan' => 'Ketepatan bahasa yang digunakan.',
+        'Kesesuaian' => 'Kesesuaian butir dengan tujuan instrumen.',
+    ];
+    $scaleDescription = $round->rating_scale_min === 1 && $round->rating_scale_max === 4
+        ? ['1 = Tidak sesuai', '2 = Kurang sesuai', '3 = Sesuai', '4 = Sangat sesuai']
+        : collect(range($round->rating_scale_min, $round->rating_scale_max))
+            ->map(fn (int $score): string => $score.' = Skor '.$score)
+            ->all();
+@endphp
+
+@section('title', $round->title.' - MyRiset Validation')
+
+@section('content')
+    <section class="mb-6 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+        <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+            <div class="max-w-3xl">
+                <p class="text-sm font-semibold uppercase tracking-wide text-emerald-700">MyRiset Expert Validation</p>
+                <h1 class="mt-2 text-3xl font-semibold">Validasi Ahli Instrumen</h1>
+                <p class="mt-3 text-lg font-semibold text-slate-800">{{ $survey->title }}</p>
+                <p class="mt-1 text-sm leading-6 text-slate-600">{{ $project?->title ?? 'Research project' }}</p>
             </div>
-            <div class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-                <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Skala Penilaian</p>
-                <p class="mt-2 font-semibold">{{ $round->rating_scale_min }} sampai {{ $round->rating_scale_max }}</p>
-                <p class="mt-1 text-sm text-gray-500">Nilai lebih tinggi berarti lebih layak.</p>
+            <span class="inline-flex rounded-full border px-3 py-1 text-sm font-semibold {{ $statusClass }}">
+                Status: {{ $statusLabel }}
+            </span>
+        </div>
+
+        <div class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="rounded-md border border-slate-100 bg-slate-50 p-4">
+                <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Putaran Validasi</p>
+                <p class="mt-2 text-sm font-semibold text-slate-950">{{ $round->title }}</p>
             </div>
-            <div class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-                <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Batas Akses</p>
-                <p class="mt-2 font-semibold">{{ $assignment->expires_at?->format('Y-m-d H:i') ?? 'Tidak ada batas khusus' }}</p>
-                <p class="mt-1 text-sm text-gray-500">Link ini hanya untuk penugasan validator ini.</p>
+            <div class="rounded-md border border-slate-100 bg-slate-50 p-4">
+                <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Validator</p>
+                <p class="mt-2 text-sm font-semibold text-slate-950">{{ $validator->name }}</p>
+                <p class="mt-1 text-xs text-slate-500">{{ $assignment->role ?: 'Expert validator' }}</p>
             </div>
-        </section>
-
-        <section class="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-5 text-sm leading-6 text-blue-950">
-            <h2 class="font-semibold">Petunjuk</h2>
-            <p class="mt-2">{{ $round->instructions ?: 'Mohon menilai setiap butir instrumen berdasarkan relevansi, kejelasan, bahasa, dan kelayakan.' }}</p>
-            <div class="mt-3 grid gap-2 md:grid-cols-2">
-                <p>1 = Tidak relevan / tidak layak</p>
-                <p>2 = Kurang relevan / perlu revisi besar</p>
-                <p>3 = Relevan / perlu revisi kecil</p>
-                <p>4 = Sangat relevan / layak</p>
+            <div class="rounded-md border border-slate-100 bg-slate-50 p-4">
+                <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Jumlah Butir</p>
+                <p class="mt-2 text-sm font-semibold text-slate-950">{{ $questions->count() }} items need scoring</p>
             </div>
-        </section>
+            <div class="rounded-md border border-slate-100 bg-slate-50 p-4">
+                <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Batas Akses</p>
+                <p class="mt-2 text-sm font-semibold text-slate-950">{{ $assignment->expires_at?->format('Y-m-d H:i') ?? 'Tidak ada batas khusus' }}</p>
+            </div>
+        </div>
+    </section>
 
-        <section class="mb-6 rounded-lg border border-gray-200 bg-white p-5 text-sm text-gray-600 shadow-sm">
-            Form ini hanya menampilkan konteks instrumen yang perlu divalidasi. Data responden, jawaban survei, analisis, dan halaman admin tidak ditampilkan.
-        </section>
-
-        @if ($errors->any())
-            <section class="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-900">
-                <p class="font-semibold">Mohon lengkapi penilaian.</p>
-                <ul class="mt-2 list-disc space-y-1 pl-5">
-                    @foreach ($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </section>
-        @endif
-
-        @if ($questions->isEmpty())
-            <section class="rounded-lg border border-dashed border-gray-300 bg-white p-8 text-center shadow-sm">
-                <h2 class="text-xl font-semibold">This survey has no questions yet.</h2>
-                <p class="mt-2 text-sm text-gray-600">Validation cannot be submitted until the researcher adds survey questions.</p>
-            </section>
-        @else
-            <form method="POST" action="{{ route('validation.survey.store', ['token' => $token]) }}" class="space-y-6">
-                @csrf
-
-                @foreach ($questions as $question)
-                    <section class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-                        <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                            <div>
-                                <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Butir {{ $loop->iteration }}</p>
-                                <h2 class="mt-1 text-lg font-semibold">{{ $question->label }}</h2>
-                                @if ($question->help_text)
-                                    <p class="mt-2 text-sm text-gray-600">{{ $question->help_text }}</p>
-                                @endif
-                            </div>
-                            <div class="flex flex-wrap gap-2">
-                                <span class="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-700">{{ str_replace('_', ' ', $question->type) }}</span>
-                                @if ($question->scoring?->indicator)
-                                    <span class="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-800">{{ $question->scoring->indicator->name }}</span>
-                                @endif
-                            </div>
-                        </div>
-
-                        <div class="mt-5 grid gap-4 md:grid-cols-4">
-                            @foreach ([
-                                'relevance_score' => 'Relevansi',
-                                'clarity_score' => 'Kejelasan',
-                                'language_score' => 'Bahasa',
-                                'appropriateness_score' => 'Kelayakan',
-                            ] as $field => $label)
-                                <div>
-                                    <label for="{{ $field }}_{{ $question->id }}" class="block text-sm font-medium text-gray-700">{{ $label }}</label>
-                                    <select id="{{ $field }}_{{ $question->id }}" name="scores[{{ $question->id }}][{{ $field }}]" required class="mt-2 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm">
-                                        <option value="">Pilih</option>
-                                        @for ($score = $round->rating_scale_min; $score <= $round->rating_scale_max; $score++)
-                                            <option value="{{ $score }}" @selected(old("scores.{$question->id}.{$field}") == $score)>{{ $score }}</option>
-                                        @endfor
-                                    </select>
-                                </div>
-                            @endforeach
-                        </div>
-
-                        <div class="mt-4 grid gap-4 md:grid-cols-3">
-                            <div>
-                                <label for="recommendation_{{ $question->id }}" class="block text-sm font-medium text-gray-700">Rekomendasi</label>
-                                <select id="recommendation_{{ $question->id }}" name="scores[{{ $question->id }}][recommendation]" required class="mt-2 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm">
-                                    <option value="">Pilih rekomendasi</option>
-                                    @foreach ($recommendations as $value => $label)
-                                        <option value="{{ $value }}" @selected(old("scores.{$question->id}.recommendation") === $value)>{{ $label }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="md:col-span-2">
-                                <label for="comment_{{ $question->id }}" class="block text-sm font-medium text-gray-700">Komentar</label>
-                                <textarea id="comment_{{ $question->id }}" name="scores[{{ $question->id }}][comment]" rows="3" class="mt-2 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm">{{ old("scores.{$question->id}.comment") }}</textarea>
-                            </div>
-                        </div>
-                    </section>
+    <section class="mb-6 grid gap-4 lg:grid-cols-[0.58fr_0.42fr]">
+        <div class="rounded-lg border border-blue-200 bg-blue-50 p-5 text-sm leading-6 text-blue-950">
+            <h2 class="text-lg font-semibold">Petunjuk validasi</h2>
+            <p class="mt-2">Bapak/Ibu diminta memberikan penilaian terhadap setiap butir instrumen berdasarkan kriteria yang tersedia.</p>
+            <ul class="mt-3 list-disc space-y-1 pl-5">
+                <li>Gunakan skala penilaian yang disediakan.</li>
+                <li>Komentar dapat diberikan untuk membantu perbaikan redaksi, relevansi, atau kejelasan butir.</li>
+                <li>Setelah dikirim, isian tidak dapat diubah melalui link ini.</li>
+            </ul>
+            @if ($round->instructions)
+                <p class="mt-4 rounded-md border border-blue-200 bg-white/70 p-3">{{ $round->instructions }}</p>
+            @endif
+        </div>
+        <div class="rounded-lg border border-slate-200 bg-white p-5 text-sm leading-6 shadow-sm">
+            <h2 class="text-lg font-semibold text-slate-950">Kriteria dan skala</h2>
+            <dl class="mt-3 space-y-2">
+                @foreach ($criteria as $label => $description)
+                    <div>
+                        <dt class="font-semibold text-slate-800">{{ $label }}</dt>
+                        <dd class="text-slate-600">{{ $description }}</dd>
+                    </div>
                 @endforeach
+            </dl>
+            <div class="mt-4 grid gap-2 sm:grid-cols-2">
+                @foreach ($scaleDescription as $scale)
+                    <span class="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-slate-700">{{ $scale }}</span>
+                @endforeach
+            </div>
+        </div>
+    </section>
 
-                <button type="submit" class="w-full rounded-md bg-emerald-700 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-emerald-600">
-                    Kirim Penilaian Validasi
+    <section class="mb-6 rounded-lg border border-slate-200 bg-white p-5 text-sm leading-6 text-slate-600 shadow-sm">
+        <h2 class="font-semibold text-slate-950">Apa yang terjadi setelah submit?</h2>
+        <p class="mt-2">Masukan Bapak/Ibu akan tersimpan untuk membantu peneliti memperbaiki instrumen. Halaman ini tidak menampilkan data responden, jawaban survei, analisis, halaman admin, token, atau data validator lain.</p>
+    </section>
+
+    @if ($errors->any())
+        <section class="mb-6 rounded-lg border border-red-200 bg-red-50 p-5 text-sm leading-6 text-red-950" role="alert">
+            <h2 class="text-lg font-semibold">Mohon lengkapi penilaian.</h2>
+            <p class="mt-1">Periksa butir berikut sebelum mengirim hasil validasi.</p>
+            <ul class="mt-3 list-disc space-y-1 pl-5">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </section>
+    @endif
+
+    @if ($questions->isEmpty())
+        <section class="rounded-lg border border-dashed border-slate-300 bg-white p-8 text-center shadow-sm">
+            <h2 class="text-xl font-semibold">This survey has no questions yet.</h2>
+            <p class="mt-2 text-sm text-slate-600">Validation cannot be submitted until the researcher adds survey questions.</p>
+        </section>
+    @else
+        <form method="POST" class="space-y-6">
+            @csrf
+
+            <div class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <p class="text-sm font-semibold text-slate-950">{{ $questions->count() }} items need scoring</p>
+                        <p class="mt-1 text-sm text-slate-600">Pastikan semua butir telah diberi skor sebelum mengirim.</p>
+                    </div>
+                    <span class="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-700">
+                        Item 1 of {{ $questions->count() }}
+                    </span>
+                </div>
+            </div>
+
+            @foreach ($questions as $question)
+                <section class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div class="min-w-0 flex-1">
+                            <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Butir {{ $loop->iteration }} dari {{ $questions->count() }}</p>
+                            <h2 class="mt-1 text-lg font-semibold leading-7 text-slate-950">{{ $question->label }}</h2>
+                            @if ($question->help_text)
+                                <p class="mt-2 text-sm leading-6 text-slate-600">{{ $question->help_text }}</p>
+                            @endif
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-700">{{ str_replace('_', ' ', $question->type) }}</span>
+                            @if ($question->scoring?->indicator)
+                                <span class="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800">{{ $question->scoring->indicator->name }}</span>
+                            @endif
+                        </div>
+                    </div>
+
+                    <div class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                        @php
+                            $scoreKey = (string) ($loop->iteration - 1);
+                        @endphp
+
+                        @foreach ([
+                            'relevance_score' => 'Relevansi',
+                            'clarity_score' => 'Kejelasan',
+                            'language_score' => 'Kebahasaan',
+                            'appropriateness_score' => 'Kesesuaian',
+                        ] as $field => $label)
+                            <div>
+                                <label for="{{ $field }}_item_{{ $loop->parent->iteration }}" class="block text-sm font-semibold text-slate-700">{{ $label }}</label>
+                                <select id="{{ $field }}_item_{{ $loop->parent->iteration }}" name="scores[{{ $scoreKey }}][{{ $field }}]" required class="mt-2 block min-h-11 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-base shadow-sm sm:text-sm">
+                                    <option value="">Pilih skor</option>
+                                    @for ($score = $round->rating_scale_min; $score <= $round->rating_scale_max; $score++)
+                                        <option value="{{ $score }}" @selected(old("scores.{$scoreKey}.{$field}") == $score)>{{ $score }}</option>
+                                    @endfor
+                                </select>
+                                @error("scores.{$scoreKey}.{$field}")
+                                    <p class="mt-1 text-sm text-red-700">{{ $message }}</p>
+                                @enderror
+                            </div>
+                        @endforeach
+                    </div>
+
+                    <div class="mt-4 grid gap-4 lg:grid-cols-3">
+                        <div>
+                            <label for="recommendation_item_{{ $loop->iteration }}" class="block text-sm font-semibold text-slate-700">Rekomendasi</label>
+                            <select id="recommendation_item_{{ $loop->iteration }}" name="scores[{{ $scoreKey }}][recommendation]" required class="mt-2 block min-h-11 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-base shadow-sm sm:text-sm">
+                                <option value="">Pilih rekomendasi</option>
+                                @foreach ($recommendations as $value => $label)
+                                    <option value="{{ $value }}" @selected(old("scores.{$scoreKey}.recommendation") === $value)>{{ $label }}</option>
+                                @endforeach
+                            </select>
+                            @error("scores.{$scoreKey}.recommendation")
+                                <p class="mt-1 text-sm text-red-700">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <div class="lg:col-span-2">
+                            <label for="comment_item_{{ $loop->iteration }}" class="block text-sm font-semibold text-slate-700">Komentar perbaikan</label>
+                            <textarea id="comment_item_{{ $loop->iteration }}" name="scores[{{ $scoreKey }}][comment]" rows="4" class="mt-2 block w-full rounded-md border border-slate-300 px-3 py-2 text-base leading-6 shadow-sm sm:text-sm">{{ old("scores.{$scoreKey}.comment") }}</textarea>
+                            <p class="mt-1 text-sm text-slate-500">Opsional. Tuliskan catatan untuk redaksi, relevansi, kejelasan, atau kesesuaian butir.</p>
+                        </div>
+                    </div>
+                </section>
+            @endforeach
+
+            <section class="rounded-lg border border-emerald-200 bg-white p-5 shadow-sm">
+                <p class="text-sm leading-6 text-slate-600">Pastikan semua butir telah diberi skor sebelum mengirim. Setelah dikirim, hasil validasi tidak dapat diubah melalui link ini.</p>
+                <button type="submit" class="mt-4 w-full rounded-md bg-emerald-700 px-4 py-3 text-base font-semibold text-white shadow-sm hover:bg-emerald-600">
+                    Kirim Hasil Validasi
                 </button>
-            </form>
-        @endif
-    </main>
-</body>
-</html>
+            </section>
+        </form>
+    @endif
+@endsection

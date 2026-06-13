@@ -37,9 +37,9 @@ class SubmitSurveyValidationScoresAction
             ]);
         }
 
-        foreach ($questions as $question) {
+        foreach ($questions as $index => $question) {
             $questionScores = $scores[$question->getKey()] ?? [];
-            $this->assertScoreSet($assignment, $question->getKey(), $questionScores);
+            $this->assertScoreSet($assignment, $question->getKey(), $questionScores, $index + 1);
 
             SurveyValidationScore::updateOrCreate([
                 'survey_validation_assignment_id' => $assignment->getKey(),
@@ -71,29 +71,34 @@ class SubmitSurveyValidationScoresAction
     /**
      * @param  array<string, mixed>  $questionScores
      */
-    private function assertScoreSet(SurveyValidationAssignment $assignment, string $questionId, mixed $questionScores): void
+    private function assertScoreSet(SurveyValidationAssignment $assignment, string $questionId, mixed $questionScores, int $questionNumber): void
     {
         if (! is_array($questionScores)) {
             throw ValidationException::withMessages([
-                "scores.{$questionId}" => 'Score every validation criterion for this question.',
+                "scores.{$questionId}" => "Butir {$questionNumber}: lengkapi seluruh skor penilaian.",
             ]);
         }
 
-        foreach (['relevance_score', 'clarity_score', 'language_score', 'appropriateness_score'] as $field) {
+        foreach ([
+            'relevance_score' => 'relevansi',
+            'clarity_score' => 'kejelasan',
+            'language_score' => 'kebahasaan',
+            'appropriateness_score' => 'kesesuaian',
+        ] as $field => $label) {
             $score = $questionScores[$field] ?? null;
 
             if (! is_numeric($score)
                 || (int) $score < $assignment->round->rating_scale_min
                 || (int) $score > $assignment->round->rating_scale_max) {
                 throw ValidationException::withMessages([
-                    "scores.{$questionId}.{$field}" => 'Each score must be within the validation round rating scale.',
+                    "scores.{$questionId}.{$field}" => "Butir {$questionNumber}: pilih skor {$label} dalam skala {$assignment->round->rating_scale_min}-{$assignment->round->rating_scale_max}.",
                 ]);
             }
         }
 
         if (! in_array($questionScores['recommendation'] ?? null, SurveyValidationScore::RECOMMENDATIONS, true)) {
             throw ValidationException::withMessages([
-                "scores.{$questionId}.recommendation" => 'Select a recommendation for every question.',
+                "scores.{$questionId}.recommendation" => "Butir {$questionNumber}: pilih rekomendasi validasi.",
             ]);
         }
     }

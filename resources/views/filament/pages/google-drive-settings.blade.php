@@ -376,7 +376,7 @@
                     <h2 id="google-drive-settings-title" class="drive-title">Connect MyRiset to Google Drive</h2>
                     <p class="drive-copy">Connect MyRiset to your own Google Drive account.</p>
                     <p class="drive-copy">
-                        Use Google Drive to prepare future document workflows while keeping tokens and secrets private.
+                        MyRiset remains the source of truth for workflow and metadata. Google Drive is used only for files, folders, and exports.
                     </p>
                 </div>
 
@@ -464,7 +464,7 @@
 
                 @unless ($credentialsConfigured)
                     <div class="drive-alert drive-alert-warning">
-                        OAuth credentials are not configured yet. Add them to your local .env, clear cache, then refresh this page.
+                        Google Drive belum dikonfigurasi. Isi GOOGLE_CLIENT_ID dan GOOGLE_CLIENT_SECRET di .env server, clear cache, lalu refresh halaman ini.
                     </div>
                 @endunless
             </section>
@@ -593,6 +593,10 @@
                 @if ($folderStatusParts)
                     <div class="drive-alert drive-alert-info">
                         MyRiset Drive folders are ready. Created {{ $folderStatusParts[1] ?? 0 }} folder(s), reused {{ $folderStatusParts[2] ?? 0 }} folder(s).
+                    </div>
+                @elseif ($isConnected && $globalFolderCount === 0)
+                    <div class="drive-alert drive-alert-warning">
+                        Google Drive sudah terhubung, tetapi folder MyRiset belum dibuat. Klik Create MyRiset Folders.
                     </div>
                 @endif
 

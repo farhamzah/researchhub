@@ -213,6 +213,22 @@ Do not use real personal data, real tokens, production Google credentials, or pr
 - Pass/fail: [ ]
 - Notes:
 
+## 12A. Google Drive Management QA
+
+- URL/path: `/admin/settings/google-drive`
+- Blueprint check: Read `docs/MYRISET_GOOGLE_DRIVE_MANAGEMENT_BLUEPRINT.md`.
+- Mapping check: Read `docs/MYRISET_GOOGLE_DRIVE_FOLDER_MAPPING.md`.
+- Configuration status check: Verify client ID, client secret, redirect URI, scope, connection status, and folder bootstrap status are visible as safe status text.
+- Secret safety check: Verify no client secret, access token, refresh token, raw Google API response, private file path, token hash, or OAuth payload appears.
+- Redirect URI check: Verify the current canonical redirect URI is visible as `/auth/google/drive/callback`.
+- Optional behavior check: Verify the app remains usable when Google Drive credentials are missing.
+- Disconnected state check: Confirm disabled connect action and clear guidance when OAuth credentials are missing.
+- Connected state check: Confirm safe Google account metadata appears without tokens when connected.
+- Folder bootstrap guidance check: Confirm the page explains MyRiset folders and that project folder mapping is documented.
+- Source-of-truth check: Confirm MyRiset remains the source of workflow/metadata and Drive is described only as file/folder/export storage.
+- Pass/fail: [ ]
+- Notes:
+
 ## 13. Production Readiness QA
 
 - Document check: Read `docs/MYRISET_PRODUCTION_DEPLOYMENT_CHECKLIST.md`.

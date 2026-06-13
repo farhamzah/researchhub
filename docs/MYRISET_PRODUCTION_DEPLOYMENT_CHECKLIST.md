@@ -133,11 +133,21 @@ php artisan queue:work --tries=3
 ## 11. Google Drive OAuth Production Notes
 
 - Google Drive is optional for production readiness.
+- Core MyRiset must still work when Google Drive is not configured.
+- Drive features should be disabled with clear guidance until OAuth is ready.
 - If enabled, create a Google Cloud OAuth Web Application client.
 - Production redirect URI must match the current application route:
 
 ```text
 https://myriset.net/auth/google/drive/callback
+```
+
+- Future naming alignment placeholder, not the current route unless implemented later:
+
+```env
+GOOGLE_DRIVE_CLIENT_ID=
+GOOGLE_DRIVE_CLIENT_SECRET=
+GOOGLE_DRIVE_REDIRECT_URI=https://myriset.net/google/drive/callback
 ```
 
 - Use HTTPS.
@@ -150,6 +160,8 @@ https://www.googleapis.com/auth/drive.file
 - Store `GOOGLE_CLIENT_SECRET` only in the server `.env`.
 - Do not commit OAuth client secrets or token payloads.
 - It is acceptable for Google Drive variables to stay empty until OAuth is configured.
+- MyRiset remains the source of truth for workflow and metadata; Google Drive stores files, folders, and exports.
+- See `docs/MYRISET_GOOGLE_DRIVE_MANAGEMENT_BLUEPRINT.md` and `docs/MYRISET_GOOGLE_DRIVE_FOLDER_MAPPING.md` before expanding Drive features.
 
 ## 12. Security Checklist
 

@@ -80,6 +80,26 @@ https://www.googleapis.com/auth/drive.file
 
 Do not commit the client secret. Do not print OAuth access tokens or refresh tokens in logs.
 
+Current MyRiset code reads:
+
+```env
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GOOGLE_REDIRECT_URI=https://myriset.net/auth/google/drive/callback
+```
+
+Future naming alignment placeholders may stay documented for later:
+
+```env
+GOOGLE_DRIVE_CLIENT_ID=
+GOOGLE_DRIVE_CLIENT_SECRET=
+GOOGLE_DRIVE_REDIRECT_URI=https://myriset.net/google/drive/callback
+```
+
+Do not use the `/google/drive/callback` value as the active redirect URI until the route alias is intentionally implemented and tested.
+
+MyRiset remains the source of truth for workflow and metadata. Google Drive stores files, folders, and exports only.
+
 ## Production Check Command
 
 After configuring the server `.env`, run:

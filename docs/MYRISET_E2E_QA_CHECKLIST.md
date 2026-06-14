@@ -221,6 +221,9 @@ Do not use real personal data, real tokens, production Google credentials, or pr
 - Configuration status check: Verify client ID, client secret, redirect URI, scope, connection status, and folder bootstrap status are visible as safe status text.
 - Secret safety check: Verify no client secret, access token, refresh token, raw Google API response, private file path, token hash, or OAuth payload appears.
 - Redirect URI check: Verify the current canonical redirect URI is visible as `/auth/google/drive/callback`.
+- Google Cloud check: Confirm docs instruct Google Cloud Console authorized redirect URIs to include `http://127.0.0.1:8001/auth/google/drive/callback` and `https://myriset.net/auth/google/drive/callback`.
+- Mismatch guidance check: Confirm `redirect_uri_mismatch` guidance says to match protocol, domain or `127.0.0.1`, port, and path exactly.
+- Alias check: Confirm `/google/drive/callback` is treated only as an optional compatibility alias, not the primary redirect URI.
 - Optional behavior check: Verify the app remains usable when Google Drive credentials are missing.
 - Disconnected state check: Confirm disabled connect action and clear guidance when OAuth credentials are missing.
 - Connected state check: Confirm safe Google account metadata appears without tokens when connected.

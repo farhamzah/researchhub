@@ -45,8 +45,8 @@ GOOGLE_CLIENT_SECRET=
 GOOGLE_REDIRECT_URI=https://myriset.net/auth/google/drive/callback
 GOOGLE_DRIVE_SCOPES=https://www.googleapis.com/auth/drive.file
 
-# Optional aliases for future naming standardization.
-# Current MyRiset code reads GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GOOGLE_REDIRECT_URI.
+# Optional aliases for naming standardization.
+# Current MyRiset code reads GOOGLE_* first, then GOOGLE_DRIVE_* fallback values.
 GOOGLE_DRIVE_CLIENT_ID=
 GOOGLE_DRIVE_CLIENT_SECRET=
 GOOGLE_DRIVE_REDIRECT_URI=https://myriset.net/auth/google/drive/callback
@@ -60,8 +60,7 @@ VITE_APP_NAME="${APP_NAME}"
 - Keep `APP_DEBUG=false` in production.
 - Keep the real database password only on the server.
 - Google Drive credentials can remain empty until OAuth is configured.
-- MyRiset currently reads Google Drive OAuth from `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_REDIRECT_URI`.
-- `GOOGLE_DRIVE_CLIENT_ID`, `GOOGLE_DRIVE_CLIENT_SECRET`, and `GOOGLE_DRIVE_REDIRECT_URI` are documented as placeholder aliases only unless the code is later updated to read them.
+- MyRiset reads Google Drive OAuth from `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_REDIRECT_URI`, with `GOOGLE_DRIVE_CLIENT_ID`, `GOOGLE_DRIVE_CLIENT_SECRET`, and `GOOGLE_DRIVE_REDIRECT_URI` as fallback aliases.
 - Do not commit `.env`, `.env.production`, credential JSON files, token dumps, private keys, or service account files.
 
 ## Google Drive OAuth
@@ -70,6 +69,12 @@ Google Drive is optional. If enabled, configure Google Cloud OAuth with this red
 
 ```text
 https://myriset.net/auth/google/drive/callback
+```
+
+For local QA, use this exact authorized redirect URI:
+
+```text
+http://127.0.0.1:8001/auth/google/drive/callback
 ```
 
 Use the least required scope:
@@ -88,15 +93,23 @@ GOOGLE_CLIENT_SECRET=
 GOOGLE_REDIRECT_URI=https://myriset.net/auth/google/drive/callback
 ```
 
-Future naming alignment placeholders may stay documented for later:
+Naming alignment fallback aliases may stay documented with the same canonical callback:
 
 ```env
 GOOGLE_DRIVE_CLIENT_ID=
 GOOGLE_DRIVE_CLIENT_SECRET=
-GOOGLE_DRIVE_REDIRECT_URI=https://myriset.net/google/drive/callback
+GOOGLE_DRIVE_REDIRECT_URI=https://myriset.net/auth/google/drive/callback
 ```
 
-Do not use the `/google/drive/callback` value as the active redirect URI until the route alias is intentionally implemented and tested.
+Optional compatibility alias:
+
+```text
+https://myriset.net/google/drive/callback
+```
+
+Do not use the optional alias as the primary redirect URI. Keep `/auth/google/drive/callback` canonical.
+
+If Google shows `redirect_uri_mismatch`, copy the canonical redirect URI from MyRiset Google Drive Settings into Google Cloud Console exactly. Match protocol, domain or `127.0.0.1`, port, and path.
 
 MyRiset remains the source of truth for workflow and metadata. Google Drive stores files, folders, and exports only.
 

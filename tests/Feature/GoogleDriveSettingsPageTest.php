@@ -97,6 +97,11 @@ class GoogleDriveSettingsPageTest extends TestCase
 
     public function test_google_drive_settings_page_shows_connected_metadata_without_tokens(): void
     {
+        config()->set('google.client_id', null);
+        config()->set('google.client_secret', null);
+        config()->set('google.redirect_uri', 'http://127.0.0.1:8001/auth/google/drive/callback');
+        config()->set('google.drive_scopes', ['https://www.googleapis.com/auth/drive.file']);
+
         $user = $this->adminUser();
 
         DriveConnection::create([

@@ -47,6 +47,7 @@ class DriveConnectionSecurityTest extends TestCase
         $this->get('/settings/drive/google')->assertRedirect('/admin/login');
         $this->get('/settings/drive/google/redirect')->assertRedirect('/admin/login');
         $this->get('/auth/google/drive/callback')->assertRedirect('/admin/login');
+        $this->get('/google/drive/callback')->assertRedirect('/admin/login');
         $this->post('/settings/drive/google/disconnect')->assertRedirect('/admin/login');
     }
 
@@ -202,6 +203,7 @@ class DriveConnectionSecurityTest extends TestCase
         $this->assertStringContainsString('GOOGLE_CLIENT_ID=', $envExample);
         $this->assertStringContainsString('GOOGLE_CLIENT_SECRET=', $envExample);
         $this->assertStringContainsString('GOOGLE_REDIRECT_URI="${APP_URL}/auth/google/drive/callback"', $envExample);
+        $this->assertStringContainsString('GOOGLE_DRIVE_REDIRECT_URI="${APP_URL}/auth/google/drive/callback"', $envExample);
         $this->assertStringContainsString('GOOGLE_DRIVE_SCOPES="https://www.googleapis.com/auth/drive.file"', $envExample);
         $this->assertStringNotContainsString('client_secret_', $envExample);
     }

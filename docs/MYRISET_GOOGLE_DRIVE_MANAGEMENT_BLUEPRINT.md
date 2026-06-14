@@ -104,17 +104,29 @@ Production canonical route:
 https://myriset.net/auth/google/drive/callback
 ```
 
-Task alignment note:
+Optional compatibility alias:
 
 ```text
-Local future alias, not implemented yet:
+Local optional alias:
 http://127.0.0.1:8001/google/drive/callback
 
-Production future alias, not implemented yet:
+Production optional alias:
 https://myriset.net/google/drive/callback
 ```
 
-Use the canonical `/auth/google/drive/callback` values until a route alias is intentionally implemented and tested.
+The optional alias points to the same callback handler, but UI and docs must keep `/auth/google/drive/callback` as the primary canonical URI.
+
+Google Cloud Console setup:
+
+```text
+APIs & Services -> Credentials -> OAuth 2.0 Client ID -> Authorized redirect URIs
+
+Add:
+http://127.0.0.1:8001/auth/google/drive/callback
+https://myriset.net/auth/google/drive/callback
+```
+
+If a Google Cloud client already includes the optional alias, it may remain, but new setup should copy the canonical URI from MyRiset Settings.
 
 Google Drive can remain unconfigured until OAuth is ready.
 
@@ -365,7 +377,7 @@ Klik Create MyRiset Folders.
 
 | Error | Technical cause | Safe user message | Admin action | Developer action |
 | --- | --- | --- | --- | --- |
-| `redirect_uri_mismatch` | Google Cloud redirect URI differs from MyRiset config | Redirect URI Google Drive belum cocok. | Copy the URI shown in Settings into Google Cloud. | Confirm route and `GOOGLE_REDIRECT_URI` match. |
+| `redirect_uri_mismatch` | Google Cloud redirect URI differs from MyRiset config | Redirect URI Google Drive belum cocok. | Copy the canonical URI shown in Settings into Google Cloud. Match protocol, domain or 127.0.0.1, port, and path exactly. | Confirm route and `GOOGLE_REDIRECT_URI` or `GOOGLE_DRIVE_REDIRECT_URI` match the canonical route. |
 | `invalid_client` | Client ID/secret invalid or missing | OAuth client belum valid. | Recheck `.env` values on the server. | Confirm config cache and Google Cloud client type. |
 | `access_denied` | User cancelled consent or lacks access | Koneksi Google Drive dibatalkan. | Retry only if intended. | No action unless repeated unexpectedly. |
 | `token_expired` | Access token expired and refresh did not recover | Sesi Google Drive kedaluwarsa. Sambungkan ulang. | Reconnect Google Drive. | Add refresh-token handling if missing in future task. |

@@ -473,17 +473,25 @@
                 <p class="drive-eyebrow">Redirect URI and Scope</p>
                 <h3 id="redirect-scope-card-title" class="drive-card-title">Copy these values into Google Cloud</h3>
                 <p class="drive-copy">
-                    The redirect URI must match the web application OAuth client in Google Cloud Console.
+                    The canonical redirect URI must match the web application OAuth client in Google Cloud Console.
                 </p>
 
                 <div class="drive-facts">
                     <div class="drive-fact">
-                        <span class="drive-fact-label">Authorized redirect URI</span>
+                        <span class="drive-fact-label">Canonical redirect URI</span>
                         <code class="drive-code">{{ $visibleRedirectUri }}</code>
                     </div>
                     <div class="drive-fact">
                         <span class="drive-fact-label">Required scope</span>
                         <code class="drive-code">{{ $primaryScope }}</code>
+                    </div>
+                    <div class="drive-fact">
+                        <span class="drive-fact-label">Local example redirect URI</span>
+                        <code class="drive-code">{{ $localExampleRedirectUri }}</code>
+                    </div>
+                    <div class="drive-fact">
+                        <span class="drive-fact-label">Production example redirect URI</span>
+                        <code class="drive-code">{{ $productionRedirectUri }}</code>
                     </div>
                 </div>
 
@@ -507,7 +515,11 @@
                 @endif
 
                 <div class="drive-alert drive-alert-info">
-                    Production redirect URI for myriset.net: <code>{{ $productionRedirectUri }}</code>
+                    Optional compatibility alias if enabled in Google Cloud: <code>{{ $optionalAliasRedirectUri }}</code>. Keep the canonical route above as the primary URI.
+                </div>
+
+                <div class="drive-alert drive-alert-warning">
+                    If Google shows <code>redirect_uri_mismatch</code>, copy the canonical redirect URI from this page into Google Cloud Console exactly. Match protocol, domain or 127.0.0.1, port, and path.
                 </div>
             </section>
 

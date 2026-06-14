@@ -35,6 +35,8 @@ Route::middleware('auth')->group(function (): void {
         ->name('drive.google.redirect');
     Route::get('/auth/google/drive/callback', [GoogleDriveOAuthController::class, 'callback'])
         ->name('drive.google.callback');
+    Route::get('/google/drive/callback', [GoogleDriveOAuthController::class, 'callback'])
+        ->name('drive.google.callback.alias');
     Route::post('/settings/drive/google/disconnect', [GoogleDriveOAuthController::class, 'disconnect'])
         ->name('drive.google.disconnect');
     Route::post('/settings/drive/google/bootstrap-folders', [GoogleDriveOAuthController::class, 'bootstrapFolders'])

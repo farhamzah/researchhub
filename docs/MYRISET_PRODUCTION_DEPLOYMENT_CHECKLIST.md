@@ -142,13 +142,28 @@ php artisan queue:work --tries=3
 https://myriset.net/auth/google/drive/callback
 ```
 
-- Future naming alignment placeholder, not the current route unless implemented later:
+- Optional naming alignment fallback values use the same canonical callback:
 
 ```env
 GOOGLE_DRIVE_CLIENT_ID=
 GOOGLE_DRIVE_CLIENT_SECRET=
-GOOGLE_DRIVE_REDIRECT_URI=https://myriset.net/google/drive/callback
+GOOGLE_DRIVE_REDIRECT_URI=https://myriset.net/auth/google/drive/callback
 ```
+
+- In Google Cloud Console, add authorized redirect URIs:
+
+```text
+http://127.0.0.1:8001/auth/google/drive/callback
+https://myriset.net/auth/google/drive/callback
+```
+
+- Optional compatibility alias, not primary:
+
+```text
+https://myriset.net/google/drive/callback
+```
+
+- If Google shows `redirect_uri_mismatch`, copy the canonical redirect URI from MyRiset Google Drive Settings and match protocol, domain or `127.0.0.1`, port, and path exactly.
 
 - Use HTTPS.
 - Use least required scopes. Current app expects:

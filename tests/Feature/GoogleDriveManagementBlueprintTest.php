@@ -83,7 +83,7 @@ class GoogleDriveManagementBlueprintTest extends TestCase
             'Core MyRiset must still work when Google Drive is not configured.',
             'GOOGLE_DRIVE_CLIENT_ID=',
             'GOOGLE_DRIVE_CLIENT_SECRET=',
-            'GOOGLE_DRIVE_REDIRECT_URI=https://myriset.net/google/drive/callback',
+            'GOOGLE_DRIVE_REDIRECT_URI=https://myriset.net/auth/google/drive/callback',
             'https://myriset.net/auth/google/drive/callback',
             'docs/MYRISET_GOOGLE_DRIVE_MANAGEMENT_BLUEPRINT.md',
             'docs/MYRISET_GOOGLE_DRIVE_FOLDER_MAPPING.md',
@@ -93,7 +93,7 @@ class GoogleDriveManagementBlueprintTest extends TestCase
 
         foreach ([
             'GOOGLE_REDIRECT_URI=https://myriset.net/auth/google/drive/callback',
-            'GOOGLE_DRIVE_REDIRECT_URI=https://myriset.net/google/drive/callback',
+            'GOOGLE_DRIVE_REDIRECT_URI=https://myriset.net/auth/google/drive/callback',
             'MyRiset remains the source of truth for workflow and metadata.',
         ] as $expected) {
             $this->assertStringContainsString($expected, $envGuide);

@@ -40,6 +40,12 @@ class SurveyValidationScore extends Model
     protected $fillable = [
         'survey_validation_assignment_id',
         'survey_question_id',
+        'content_relevance_score',
+        'language_clarity_score',
+        'construct_alignment_score',
+        'measurability_score',
+        'feasibility_score',
+        'ethical_suitability_score',
         'relevance_score',
         'clarity_score',
         'language_score',
@@ -51,6 +57,12 @@ class SurveyValidationScore extends Model
     protected function casts(): array
     {
         return [
+            'content_relevance_score' => 'integer',
+            'language_clarity_score' => 'integer',
+            'construct_alignment_score' => 'integer',
+            'measurability_score' => 'integer',
+            'feasibility_score' => 'integer',
+            'ethical_suitability_score' => 'integer',
             'relevance_score' => 'integer',
             'clarity_score' => 'integer',
             'language_score' => 'integer',

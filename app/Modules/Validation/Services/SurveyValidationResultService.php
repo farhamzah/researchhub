@@ -4,6 +4,7 @@ namespace App\Modules\Validation\Services;
 
 use App\Models\SurveyQuestion;
 use App\Models\SurveyValidationAssignment;
+use App\Models\SurveyValidationRevision;
 use App\Models\SurveyValidationRound;
 use App\Models\SurveyValidationScore;
 use App\Modules\Validation\DTOs\SurveyValidationResultData;
@@ -27,10 +28,24 @@ class SurveyValidationResultService
      * @var array<string, string>
      */
     private const CRITERIA = [
-        'relevance_score' => 'Relevance',
-        'clarity_score' => 'Clarity',
-        'language_score' => 'Language',
-        'appropriateness_score' => 'Appropriateness',
+        'content_relevance_score' => 'Content relevance',
+        'language_clarity_score' => 'Language clarity',
+        'construct_alignment_score' => 'Construct alignment',
+        'measurability_score' => 'Measurability',
+        'feasibility_score' => 'Feasibility of use',
+        'ethical_suitability_score' => 'Ethical/privacy suitability',
+    ];
+
+    /**
+     * @var array<string, string>
+     */
+    private const LEGACY_CRITERIA = [
+        'content_relevance_score' => 'relevance_score',
+        'language_clarity_score' => 'clarity_score',
+        'construct_alignment_score' => 'appropriateness_score',
+        'measurability_score' => 'clarity_score',
+        'feasibility_score' => 'appropriateness_score',
+        'ethical_suitability_score' => 'relevance_score',
     ];
 
     public function analyze(SurveyValidationRound $round): SurveyValidationResultData
@@ -38,7 +53,9 @@ class SurveyValidationResultService
         $round->load([
             'survey.project',
             'survey.questions.scoring.indicator',
+            'survey.validationRevisions.sourceAssignment.validator',
             'assignments.validator',
+            'assignments.recommendation',
             'assignments.scores.question',
             'creator',
         ]);
@@ -66,6 +83,8 @@ class SurveyValidationResultService
             validators: $this->validators($round),
             items: $items,
             comments: $comments,
+            aspectSummary: $this->aspectSummary($submittedAssignments),
+            revisionMatrix: $this->revisionMatrix($round),
             narrative: $this->narrative($round, $summary),
             cvrNote: 'CVR requires an explicit essential/not-essential expert judgment and is not calculated for this round.',
         );
@@ -83,12 +102,26 @@ class SurveyValidationResultService
             ->values();
 
         $aiken = [];
+        $averageScores = [];
 
         foreach (array_keys(self::CRITERIA) as $criterion) {
             $aiken[$criterion] = $this->aikenV($scores, $criterion, $round->rating_scale_min, $round->rating_scale_max);
+            $averageScores[$criterion] = $this->averageScore($scores, $criterion);
         }
 
-        $averageAiken = $this->average(array_values($aiken));
+        $aiken['relevance_score'] = $this->aikenV($scores, 'relevance_score', $round->rating_scale_min, $round->rating_scale_max);
+        $aiken['clarity_score'] = $this->aikenV($scores, 'clarity_score', $round->rating_scale_min, $round->rating_scale_max);
+        $aiken['language_score'] = $this->aikenV($scores, 'language_score', $round->rating_scale_min, $round->rating_scale_max);
+        $aiken['appropriateness_score'] = $this->aikenV($scores, 'appropriateness_score', $round->rating_scale_min, $round->rating_scale_max);
+        $averageAiken = $this->hasModernAspectScores($scores)
+            ? $this->average(array_map(fn (string $criterion): ?float => $aiken[$criterion], array_keys(self::CRITERIA)))
+            : $this->average([
+                $aiken['relevance_score'],
+                $aiken['clarity_score'],
+                $aiken['language_score'],
+                $aiken['appropriateness_score'],
+            ]);
+
         $iCvi = $this->itemCvi($scores, $round);
 
         return [
@@ -100,6 +133,7 @@ class SurveyValidationResultService
             'indicator' => $question->scoring?->indicator?->name,
             'submitted_score_count' => $scores->count(),
             'aiken' => $aiken,
+            'average_scores' => $averageScores,
             'average_aiken_v' => $averageAiken,
             'i_cvi' => $iCvi,
             's_cvi_ua_item' => $iCvi !== null && $iCvi >= 1.0,
@@ -115,7 +149,7 @@ class SurveyValidationResultService
     private function aikenV(Collection $scores, string $criterion, int $scaleMin, int $scaleMax): ?float
     {
         $ratings = $scores
-            ->pluck($criterion)
+            ->map(fn (SurveyValidationScore $score): mixed => $this->scoreForCriterion($score, $criterion))
             ->filter(fn (mixed $score): bool => is_numeric($score))
             ->map(fn (mixed $score): int => (int) $score);
 
@@ -128,10 +162,38 @@ class SurveyValidationResultService
         return round($sumS / ($ratings->count() * ($scaleMax - $scaleMin)), 4);
     }
 
+    private function averageScore(Collection $scores, string $criterion): ?float
+    {
+        $ratings = $scores
+            ->map(fn (SurveyValidationScore $score): mixed => $this->scoreForCriterion($score, $criterion))
+            ->filter(fn (mixed $score): bool => is_numeric($score))
+            ->map(fn (mixed $score): int => (int) $score);
+
+        return $ratings->isEmpty() ? null : round($ratings->average(), 2);
+    }
+
+    private function scoreForCriterion(SurveyValidationScore $score, string $criterion): mixed
+    {
+        return $score->{$criterion} ?? $score->{self::LEGACY_CRITERIA[$criterion] ?? $criterion};
+    }
+
+    private function hasModernAspectScores(Collection $scores): bool
+    {
+        return $scores->contains(function (SurveyValidationScore $score): bool {
+            foreach (array_keys(self::CRITERIA) as $criterion) {
+                if ($score->{$criterion} !== null) {
+                    return true;
+                }
+            }
+
+            return false;
+        });
+    }
+
     private function itemCvi(Collection $scores, SurveyValidationRound $round): ?float
     {
         $ratings = $scores
-            ->pluck('relevance_score')
+            ->map(fn (SurveyValidationScore $score): mixed => $this->scoreForCriterion($score, 'content_relevance_score'))
             ->filter(fn (mixed $score): bool => is_numeric($score))
             ->map(fn (mixed $score): int => (int) $score);
 
@@ -181,11 +243,27 @@ class SurveyValidationResultService
     {
         $aikenValues = collect($items)->pluck('average_aiken_v')->filter(fn (mixed $value): bool => $value !== null)->all();
         $iCviValues = collect($items)->pluck('i_cvi')->filter(fn (mixed $value): bool => $value !== null)->all();
+        $scoreValues = collect($items)
+            ->flatMap(fn (array $item): array => array_values($item['average_scores']))
+            ->filter(fn (mixed $value): bool => $value !== null)
+            ->values();
+        $overallAverageScore = $scoreValues->isEmpty() ? null : round($scoreValues->average(), 2);
+        $maxScore = max(1, $round->rating_scale_max);
+        $percentageFeasibility = $overallAverageScore === null ? null : round(($overallAverageScore / $maxScore) * 100, 2);
+        $decisionCounts = $submittedAssignments
+            ->map(fn (SurveyValidationAssignment $assignment): ?string => $assignment->recommendation?->feasibility_decision)
+            ->filter()
+            ->countBy()
+            ->all();
 
         return [
             'submitted_count' => $submittedAssignments->count(),
             'assigned_count' => $round->assignments->count(),
             'question_count' => $questions->count(),
+            'overall_average_score' => $overallAverageScore,
+            'percentage_feasibility' => $percentageFeasibility,
+            'validation_category' => $this->validationCategory($overallAverageScore),
+            'decision_counts' => $decisionCounts,
             'average_aiken_v' => $this->average($aikenValues),
             'average_i_cvi' => $this->average($iCviValues),
             's_cvi_ave' => $this->average($iCviValues),
@@ -208,6 +286,8 @@ class SurveyValidationResultService
                 'validator_name' => $assignment->validator?->name ?? 'Missing validator',
                 'role' => $assignment->role,
                 'status' => $assignment->status,
+                'average_score' => $assignment->recommendation?->overall_score,
+                'feasibility_decision' => $assignment->recommendation?->feasibility_decision,
                 'opened_at' => $assignment->opened_at,
                 'submitted_at' => $assignment->submitted_at,
                 'expires_at' => $assignment->expires_at,
@@ -253,6 +333,60 @@ class SurveyValidationResultService
     }
 
     /**
+     * @param  Collection<int, SurveyValidationAssignment>  $submittedAssignments
+     * @return array<int, array<string, mixed>>
+     */
+    private function aspectSummary(Collection $submittedAssignments): array
+    {
+        $scores = $submittedAssignments
+            ->flatMap(fn (SurveyValidationAssignment $assignment): Collection => $assignment->scores)
+            ->values();
+
+        return collect(self::CRITERIA)
+            ->map(fn (string $label, string $criterion): array => [
+                'aspect' => $criterion,
+                'label' => $label,
+                'average_score' => $this->averageScore($scores, $criterion),
+                'aiken_v' => $this->aikenV($scores, $criterion, 1, 5),
+            ])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function revisionMatrix(SurveyValidationRound $round): array
+    {
+        return $round->survey->validationRevisions
+            ->map(fn (SurveyValidationRevision $revision): array => [
+                'id' => $revision->getKey(),
+                'validator_name' => $revision->sourceAssignment?->validator?->name ?? 'Validator',
+                'validator_comment' => $revision->validator_comment,
+                'revision_action' => $revision->revision_action,
+                'status' => $revision->status,
+                'researcher_note' => $revision->researcher_note,
+            ])
+            ->values()
+            ->all();
+    }
+
+    private function validationCategory(?float $averageScore): string
+    {
+        if ($averageScore === null) {
+            return 'No submitted validation yet';
+        }
+
+        return match (true) {
+            $averageScore >= 4.20 => 'Very feasible / very valid',
+            $averageScore >= 3.40 => 'Feasible with minor revision',
+            $averageScore >= 2.60 => 'Fair, needs revision',
+            $averageScore >= 1.80 => 'Less feasible',
+            default => 'Not feasible',
+        };
+    }
+
+    /**
      * @param  array<int, float|null>  $values
      */
     private function average(array $values): ?float
@@ -276,8 +410,11 @@ class SurveyValidationResultService
         }
 
         return sprintf(
-            'Berdasarkan hasil validasi ahli terhadap instrumen %s, diperoleh nilai rata-rata Aiken\'s V sebesar %s dan S-CVI/Ave sebesar %s. Sebanyak %d butir dinyatakan layak, %d butir memerlukan revisi, dan %d butir tidak layak. Masukan validator digunakan sebagai dasar perbaikan instrumen sebelum pengambilan data.',
+            'Berdasarkan hasil validasi ahli terhadap instrumen %s, diperoleh rata-rata skor %.2f dengan persentase kelayakan %s%% dan kategori %s. Nilai rata-rata Aiken\'s V sebesar %s dan S-CVI/Ave sebesar %s. Sebanyak %d butir dinyatakan layak, %d butir memerlukan revisi, dan %d butir tidak layak. Masukan validator digunakan sebagai dasar perbaikan instrumen sebelum pengambilan data.',
             $round->survey->title,
+            (float) ($summary['overall_average_score'] ?? 0),
+            $summary['percentage_feasibility'] === null ? '0.00' : number_format((float) $summary['percentage_feasibility'], 2),
+            $summary['validation_category'],
             $this->formatMetric($summary['average_aiken_v']),
             $this->formatMetric($summary['s_cvi_ave']),
             $summary['valid_count'],

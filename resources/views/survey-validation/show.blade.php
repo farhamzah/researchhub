@@ -3,16 +3,20 @@
 @php
     $statusLabel = 'Aktif';
     $criteria = [
-        'Relevansi' => 'Kesesuaian butir dengan indikator.',
-        'Kejelasan' => 'Kemudahan memahami redaksi butir.',
-        'Kebahasaan' => 'Ketepatan bahasa yang digunakan.',
-        'Kesesuaian' => 'Kesesuaian butir dengan tujuan instrumen.',
+        'Content relevance / Relevansi' => 'Kesesuaian butir dengan kebutuhan analisis dan indikator penelitian.',
+        'Language clarity / Kejelasan' => 'Kejelasan bahasa, instruksi, dan redaksi butir.',
+        'Construct alignment / Kesesuaian konstruk' => 'Keselarasan butir dengan konstruk yang hendak diukur.',
+        'Measurability' => 'Kemampuan butir menghasilkan jawaban yang dapat dianalisis.',
+        'Feasibility of use' => 'Kelayakan butir digunakan oleh responden sasaran.',
+        'Ethical/privacy suitability / Kebahasaan dan etik' => 'Kesesuaian butir dengan prinsip etik, privasi responden, dan bahasa akademik.',
     ];
-    $scaleDescription = $round->rating_scale_min === 1 && $round->rating_scale_max === 4
-        ? ['1 = Tidak sesuai', '2 = Kurang sesuai', '3 = Sesuai', '4 = Sangat sesuai']
-        : collect(range($round->rating_scale_min, $round->rating_scale_max))
+    $scaleDescription = match (true) {
+        $round->rating_scale_min === 1 && $round->rating_scale_max === 5 => ['1 = Not feasible / not relevant', '2 = Less feasible', '3 = Fairly feasible', '4 = Feasible', '5 = Very feasible'],
+        $round->rating_scale_min === 1 && $round->rating_scale_max === 4 => ['1 = Tidak sesuai', '2 = Kurang sesuai', '3 = Sesuai', '4 = Sangat sesuai'],
+        default => collect(range($round->rating_scale_min, $round->rating_scale_max))
             ->map(fn (int $score): string => $score.' = Skor '.$score)
-            ->all();
+            ->all(),
+    };
 @endphp
 
 @section('title', $round->title.' - MyRiset Validation')
@@ -144,14 +148,21 @@
                         @endphp
 
                         @foreach ([
-                            'relevance_score' => 'Relevansi',
-                            'clarity_score' => 'Kejelasan',
-                            'language_score' => 'Kebahasaan',
-                            'appropriateness_score' => 'Kesesuaian',
+                            'content_relevance_score' => 'Content relevance',
+                            'language_clarity_score' => 'Language clarity',
+                            'construct_alignment_score' => 'Construct alignment',
+                            'measurability_score' => 'Measurability',
+                            'feasibility_score' => 'Feasibility of use',
+                            'ethical_suitability_score' => 'Ethical/privacy suitability',
                         ] as $field => $label)
+                            @php
+                                $inputId = $field === 'content_relevance_score'
+                                    ? 'relevance_score_item_'.$loop->parent->iteration
+                                    : $field.'_item_'.$loop->parent->iteration;
+                            @endphp
                             <div>
-                                <label for="{{ $field }}_item_{{ $loop->parent->iteration }}" class="block text-sm font-semibold text-slate-700">{{ $label }}</label>
-                                <select id="{{ $field }}_item_{{ $loop->parent->iteration }}" name="scores[{{ $scoreKey }}][{{ $field }}]" required class="mt-2 block min-h-11 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-base shadow-sm sm:text-sm">
+                                <label for="{{ $inputId }}" class="block text-sm font-semibold text-slate-700">{{ $label }}</label>
+                                <select id="{{ $inputId }}" name="scores[{{ $scoreKey }}][{{ $field }}]" required class="mt-2 block min-h-11 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-base shadow-sm sm:text-sm">
                                     <option value="">Pilih skor</option>
                                     @for ($score = $round->rating_scale_min; $score <= $round->rating_scale_max; $score++)
                                         <option value="{{ $score }}" @selected(old("scores.{$scoreKey}.{$field}") == $score)>{{ $score }}</option>
@@ -185,6 +196,34 @@
                     </div>
                 </section>
             @endforeach
+
+            <section class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+                <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Overall recommendation</p>
+                <h2 class="mt-1 text-lg font-semibold leading-7 text-slate-950">Final feasibility decision</h2>
+                <div class="mt-5 grid gap-4 lg:grid-cols-3">
+                    <div>
+                        <label for="feasibility_decision" class="block text-sm font-semibold text-slate-700">Final decision</label>
+                        <select id="feasibility_decision" name="feasibility_decision" required class="mt-2 block min-h-11 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-base shadow-sm sm:text-sm">
+                            <option value="">Pilih keputusan akhir</option>
+                            @foreach ($feasibilityDecisions as $value => $label)
+                                <option value="{{ $value }}" @selected(old('feasibility_decision') === $value)>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                        @error('feasibility_decision')
+                            <p class="mt-1 text-sm text-red-700">{{ $message }}</p>
+                        @enderror
+                    </div>
+                    <div class="lg:col-span-2">
+                        <label for="general_comments" class="block text-sm font-semibold text-slate-700">General comments</label>
+                        <textarea id="general_comments" name="general_comments" rows="4" class="mt-2 block w-full rounded-md border border-slate-300 px-3 py-2 text-base leading-6 shadow-sm sm:text-sm">{{ old('general_comments') }}</textarea>
+                    </div>
+                    <div class="lg:col-span-3">
+                        <label for="revision_suggestions" class="block text-sm font-semibold text-slate-700">Suggested revisions</label>
+                        <textarea id="revision_suggestions" name="revision_suggestions" rows="4" class="mt-2 block w-full rounded-md border border-slate-300 px-3 py-2 text-base leading-6 shadow-sm sm:text-sm">{{ old('revision_suggestions') }}</textarea>
+                        <p class="mt-1 text-sm text-slate-500">Saran ini akan masuk ke revision matrix peneliti.</p>
+                    </div>
+                </div>
+            </section>
 
             <section class="rounded-lg border border-emerald-200 bg-white p-5 shadow-sm">
                 <p class="text-sm leading-6 text-slate-600">Pastikan semua butir telah diberi skor sebelum mengirim. Setelah dikirim, hasil validasi tidak dapat diubah melalui link ini.</p>

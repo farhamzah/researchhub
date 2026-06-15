@@ -12,6 +12,7 @@ use App\Http\Controllers\AdminSurveyResponseController;
 use App\Http\Controllers\AdminSurveyResponseExportController;
 use App\Http\Controllers\AdminSurveyScoringController;
 use App\Http\Controllers\AdminSurveyValidationController;
+use App\Http\Controllers\AdminSurveyValidationReportController;
 use App\Http\Controllers\AdminSurveyValidationResultController;
 use App\Http\Controllers\PublicSupervisionReviewController;
 use App\Http\Controllers\PublicSurveyController;
@@ -168,12 +169,16 @@ Route::middleware('auth')->group(function (): void {
         ->name('admin.surveys.validation.rounds.update');
     Route::get('/admin/surveys/{survey}/validation/rounds/{round}/results', AdminSurveyValidationResultController::class)
         ->name('admin.surveys.validation.results.show');
+    Route::get('/admin/surveys/{survey}/validation/rounds/{round}/report', AdminSurveyValidationReportController::class)
+        ->name('admin.surveys.validation.report');
     Route::post('/admin/surveys/{survey}/validation/rounds/{round}/assignments', [AdminSurveyValidationController::class, 'storeAssignment'])
         ->name('admin.surveys.validation.assignments.store');
     Route::post('/admin/surveys/{survey}/validation/assignments/{assignment}/generate-link', [AdminSurveyValidationController::class, 'generateLink'])
         ->name('admin.surveys.validation.assignments.generate-link');
     Route::post('/admin/surveys/{survey}/validation/assignments/{assignment}/revoke-link', [AdminSurveyValidationController::class, 'revokeLink'])
         ->name('admin.surveys.validation.assignments.revoke-link');
+    Route::put('/admin/surveys/{survey}/validation/revisions/{revision}', [AdminSurveyValidationController::class, 'updateRevision'])
+        ->name('admin.surveys.validation.revisions.update');
 });
 
 Route::middleware('throttle:review-links')->group(function (): void {
@@ -200,6 +205,10 @@ Route::middleware('throttle:surveys')->group(function (): void {
         ->name('validation.survey.show');
     Route::post('/validation/survey/{token}', [PublicSurveyValidationController::class, 'store'])
         ->name('validation.survey.store');
+    Route::get('/validator/surveys/{token}', [PublicSurveyValidationController::class, 'show'])
+        ->name('validator.surveys.show');
+    Route::post('/validator/surveys/{token}', [PublicSurveyValidationController::class, 'store'])
+        ->name('validator.surveys.store');
 });
 
 Route::middleware('throttle:review-links')->group(function (): void {

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class SurveyValidationAssignment extends Model
 {
@@ -20,6 +21,8 @@ class SurveyValidationAssignment extends Model
 
     public const STATUS_SUBMITTED = 'submitted';
 
+    public const STATUS_REVIEWED = 'reviewed';
+
     public const STATUS_EXPIRED = 'expired';
 
     public const STATUS_REVOKED = 'revoked';
@@ -29,6 +32,7 @@ class SurveyValidationAssignment extends Model
         self::STATUS_LINK_GENERATED,
         self::STATUS_OPENED,
         self::STATUS_SUBMITTED,
+        self::STATUS_REVIEWED,
         self::STATUS_EXPIRED,
         self::STATUS_REVOKED,
     ];
@@ -38,6 +42,7 @@ class SurveyValidationAssignment extends Model
         self::STATUS_LINK_GENERATED => 'Link Generated',
         self::STATUS_OPENED => 'Opened',
         self::STATUS_SUBMITTED => 'Submitted',
+        self::STATUS_REVIEWED => 'Reviewed',
         self::STATUS_EXPIRED => 'Expired',
         self::STATUS_REVOKED => 'Revoked',
     ];
@@ -100,6 +105,16 @@ class SurveyValidationAssignment extends Model
         return $this->hasMany(SurveyValidationScore::class);
     }
 
+    public function recommendation(): HasOne
+    {
+        return $this->hasOne(SurveyValidationRecommendation::class);
+    }
+
+    public function revisions(): HasMany
+    {
+        return $this->hasMany(SurveyValidationRevision::class, 'source_assignment_id');
+    }
+
     public function isExpired(): bool
     {
         return $this->expires_at !== null && $this->expires_at->isPast();
@@ -112,7 +127,7 @@ class SurveyValidationAssignment extends Model
 
     public function isSubmitted(): bool
     {
-        return $this->submitted_at !== null || $this->status === self::STATUS_SUBMITTED;
+        return $this->submitted_at !== null || in_array($this->status, [self::STATUS_SUBMITTED, self::STATUS_REVIEWED], true);
     }
 
     public function isAccessible(): bool

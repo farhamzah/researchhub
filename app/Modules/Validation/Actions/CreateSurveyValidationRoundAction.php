@@ -28,7 +28,7 @@ class CreateSurveyValidationRoundAction
             'description' => $attributes['description'] ?? null,
             'method' => (string) ($attributes['method'] ?? SurveyValidationRound::METHOD_EXPERT_JUDGMENT),
             'rating_scale_min' => (int) ($attributes['rating_scale_min'] ?? 1),
-            'rating_scale_max' => (int) ($attributes['rating_scale_max'] ?? 4),
+            'rating_scale_max' => (int) ($attributes['rating_scale_max'] ?? 5),
             'status' => (string) ($attributes['status'] ?? SurveyValidationRound::STATUS_DRAFT),
             'instructions' => $attributes['instructions'] ?? null,
             'starts_at' => $attributes['starts_at'] ?? null,

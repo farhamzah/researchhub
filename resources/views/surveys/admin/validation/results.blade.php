@@ -32,6 +32,9 @@
                 <p class="mt-1 text-xs text-gray-500">{{ $survey->project?->title ?? 'No project' }}</p>
             </div>
             <div class="flex flex-wrap gap-2">
+                <a href="{{ route('admin.surveys.validation.report', ['survey' => $survey, 'round' => $round]) }}" target="_blank" class="rounded-md border border-blue-300 bg-white px-4 py-2 text-sm font-semibold text-blue-700 shadow-sm hover:bg-blue-50">
+                    Printable Report
+                </a>
                 <a href="{{ route('admin.surveys.validation.index', ['survey' => $survey]) }}" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50">
                     Validation Rounds
                 </a>
@@ -88,6 +91,18 @@
 
         <section class="mb-6 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+                <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Average Score</p>
+                <p class="mt-2 text-2xl font-semibold">{{ $result->summary['overall_average_score'] === null ? 'N/A' : number_format((float) $result->summary['overall_average_score'], 2) }}</p>
+            </div>
+            <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+                <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Feasibility Percentage</p>
+                <p class="mt-2 text-2xl font-semibold">{{ $result->summary['percentage_feasibility'] === null ? 'N/A' : number_format((float) $result->summary['percentage_feasibility'], 2).'%' }}</p>
+            </div>
+            <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm md:col-span-2">
+                <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Validation Category</p>
+                <p class="mt-2 text-lg font-semibold">{{ $result->summary['validation_category'] }}</p>
+            </div>
+            <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
                 <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Submitted Validators</p>
                 <p class="mt-2 text-2xl font-semibold">{{ $result->summary['submitted_count'] }}</p>
             </div>
@@ -121,6 +136,41 @@
             </div>
         </section>
 
+        <section class="mb-6 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+            <h2 class="text-xl font-semibold">Aspect Summary</h2>
+            <div class="mt-5 overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 text-sm">
+                    <thead>
+                        <tr class="text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                            <th class="py-3 pr-4">Aspect</th>
+                            <th class="py-3 pr-4">Average Score</th>
+                            <th class="py-3 pr-4">Aiken's V</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        @foreach ($result->aspectSummary as $aspect)
+                            <tr>
+                                <td class="py-3 pr-4 font-medium">{{ $aspect['label'] }}</td>
+                                <td class="py-3 pr-4">{{ $aspect['average_score'] === null ? 'N/A' : number_format((float) $aspect['average_score'], 2) }}</td>
+                                <td class="py-3 pr-4">{{ $formatMetric($aspect['aiken_v']) }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="mb-6 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+            <h2 class="text-xl font-semibold">Feasibility Decisions</h2>
+            <div class="mt-4 flex flex-wrap gap-2">
+                @forelse ($result->summary['decision_counts'] as $decision => $count)
+                    <span class="rounded-full bg-gray-100 px-3 py-1 text-sm font-semibold text-gray-700">{{ \App\Models\SurveyValidationRecommendation::DECISION_LABELS[$decision] ?? $decision }}: {{ $count }}</span>
+                @empty
+                    <p class="text-sm text-gray-500">No final decisions submitted yet.</p>
+                @endforelse
+            </div>
+        </section>
+
         <section class="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-950">
             Thresholds are decision aids and should be confirmed by the researcher/supervisor. Default interpretation: valid if average Aiken's V and I-CVI are at least 0.80; revise for values around 0.60-0.79; reject when below 0.60.
         </section>
@@ -149,6 +199,8 @@
                             <th class="py-3 pr-4">Validator</th>
                             <th class="py-3 pr-4">Role</th>
                             <th class="py-3 pr-4">Status</th>
+                            <th class="py-3 pr-4">Average Score</th>
+                            <th class="py-3 pr-4">Decision</th>
                             <th class="py-3 pr-4">Opened At</th>
                             <th class="py-3 pr-4">Submitted At</th>
                             <th class="py-3 pr-4">Expiry / Revoked</th>
@@ -160,6 +212,8 @@
                                 <td class="py-3 pr-4 font-medium">{{ $validator['validator_name'] }}</td>
                                 <td class="py-3 pr-4">{{ \App\Models\ExpertValidatorProject::ROLE_LABELS[$validator['role']] ?? ($validator['role'] ?: 'No role') }}</td>
                                 <td class="py-3 pr-4">{{ \App\Models\SurveyValidationAssignment::STATUS_LABELS[$validator['status']] ?? $validator['status'] }}</td>
+                                <td class="py-3 pr-4">{{ $validator['average_score'] === null ? 'N/A' : number_format((float) $validator['average_score'], 2) }}</td>
+                                <td class="py-3 pr-4">{{ $validator['feasibility_decision'] ? (\App\Models\SurveyValidationRecommendation::DECISION_LABELS[$validator['feasibility_decision']] ?? $validator['feasibility_decision']) : 'Not submitted' }}</td>
                                 <td class="py-3 pr-4">{{ $validator['opened_at']?->format('Y-m-d H:i') ?? 'Not opened' }}</td>
                                 <td class="py-3 pr-4">{{ $validator['submitted_at']?->format('Y-m-d H:i') ?? 'Not submitted' }}</td>
                                 <td class="py-3 pr-4">
@@ -169,7 +223,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="py-6 text-center text-sm text-gray-500">No validators assigned.</td>
+                                <td colspan="8" class="py-6 text-center text-sm text-gray-500">No validators assigned.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -186,10 +240,12 @@
                             <th class="py-3 pr-4">#</th>
                             <th class="py-3 pr-4">Question</th>
                             <th class="py-3 pr-4">Type</th>
-                            <th class="py-3 pr-4">Aiken V Relevance</th>
-                            <th class="py-3 pr-4">Aiken V Clarity</th>
+                            <th class="py-3 pr-4">Aiken V Content</th>
                             <th class="py-3 pr-4">Aiken V Language</th>
-                            <th class="py-3 pr-4">Aiken V Appropriateness</th>
+                            <th class="py-3 pr-4">Aiken V Construct</th>
+                            <th class="py-3 pr-4">Aiken V Measurability</th>
+                            <th class="py-3 pr-4">Aiken V Feasibility</th>
+                            <th class="py-3 pr-4">Aiken V Ethics</th>
                             <th class="py-3 pr-4">Average Aiken V</th>
                             <th class="py-3 pr-4">I-CVI</th>
                             <th class="py-3 pr-4">Status</th>
@@ -207,10 +263,12 @@
                                     @endif
                                 </td>
                                 <td class="py-3 pr-4">{{ str_replace('_', ' ', $item['question_type']) }}</td>
-                                <td class="py-3 pr-4">{{ $formatMetric($item['aiken']['relevance_score']) }}</td>
-                                <td class="py-3 pr-4">{{ $formatMetric($item['aiken']['clarity_score']) }}</td>
-                                <td class="py-3 pr-4">{{ $formatMetric($item['aiken']['language_score']) }}</td>
-                                <td class="py-3 pr-4">{{ $formatMetric($item['aiken']['appropriateness_score']) }}</td>
+                                <td class="py-3 pr-4">{{ $formatMetric($item['aiken']['content_relevance_score']) }}</td>
+                                <td class="py-3 pr-4">{{ $formatMetric($item['aiken']['language_clarity_score']) }}</td>
+                                <td class="py-3 pr-4">{{ $formatMetric($item['aiken']['construct_alignment_score']) }}</td>
+                                <td class="py-3 pr-4">{{ $formatMetric($item['aiken']['measurability_score']) }}</td>
+                                <td class="py-3 pr-4">{{ $formatMetric($item['aiken']['feasibility_score']) }}</td>
+                                <td class="py-3 pr-4">{{ $formatMetric($item['aiken']['ethical_suitability_score']) }}</td>
                                 <td class="py-3 pr-4 font-semibold">{{ $formatMetric($item['average_aiken_v']) }}</td>
                                 <td class="py-3 pr-4 font-semibold">{{ $formatMetric($item['i_cvi']) }}</td>
                                 <td class="py-3 pr-4">
@@ -226,7 +284,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="11" class="py-6 text-center text-sm text-gray-500">No survey questions available for validation.</td>
+                                <td colspan="13" class="py-6 text-center text-sm text-gray-500">No survey questions available for validation.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -253,6 +311,51 @@
                         </div>
                     </article>
                 @endforeach
+            </div>
+        </section>
+
+        <section class="mb-6 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+            <h2 class="text-xl font-semibold">Revision Matrix</h2>
+            <p class="mt-2 text-sm text-gray-600">Use this matrix for dissertation documentation and instrument revision tracking.</p>
+            <div class="mt-5 overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 text-sm">
+                    <thead>
+                        <tr class="text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                            <th class="py-3 pr-4">Validator</th>
+                            <th class="py-3 pr-4">Validator Comment</th>
+                            <th class="py-3 pr-4">Researcher Action</th>
+                            <th class="py-3 pr-4">Status</th>
+                            <th class="py-3 pr-4">Researcher Note</th>
+                            <th class="py-3 pr-4">Save</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        @forelse ($result->revisionMatrix as $revision)
+                            <tr>
+                                <td class="py-3 pr-4 font-medium">{{ $revision['validator_name'] }}</td>
+                                <td class="py-3 pr-4">{{ $revision['validator_comment'] }}</td>
+                                <td colspan="4" class="py-3 pr-4">
+                                    <form method="POST" action="{{ route('admin.surveys.validation.revisions.update', ['survey' => $survey, 'revision' => $revision['id']]) }}" class="grid gap-3 lg:grid-cols-[1.2fr_0.8fr_1.2fr_auto]">
+                                        @csrf
+                                        @method('PUT')
+                                        <textarea name="revision_action" rows="2" class="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm" placeholder="Researcher action">{{ $revision['revision_action'] }}</textarea>
+                                        <select name="status" class="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm">
+                                            @foreach (\App\Models\SurveyValidationRevision::STATUS_LABELS as $value => $label)
+                                                <option value="{{ $value }}" @selected($revision['status'] === $value)>{{ $label }}</option>
+                                            @endforeach
+                                        </select>
+                                        <textarea name="researcher_note" rows="2" class="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm" placeholder="Researcher note">{{ $revision['researcher_note'] }}</textarea>
+                                        <button type="submit" class="rounded-md bg-gray-900 px-3 py-2 text-xs font-semibold text-white shadow-sm hover:bg-gray-800">Save</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="6" class="py-6 text-center text-sm text-gray-500">No revision suggestions submitted yet.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
         </section>
 

@@ -6,6 +6,8 @@ use App\Models\ExpertValidator;
 use App\Models\ExpertValidatorProject;
 use App\Models\Survey;
 use App\Models\SurveyValidationAssignment;
+use App\Models\SurveyValidationRecommendation;
+use App\Models\SurveyValidationRevision;
 use App\Models\SurveyValidationRound;
 use App\Modules\Validation\Actions\CreateSurveyValidationAssignmentAction;
 use App\Modules\Validation\Actions\CreateSurveyValidationRoundAction;
@@ -28,6 +30,7 @@ class AdminSurveyValidationController extends Controller
             'project',
             'questions.scoring.indicator',
             'validationRounds.assignments.validator',
+            'validationRounds.assignments.recommendation',
             'validationRounds.assignments.scores.question',
         ]);
 
@@ -39,6 +42,7 @@ class AdminSurveyValidationController extends Controller
             'roundStatuses' => SurveyValidationRound::STATUS_LABELS,
             'assignmentStatuses' => SurveyValidationAssignment::STATUS_LABELS,
             'roleLabels' => ExpertValidatorProject::ROLE_LABELS,
+            'feasibilityDecisions' => SurveyValidationRecommendation::DECISION_LABELS,
         ]);
     }
 
@@ -106,6 +110,27 @@ class AdminSurveyValidationController extends Controller
         return redirect()
             ->route('admin.surveys.validation.index', ['survey' => $survey])
             ->with('status', 'survey-validation-link-revoked');
+    }
+
+    public function updateRevision(
+        Survey $survey,
+        SurveyValidationRevision $revision,
+        Request $request,
+    ): RedirectResponse {
+        abort_unless($revision->survey_id === $survey->getKey(), 404);
+        Gate::authorize('manageValidation', $survey);
+
+        $data = $request->validate([
+            'revision_action' => ['nullable', 'string', 'max:10000'],
+            'status' => ['required', 'string', Rule::in(SurveyValidationRevision::STATUSES)],
+            'researcher_note' => ['nullable', 'string', 'max:10000'],
+        ]);
+
+        $revision->update($data);
+
+        return redirect()
+            ->route('admin.surveys.validation.index', ['survey' => $survey])
+            ->with('status', 'survey-validation-revision-updated');
     }
 
     /**

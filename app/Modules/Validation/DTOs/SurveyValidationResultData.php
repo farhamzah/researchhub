@@ -11,6 +11,8 @@ class SurveyValidationResultData
      * @param  array<int, array<string, mixed>>  $validators
      * @param  array<int, array<string, mixed>>  $items
      * @param  array<int, array<string, mixed>>  $comments
+     * @param  array<int, array<string, mixed>>  $aspectSummary
+     * @param  array<int, array<string, mixed>>  $revisionMatrix
      */
     public function __construct(
         public readonly SurveyValidationRound $round,
@@ -18,6 +20,8 @@ class SurveyValidationResultData
         public readonly array $validators,
         public readonly array $items,
         public readonly array $comments,
+        public readonly array $aspectSummary,
+        public readonly array $revisionMatrix,
         public readonly string $narrative,
         public readonly string $cvrNote,
     ) {}

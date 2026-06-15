@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\SurveyQuestion;
+use App\Models\SurveyValidationRecommendation;
 use App\Models\SurveyValidationScore;
 use App\Modules\Validation\Actions\SubmitSurveyValidationScoresAction;
 use App\Modules\Validation\Services\SurveyValidationTokenResolver;
@@ -49,6 +50,7 @@ class PublicSurveyValidationController extends Controller
             'questions' => $questions,
             'token' => $token,
             'recommendations' => SurveyValidationScore::RECOMMENDATION_LABELS,
+            'feasibilityDecisions' => SurveyValidationRecommendation::DECISION_LABELS,
         ]);
     }
 
@@ -79,6 +81,7 @@ class PublicSurveyValidationController extends Controller
                 $assignment,
                 $this->normalizePublicScores($assignment, $request->input('scores', [])),
                 $request,
+                $this->recommendationData($request),
             );
         } catch (ValidationException $exception) {
             throw ValidationException::withMessages($this->publicErrorMessages($assignment, $exception));
@@ -140,5 +143,17 @@ class PublicSurveyValidationController extends Controller
             ->orderBy('sort_order')
             ->get()
             ->values();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function recommendationData(Request $request): array
+    {
+        return $request->validate([
+            'feasibility_decision' => ['nullable', 'string', 'in:'.implode(',', SurveyValidationRecommendation::DECISIONS)],
+            'general_comments' => ['nullable', 'string', 'max:10000'],
+            'revision_suggestions' => ['nullable', 'string', 'max:10000'],
+        ]);
     }
 }

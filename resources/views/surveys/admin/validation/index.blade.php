@@ -99,7 +99,7 @@
                 </div>
                 <div>
                     <label for="rating_scale_max" class="block text-sm font-medium text-gray-700">Rating Max</label>
-                    <input id="rating_scale_max" name="rating_scale_max" type="number" min="2" value="4" required class="mt-2 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm">
+                    <input id="rating_scale_max" name="rating_scale_max" type="number" min="2" value="5" required class="mt-2 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm">
                 </div>
                 <div>
                     <label for="starts_at" class="block text-sm font-medium text-gray-700">Starts At</label>
@@ -115,7 +115,7 @@
                 </div>
                 <div class="lg:col-span-3">
                     <label for="instructions" class="block text-sm font-medium text-gray-700">Instructions</label>
-                    <textarea id="instructions" name="instructions" rows="3" class="mt-2 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm">Mohon menilai setiap butir instrumen berdasarkan relevansi, kejelasan, bahasa, dan kelayakan.</textarea>
+                    <textarea id="instructions" name="instructions" rows="3" class="mt-2 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm">Mohon menilai setiap butir instrumen dengan skala 1-5 berdasarkan content relevance, language clarity, construct alignment, measurability, feasibility of use, dan ethical/privacy suitability.</textarea>
                 </div>
                 <button type="submit" class="lg:col-span-3 rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-600">
                     Create Validation Round
@@ -197,6 +197,9 @@
                             <a href="{{ route('admin.surveys.validation.results.show', ['survey' => $survey, 'round' => $round]) }}" class="rounded-md border border-emerald-300 bg-white px-3 py-2 text-xs font-semibold text-emerald-800 shadow-sm hover:bg-emerald-50">
                                 View Results
                             </a>
+                            <a href="{{ route('admin.surveys.validation.report', ['survey' => $survey, 'round' => $round]) }}" target="_blank" class="rounded-md border border-blue-300 bg-white px-3 py-2 text-xs font-semibold text-blue-800 shadow-sm hover:bg-blue-50">
+                                Printable Report
+                            </a>
                         </div>
                         @if ($availableValidators === [])
                             <p class="mt-3 rounded-md border border-dashed border-gray-300 bg-gray-50 p-4 text-sm text-gray-600">No active validators are available for this survey. Add a validator to the project or registry first.</p>
@@ -253,12 +256,18 @@
                                                 <span class="text-gray-500">No scores yet</span>
                                             @else
                                                 <details>
-                                                    <summary class="cursor-pointer font-semibold text-emerald-700">{{ $assignment->scores->count() }} scored items</summary>
+                                                    <summary class="cursor-pointer font-semibold text-emerald-700">
+                                                        {{ $assignment->scores->count() }} scored items
+                                                        @if ($assignment->recommendation)
+                                                            - Avg {{ number_format((float) $assignment->recommendation->overall_score, 2) }}
+                                                            - {{ $feasibilityDecisions[$assignment->recommendation->feasibility_decision] ?? $assignment->recommendation->feasibility_decision }}
+                                                        @endif
+                                                    </summary>
                                                     <div class="mt-2 max-w-xl space-y-2">
                                                         @foreach ($assignment->scores as $score)
                                                             <div class="rounded-md border border-gray-200 bg-gray-50 p-3">
                                                                 <p class="font-medium">{{ $score->question?->label }}</p>
-                                                                <p class="mt-1 text-xs text-gray-600">R{{ $score->relevance_score }} C{{ $score->clarity_score }} L{{ $score->language_score }} A{{ $score->appropriateness_score }} - {{ \App\Models\SurveyValidationScore::RECOMMENDATION_LABELS[$score->recommendation] ?? $score->recommendation }}</p>
+                                                                <p class="mt-1 text-xs text-gray-600">Content {{ $score->content_relevance_score ?? $score->relevance_score }} | Language {{ $score->language_clarity_score ?? $score->clarity_score }} | Construct {{ $score->construct_alignment_score ?? $score->appropriateness_score }} | Measurable {{ $score->measurability_score ?? $score->clarity_score }} | Feasible {{ $score->feasibility_score ?? $score->appropriateness_score }} | Ethics {{ $score->ethical_suitability_score ?? $score->relevance_score }} - {{ \App\Models\SurveyValidationScore::RECOMMENDATION_LABELS[$score->recommendation] ?? $score->recommendation }}</p>
                                                                 @if ($score->comment)
                                                                     <p class="mt-1 text-xs text-gray-600">{{ $score->comment }}</p>
                                                                 @endif

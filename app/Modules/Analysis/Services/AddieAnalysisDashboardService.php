@@ -63,6 +63,7 @@ class AddieAnalysisDashboardService
             'readability' => $readability,
             'readiness' => $readiness,
             'synthesis_items' => $survey->synthesisItems,
+            'analysis_instruments' => $this->analysisInstruments($survey),
             'filters' => $this->filters($survey->synthesisItems),
         ];
     }
@@ -76,6 +77,7 @@ class AddieAnalysisDashboardService
         $drafts = collect()
             ->merge($this->draftsFromPriority($survey, $dashboard['priority']))
             ->merge($this->draftsFromResponses($survey, $dashboard['response_summary']))
+            ->merge($this->draftsFromRelatedInstruments($survey))
             ->merge($this->draftsFromValidation($survey, $dashboard['validation']))
             ->merge($this->draftsFromReadability($survey, $dashboard['readability']));
 
@@ -136,6 +138,72 @@ class AddieAnalysisDashboardService
                 ];
             })
             ->all();
+    }
+
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    private function analysisInstruments(Survey $survey): array
+    {
+        $related = Survey::query()
+            ->withCount([
+                'responses',
+                'responses as submitted_responses_count' => fn ($query) => $query->where('status', SurveyResponse::STATUS_SUBMITTED),
+            ])
+            ->where('project_id', $survey->project_id)
+            ->where(function ($query) use ($survey): void {
+                $query
+                    ->where('id', $survey->getKey())
+                    ->orWhere('parent_survey_id', $survey->getKey());
+            })
+            ->get()
+            ->keyBy('instrument_type');
+
+        return [
+            'student' => $this->instrumentCard(
+                $survey->fresh(['project'])->loadCount([
+                    'responses',
+                    'responses as submitted_responses_count' => fn ($query) => $query->where('status', SurveyResponse::STATUS_SUBMITTED),
+                ]),
+                'Student Questionnaire',
+                'Instrumen utama analisis kebutuhan mahasiswa.',
+                false,
+                null,
+            ),
+            'lecturer' => $this->instrumentCard(
+                $related->get(Survey::INSTRUMENT_ANALYSIS_LECTURER),
+                'Lecturer Questionnaire',
+                'Kuesioner analisis kebutuhan dosen PharmVR.',
+                true,
+                'admin.surveys.analysis.create-lecturer-questionnaire',
+            ),
+            'practitioner' => $this->instrumentCard(
+                $related->get(Survey::INSTRUMENT_PRACTITIONER_INTERVIEW),
+                'Practitioner Interview Form',
+                'Pedoman wawancara praktisi atau ahli CPOB.',
+                true,
+                'admin.surveys.analysis.create-practitioner-interview',
+            ),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function instrumentCard(?Survey $instrument, string $label, string $description, bool $canCreate, ?string $createRoute): array
+    {
+        return [
+            'label' => $label,
+            'description' => $description,
+            'exists' => $instrument instanceof Survey,
+            'survey' => $instrument,
+            'response_count' => $instrument?->responses_count ?? 0,
+            'submitted_response_count' => $instrument?->submitted_responses_count ?? 0,
+            'is_public' => (bool) ($instrument?->is_public ?? false),
+            'can_receive_responses' => $instrument?->canReceiveResponses() ?? false,
+            'can_create' => $canCreate,
+            'create_route' => $createRoute,
+        ];
     }
 
     /**
@@ -434,6 +502,145 @@ class AddieAnalysisDashboardService
             ])
             ->values()
             ->all();
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function draftsFromRelatedInstruments(Survey $survey): array
+    {
+        $related = Survey::query()
+            ->with(['project', 'questions.answers.response', 'responses.answers'])
+            ->where('project_id', $survey->project_id)
+            ->where('parent_survey_id', $survey->getKey())
+            ->whereIn('instrument_type', [Survey::INSTRUMENT_ANALYSIS_LECTURER, Survey::INSTRUMENT_PRACTITIONER_INTERVIEW])
+            ->get();
+
+        return $related
+            ->flatMap(function (Survey $instrument): array {
+                $submittedResponses = $instrument->responses
+                    ->filter(fn (SurveyResponse $response): bool => $response->status === SurveyResponse::STATUS_SUBMITTED)
+                    ->values();
+
+                if ($submittedResponses->isEmpty()) {
+                    return [];
+                }
+
+                $summary = $this->responseSummary($instrument, $submittedResponses);
+
+                return $instrument->instrument_type === Survey::INSTRUMENT_ANALYSIS_LECTURER
+                    ? $this->draftsFromLecturerInstrument($instrument, $summary)
+                    : $this->draftsFromPractitionerInstrument($instrument, $summary);
+            })
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $summary
+     * @return array<int, array<string, mixed>>
+     */
+    private function draftsFromLecturerInstrument(Survey $instrument, array $summary): array
+    {
+        $drafts = [];
+
+        foreach ($summary as $row) {
+            $label = Str::lower($row['label']);
+            $analysis = $row['analysis'];
+
+            if (isset($analysis['mean']) && (float) $analysis['mean'] >= 4.0) {
+                $theme = match (true) {
+                    $this->matches($label, ['cpl', 'cpmk', 'obe', 'kurikulum']) => AnalysisSynthesisItem::THEME_ASSESSMENT_NEED,
+                    $this->matches($label, ['assessment', 'pretest', 'posttest', 'rubrik', 'monitoring', 'tracking', 'dashboard']) => AnalysisSynthesisItem::THEME_ASSESSMENT_NEED,
+                    $this->matches($label, ['teknologi', 'headset', 'laptop', 'smartphone', 'avatar', 'instructor']) => AnalysisSynthesisItem::THEME_TECHNOLOGY_READINESS,
+                    $this->matches($label, ['konten', 'cpob', 'gmp', 'hygiene', 'gowning', 'airlock', 'weighing']) => AnalysisSynthesisItem::THEME_CPOB_CONTENT_NEED,
+                    default => AnalysisSynthesisItem::THEME_VR_MEDIA_NEED,
+                };
+
+                $drafts[] = [
+                    'source_type' => AnalysisSynthesisItem::SOURCE_LECTURER_SURVEY,
+                    'source_label' => $instrument->title,
+                    'theme' => $theme,
+                    'finding' => 'Dosen menilai penting: '.$row['label'],
+                    'evidence_summary' => $row['summary_text'],
+                    'evidence_metric' => 'Mean '.$this->format($analysis['mean']),
+                    'priority_level' => (float) $analysis['mean'] >= 4.5 ? AnalysisSynthesisItem::PRIORITY_HIGH : AnalysisSynthesisItem::PRIORITY_MEDIUM,
+                    'design_implication' => 'Masukkan kebutuhan dosen ini ke rancangan pembelajaran PharmVR.',
+                    'development_decision' => 'Petakan kebutuhan ke scene, fitur monitoring, atau assessment sesuai tema.',
+                    'mapped_module' => $this->mappedModule($row['label']),
+                ];
+            }
+
+            if (($row['type'] ?? null) === SurveyQuestion::TYPE_MULTIPLE_CHOICE && $this->matches($label, ['prioritas scene'])) {
+                foreach (array_slice($this->frequencyRows($row), 0, 5) as $frequency) {
+                    $drafts[] = [
+                        'source_type' => AnalysisSynthesisItem::SOURCE_LECTURER_SURVEY,
+                        'source_label' => $instrument->title,
+                        'theme' => AnalysisSynthesisItem::THEME_SCENE_PRIORITY,
+                        'finding' => 'Dosen memprioritaskan scene '.$frequency['label'].'.',
+                        'evidence_summary' => $frequency['question'],
+                        'evidence_metric' => $frequency['count'].' selected / '.number_format($frequency['percentage'], 2).'%',
+                        'priority_level' => AnalysisSynthesisItem::PRIORITY_HIGH,
+                        'design_implication' => 'Pertimbangkan scene ini sebagai kandidat prioritas desain PharmVR.',
+                        'development_decision' => 'Masukkan scene ini ke backlog MVP bila selaras dengan validasi praktisi.',
+                        'mapped_module' => $this->mappedModule((string) $frequency['label']),
+                    ];
+                }
+            }
+        }
+
+        return array_slice($drafts, 0, 12);
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $summary
+     * @return array<int, array<string, mixed>>
+     */
+    private function draftsFromPractitionerInstrument(Survey $instrument, array $summary): array
+    {
+        $drafts = [];
+
+        foreach ($summary as $row) {
+            $label = Str::lower($row['label']);
+
+            if (($row['type'] ?? null) === SurveyQuestion::TYPE_MULTIPLE_CHOICE && $this->matches($label, ['tema utama'])) {
+                foreach (array_slice($this->frequencyRows($row), 0, 8) as $frequency) {
+                    $drafts[] = [
+                        'source_type' => AnalysisSynthesisItem::SOURCE_PRACTITIONER_INTERVIEW,
+                        'source_label' => $instrument->title,
+                        'theme' => $this->matches(Str::lower((string) $frequency['label']), ['risiko', 'miskonsepsi']) ? AnalysisSynthesisItem::THEME_DEVELOPMENT_RISK : AnalysisSynthesisItem::THEME_CPOB_CONTENT_NEED,
+                        'finding' => 'Praktisi menekankan tema '.$frequency['label'].' dalam rancangan PharmVR.',
+                        'evidence_summary' => $frequency['question'],
+                        'evidence_metric' => $frequency['count'].' coded / '.number_format($frequency['percentage'], 2).'%',
+                        'priority_level' => AnalysisSynthesisItem::PRIORITY_HIGH,
+                        'design_implication' => 'Tema praktisi ini perlu dipakai untuk menjaga akurasi dan relevansi industri.',
+                        'development_decision' => 'Gunakan tema ini sebagai checklist validasi scene dan konten.',
+                        'mapped_module' => $this->mappedModule((string) $frequency['label']),
+                    ];
+                }
+            }
+
+            if (($row['type'] ?? null) === SurveyQuestion::TYPE_LONG_TEXT && $this->matches($label, ['risiko', 'scene', 'dokumentasi', 'weighing', 'airlock', 'evaluasi'])) {
+                $sample = collect($row['analysis']['sample_answers'] ?? [])->first();
+
+                if ($sample) {
+                    $drafts[] = [
+                        'source_type' => AnalysisSynthesisItem::SOURCE_PRACTITIONER_INTERVIEW,
+                        'source_label' => $instrument->title,
+                        'theme' => $this->matches($label, ['risiko']) ? AnalysisSynthesisItem::THEME_DEVELOPMENT_RISK : AnalysisSynthesisItem::THEME_CPOB_CONTENT_NEED,
+                        'finding' => 'Masukan praktisi: '.$row['label'],
+                        'evidence_summary' => $sample,
+                        'evidence_metric' => $row['answered_count'].' interview notes',
+                        'priority_level' => AnalysisSynthesisItem::PRIORITY_HIGH,
+                        'design_implication' => 'Gunakan masukan praktisi untuk memperjelas akurasi scene dan materi.',
+                        'development_decision' => 'Masukkan sebagai acceptance checklist untuk modul terkait.',
+                        'mapped_module' => $this->mappedModule($row['label'].' '.$sample),
+                    ];
+                }
+            }
+        }
+
+        return array_slice($drafts, 0, 12);
     }
 
     /**

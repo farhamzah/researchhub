@@ -45,6 +45,30 @@ class Survey extends Model
         self::IDENTITY_PSEUDONYM,
     ];
 
+    public const INSTRUMENT_ANALYSIS_STUDENT = 'analysis_student_questionnaire';
+
+    public const INSTRUMENT_ANALYSIS_LECTURER = 'analysis_lecturer_questionnaire';
+
+    public const INSTRUMENT_PRACTITIONER_INTERVIEW = 'practitioner_interview_form';
+
+    public const INSTRUMENT_OTHER = 'other';
+
+    public const INSTRUMENT_TYPES = [
+        self::INSTRUMENT_ANALYSIS_STUDENT,
+        self::INSTRUMENT_ANALYSIS_LECTURER,
+        self::INSTRUMENT_PRACTITIONER_INTERVIEW,
+        self::INSTRUMENT_OTHER,
+    ];
+
+    public const INSTRUMENT_LABELS = [
+        self::INSTRUMENT_ANALYSIS_STUDENT => 'Student Questionnaire',
+        self::INSTRUMENT_ANALYSIS_LECTURER => 'Lecturer Questionnaire',
+        self::INSTRUMENT_PRACTITIONER_INTERVIEW => 'Practitioner Interview Form',
+        self::INSTRUMENT_OTHER => 'Other',
+    ];
+
+    public const ANALYSIS_GROUP_PHARMVR_ADDIE = 'pharmvr_addie_analysis';
+
     public $incrementing = false;
 
     protected $keyType = 'string';
@@ -58,6 +82,9 @@ class Survey extends Model
         'schema',
         'status',
         'identity_mode',
+        'instrument_type',
+        'parent_survey_id',
+        'analysis_group_key',
         'is_public',
         'published_at',
         'closed_at',
@@ -98,6 +125,16 @@ class Survey extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function parentSurvey(): BelongsTo
+    {
+        return $this->belongsTo(Survey::class, 'parent_survey_id');
+    }
+
+    public function relatedAnalysisInstruments(): HasMany
+    {
+        return $this->hasMany(Survey::class, 'parent_survey_id');
     }
 
     public function pages(): HasMany

@@ -7,6 +7,8 @@ use App\Models\AnalysisSynthesisItem;
 use App\Models\Survey;
 use App\Modules\Analysis\Actions\RunSurveyDescriptiveAnalysisAction;
 use App\Modules\Analysis\Services\AddieAnalysisDashboardService;
+use App\Modules\Surveys\Actions\CreateLecturerNeedsAnalysisQuestionnaireAction;
+use App\Modules\Surveys\Actions\CreatePractitionerInterviewFormAction;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -108,6 +110,34 @@ class AdminSurveyAnalysisController extends Controller
         return redirect()
             ->route('admin.surveys.analysis.index', ['survey' => $survey])
             ->with('status', 'analysis-synthesis-generated-'.$result['created'].'-created-'.$result['skipped'].'-skipped');
+    }
+
+    public function createLecturerQuestionnaire(
+        Survey $survey,
+        Request $request,
+        CreateLecturerNeedsAnalysisQuestionnaireAction $createLecturerQuestionnaire,
+    ): RedirectResponse {
+        Gate::authorize('runAnalysis', $survey);
+
+        $instrument = $createLecturerQuestionnaire->handle($request->user(), $survey, $request);
+
+        return redirect()
+            ->route('admin.surveys.builder.index', ['survey' => $instrument])
+            ->with('status', 'lecturer-needs-analysis-questionnaire-ready');
+    }
+
+    public function createPractitionerInterviewForm(
+        Survey $survey,
+        Request $request,
+        CreatePractitionerInterviewFormAction $createPractitionerInterview,
+    ): RedirectResponse {
+        Gate::authorize('runAnalysis', $survey);
+
+        $instrument = $createPractitionerInterview->handle($request->user(), $survey, $request);
+
+        return redirect()
+            ->route('admin.surveys.builder.index', ['survey' => $instrument])
+            ->with('status', 'practitioner-interview-form-ready');
     }
 
     public function report(Survey $survey, AddieAnalysisDashboardService $dashboardService): View

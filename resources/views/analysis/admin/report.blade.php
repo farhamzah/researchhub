@@ -51,6 +51,30 @@
         </section>
 
         <section class="mt-8">
+            <h2 class="text-xl font-semibold">ADDIE Analysis Instruments</h2>
+            <table class="mt-4 min-w-full divide-y divide-slate-200 text-sm">
+                <thead>
+                    <tr class="text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        <th class="py-2 pr-4">Instrument</th>
+                        <th class="py-2 pr-4">Status</th>
+                        <th class="py-2 pr-4">Submitted Responses</th>
+                        <th class="py-2 pr-4">Public Status</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    @foreach ($dashboard['analysis_instruments'] as $instrument)
+                        <tr>
+                            <td class="py-2 pr-4">{{ $instrument['label'] }}</td>
+                            <td class="py-2 pr-4">{{ $instrument['exists'] ? 'Exists' : 'Not created' }}</td>
+                            <td class="py-2 pr-4">{{ $instrument['submitted_response_count'] }}</td>
+                            <td class="py-2 pr-4">{{ $instrument['can_receive_responses'] ? 'Open' : 'Not open' }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </section>
+
+        <section class="mt-8">
             <h2 class="text-xl font-semibold">Survey Response Summary</h2>
             <table class="mt-4 min-w-full divide-y divide-slate-200 text-sm">
                 <thead>

@@ -101,6 +101,57 @@
             <section class="mb-6 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
                 <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                     <div>
+                        <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">ADDIE Analysis Instruments</p>
+                        <h2 class="mt-1 text-xl font-semibold">Triangulasi Instrumen Analysis PharmVR</h2>
+                        <p class="mt-1 text-sm text-slate-600">Gunakan survey mahasiswa, kuesioner dosen, dan wawancara praktisi untuk memperkuat evidence sebelum tahap Design.</p>
+                    </div>
+                </div>
+                <div class="mt-5 grid gap-4 lg:grid-cols-3">
+                    @foreach ($dashboard['analysis_instruments'] as $instrumentKey => $instrument)
+                        <article class="rounded-lg border {{ $instrument['exists'] ? 'border-emerald-200 bg-emerald-50' : 'border-amber-200 bg-amber-50' }} p-5">
+                            <div class="flex items-start justify-between gap-3">
+                                <div>
+                                    <p class="text-xs font-semibold uppercase tracking-wide {{ $instrument['exists'] ? 'text-emerald-700' : 'text-amber-800' }}">{{ $instrument['exists'] ? 'Exists' : 'Not created' }}</p>
+                                    <h3 class="mt-1 text-lg font-semibold text-slate-950">{{ $instrument['label'] }}</h3>
+                                    <p class="mt-1 text-sm leading-6 text-slate-600">{{ $instrument['description'] }}</p>
+                                </div>
+                            </div>
+
+                            @if ($instrument['exists'])
+                                <dl class="mt-4 grid grid-cols-2 gap-3 text-sm">
+                                    <div class="rounded-md bg-white/70 p-3">
+                                        <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Responses</dt>
+                                        <dd class="mt-1 font-semibold">{{ $instrument['submitted_response_count'] }} submitted</dd>
+                                    </div>
+                                    <div class="rounded-md bg-white/70 p-3">
+                                        <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Public</dt>
+                                        <dd class="mt-1 font-semibold">{{ $instrument['can_receive_responses'] ? 'Open' : 'Not open' }}</dd>
+                                    </div>
+                                </dl>
+                                <div class="mt-4 flex flex-wrap gap-2">
+                                    <a href="{{ route('admin.surveys.builder.index', ['survey' => $instrument['survey']]) }}" class="rounded-md border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50">Open Builder</a>
+                                    <a href="{{ route('admin.surveys.analysis.index', ['survey' => $instrument['survey']]) }}" class="rounded-md border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50">Response Summary</a>
+                                    @if ($instrument['can_receive_responses'])
+                                        <a href="{{ route('survey.show', ['survey' => $instrument['survey']->slug]) }}" target="_blank" class="rounded-md border border-emerald-300 bg-white px-3 py-2 text-xs font-semibold text-emerald-800 shadow-sm hover:bg-emerald-50">Public Form</a>
+                                    @endif
+                                </div>
+                            @elseif ($instrument['can_create'] && $instrument['create_route'])
+                                <form method="POST" action="{{ route($instrument['create_route'], ['survey' => $survey]) }}" class="mt-4">
+                                    @csrf
+                                    <button type="submit" class="rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-600">
+                                        {{ $instrumentKey === 'lecturer' ? 'Create Lecturer Questionnaire' : 'Create Practitioner Interview Form' }}
+                                    </button>
+                                </form>
+                            @endif
+                        </article>
+                    @endforeach
+                </div>
+                <p class="mt-4 rounded-md border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-900">Privacy note: lecturer and practitioner instruments allow initials. Company/industry names may be omitted when confidential.</p>
+            </section>
+
+            <section class="mb-6 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+                <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
                         <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Survey Response Summary</p>
                         <h2 class="mt-1 text-xl font-semibold">Ringkasan Respons Survey Utama</h2>
                     </div>

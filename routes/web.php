@@ -132,6 +132,10 @@ Route::middleware('auth')->group(function (): void {
         ->name('admin.surveys.analysis.synthesis-items.delete');
     Route::post('/admin/surveys/{survey}/analysis/generate-synthesis', [AdminSurveyAnalysisController::class, 'generateSynthesis'])
         ->name('admin.surveys.analysis.generate-synthesis');
+    Route::post('/admin/surveys/{survey}/analysis/create-lecturer-questionnaire', [AdminSurveyAnalysisController::class, 'createLecturerQuestionnaire'])
+        ->name('admin.surveys.analysis.create-lecturer-questionnaire');
+    Route::post('/admin/surveys/{survey}/analysis/create-practitioner-interview', [AdminSurveyAnalysisController::class, 'createPractitionerInterviewForm'])
+        ->name('admin.surveys.analysis.create-practitioner-interview');
     Route::get('/admin/analysis/results/{analysisResult}', [AdminSurveyAnalysisController::class, 'show'])
         ->name('admin.analysis.results.show');
     Route::get('/admin/analysis/{analysisResult}/export/csv', [AdminAnalysisExportController::class, 'csv'])

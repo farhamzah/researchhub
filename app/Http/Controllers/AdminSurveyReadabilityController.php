@@ -15,6 +15,7 @@ use App\Modules\Surveys\Services\SurveyReadabilityResultService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -147,11 +148,19 @@ class AdminSurveyReadabilityController extends Controller
      */
     private function participantData(Request $request): array
     {
-        return $request->validate([
+        $validator = Validator::make($request->all(), [
             'participant_name' => ['nullable', 'string', 'max:255'],
             'participant_email' => ['nullable', 'email', 'max:255'],
             'participant_type' => ['nullable', 'string', Rule::in(SurveyReadabilityParticipant::TYPES)],
             'institution' => ['nullable', 'string', 'max:255'],
         ]);
+
+        $validator->after(function ($validator) use ($request): void {
+            if (blank($request->input('participant_name')) && blank($request->input('participant_email'))) {
+                $validator->errors()->add('participant_name', 'Isi minimal nama atau email participant.');
+            }
+        });
+
+        return $validator->validate();
     }
 }

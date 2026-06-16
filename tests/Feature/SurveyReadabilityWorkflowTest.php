@@ -17,6 +17,7 @@ use App\Models\SurveyValidationRound;
 use App\Models\User;
 use App\Modules\Surveys\Actions\CreateSurveyAction;
 use App\Modules\Surveys\Actions\PublishSurveyAction;
+use App\Modules\Surveys\Actions\SubmitSurveyReadabilityResponseAction;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -32,8 +33,9 @@ class SurveyReadabilityWorkflowTest extends TestCase
         $this->actingAs($owner)
             ->get(route('admin.surveys.readability.index', ['survey' => $survey]))
             ->assertOk()
-            ->assertSeeText('Readability Test')
-            ->assertSeeText('Create Readability Round');
+            ->assertSeeText('Uji Keterbacaan')
+            ->assertSeeText('Buat Putaran Uji Keterbacaan')
+            ->assertSeeText('No readability issues have been submitted yet. The revision matrix will appear after participants submit feedback.');
 
         $this->actingAs($owner)
             ->post(route('admin.surveys.readability.rounds.store', ['survey' => $survey]), [
@@ -45,6 +47,23 @@ class SurveyReadabilityWorkflowTest extends TestCase
             ->assertRedirect(route('admin.surveys.readability.index', ['survey' => $survey]));
 
         $round = SurveyReadabilityRound::query()->firstOrFail();
+
+        $this->actingAs($owner)
+            ->get(route('admin.surveys.readability.index', ['survey' => $survey]))
+            ->assertOk()
+            ->assertSeeText('Create another readability round')
+            ->assertSeeText('Tambah Responden Pilot')
+            ->assertSeeText('No pilot participants have been added yet. Add 5-10 participants to start the readability test.');
+
+        $this->actingAs($owner)
+            ->post(route('admin.surveys.readability.participants.store', ['survey' => $survey, 'round' => $round]), [
+                'participant_name' => '',
+                'participant_email' => '',
+                'participant_type' => SurveyReadabilityParticipant::TYPE_STUDENT,
+            ])
+            ->assertSessionHasErrors([
+                'participant_name' => 'Isi minimal nama atau email participant.',
+            ]);
 
         $this->actingAs($owner)
             ->post(route('admin.surveys.readability.participants.store', ['survey' => $survey, 'round' => $round]), [
@@ -76,6 +95,13 @@ class SurveyReadabilityWorkflowTest extends TestCase
 
         $this->assertNotEmpty($token);
         $this->assertNotSame($token, $participant->fresh()->token_hash);
+
+        $this->actingAs($owner)
+            ->get(route('admin.surveys.readability.index', ['survey' => $survey]))
+            ->assertOk()
+            ->assertSeeText('Link hanya ditampilkan saat dibuat atau diregenerasi.')
+            ->assertSeeText('Copy Link')
+            ->assertSeeText('Open Link');
 
         $this->get(route('readability.survey.show', ['token' => $token]))
             ->assertOk()
@@ -242,7 +268,7 @@ class SurveyReadabilityWorkflowTest extends TestCase
             'token_created_at' => now(),
         ])->save();
 
-        app(\App\Modules\Surveys\Actions\SubmitSurveyReadabilityResponseAction::class)->handle($participant, [
+        app(SubmitSurveyReadabilityResponseAction::class)->handle($participant, [
             'participant_name' => 'Pilot Student',
             'participant_type' => SurveyReadabilityParticipant::TYPE_STUDENT,
             'institution' => 'PharmVR Campus',

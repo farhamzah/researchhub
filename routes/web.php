@@ -7,6 +7,7 @@ use App\Http\Controllers\AdminProjectTemplateController;
 use App\Http\Controllers\AdminProjectTimelineController;
 use App\Http\Controllers\AdminProjectValidatorController;
 use App\Http\Controllers\AdminSurveyAnalysisController;
+use App\Http\Controllers\AdminSurveyAnalysisPackageController;
 use App\Http\Controllers\AdminSurveyBuilderController;
 use App\Http\Controllers\AdminSurveyCollectionMonitoringController;
 use App\Http\Controllers\AdminSurveyDistributionController;
@@ -134,6 +135,18 @@ Route::middleware('auth')->group(function (): void {
         ->name('admin.surveys.collection-monitoring.report');
     Route::get('/admin/surveys/{survey}/collection-monitoring/export.csv', [AdminSurveyCollectionMonitoringController::class, 'exportCsv'])
         ->name('admin.surveys.collection-monitoring.export');
+    Route::get('/admin/surveys/{survey}/analysis-package', [AdminSurveyAnalysisPackageController::class, 'index'])
+        ->name('admin.surveys.analysis-package.index');
+    Route::put('/admin/surveys/{survey}/analysis-package', [AdminSurveyAnalysisPackageController::class, 'updateMetadata'])
+        ->name('admin.surveys.analysis-package.update');
+    Route::get('/admin/surveys/{survey}/analysis-package/print', [AdminSurveyAnalysisPackageController::class, 'print'])
+        ->name('admin.surveys.analysis-package.print');
+    Route::get('/admin/surveys/{survey}/analysis-package/export.html', [AdminSurveyAnalysisPackageController::class, 'exportHtml'])
+        ->name('admin.surveys.analysis-package.export-html');
+    Route::get('/admin/surveys/{survey}/analysis-package/export.doc', [AdminSurveyAnalysisPackageController::class, 'exportDoc'])
+        ->name('admin.surveys.analysis-package.export-doc');
+    Route::post('/admin/surveys/{survey}/analysis-package/finalize', [AdminSurveyAnalysisPackageController::class, 'finalize'])
+        ->name('admin.surveys.analysis-package.finalize');
     Route::post('/admin/surveys/{survey}/analysis/synthesis-items', [AdminSurveyAnalysisController::class, 'storeSynthesisItem'])
         ->name('admin.surveys.analysis.synthesis-items.store');
     Route::put('/admin/surveys/{survey}/analysis/synthesis-items/{synthesisItem}', [AdminSurveyAnalysisController::class, 'updateSynthesisItem'])

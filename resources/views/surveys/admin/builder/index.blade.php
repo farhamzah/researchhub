@@ -180,7 +180,7 @@
                 </div>
             </div>
 
-            <form method="POST" action="{{ route('admin.surveys.builder.intro.update', ['survey' => $survey]) }}" class="mt-5 rounded-lg border border-emerald-100 bg-emerald-50/60 p-5">
+            <form method="POST" action="{{ route('admin.surveys.builder.intro.update', ['survey' => $survey]) }}" enctype="multipart/form-data" class="mt-5 rounded-lg border border-emerald-100 bg-emerald-50/60 p-5">
                 @csrf
                 @method('PUT')
                 <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
@@ -202,6 +202,55 @@
                     <div>
                         <label for="estimated_duration" class="block text-sm font-medium text-slate-700">Estimated completion time</label>
                         <input id="estimated_duration" name="estimated_duration" value="{{ old('estimated_duration', $survey->estimated_duration) }}" placeholder="10-15 menit" class="mt-2 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm">
+                    </div>
+                    <div class="lg:col-span-2">
+                        <div class="rounded-md border border-emerald-200 bg-white p-4">
+                            <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+                                <div>
+                                    <label for="intro_image" class="block text-sm font-medium text-slate-700">Intro illustration image</label>
+                                    <input id="intro_image" name="intro_image" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" class="mt-2 block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm">
+                                    @error('intro_image')
+                                        <p class="mt-2 text-sm text-red-700">{{ $message }}</p>
+                                    @enderror
+                                    <p class="mt-2 text-xs leading-5 text-slate-500">JPG, JPEG, PNG, or WEBP. Max 2MB. Recommended 16:9, 1200x675 or 1600x900. Use neutral research context imagery that does not imply a preferred answer.</p>
+
+                                    @if ($survey->introImageUrl())
+                                        <label class="mt-4 flex items-start gap-3 rounded-md border border-red-200 bg-red-50 p-3 text-sm leading-6 text-red-950">
+                                            <input type="checkbox" name="remove_intro_image" value="1" @checked(old('remove_intro_image')) class="mt-1 rounded border-red-300 text-red-700">
+                                            <span>Remove current intro image</span>
+                                        </label>
+                                    @endif
+                                </div>
+
+                                <div>
+                                    @if ($survey->introImageUrl())
+                                        <figure class="overflow-hidden rounded-md border border-slate-200 bg-slate-50">
+                                            <img src="{{ $survey->introImageUrl() }}" alt="{{ $survey->intro_image_alt_text }}" class="aspect-video w-full object-cover">
+                                        </figure>
+                                    @else
+                                        <div class="flex aspect-video items-center justify-center rounded-md border border-dashed border-slate-300 bg-slate-50 text-sm text-slate-500">No intro image uploaded</div>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <div class="mt-4 grid gap-4 lg:grid-cols-2">
+                                <div>
+                                    <label for="intro_image_alt_text" class="block text-sm font-medium text-slate-700">Image alt text</label>
+                                    <input id="intro_image_alt_text" name="intro_image_alt_text" value="{{ old('intro_image_alt_text', $survey->intro_image_alt_text) }}" placeholder="Ilustrasi responden membaca pengantar survey penelitian" class="mt-2 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm">
+                                    @error('intro_image_alt_text')
+                                        <p class="mt-2 text-sm text-red-700">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                                <div>
+                                    <label for="intro_image_source_note" class="block text-sm font-medium text-slate-700">Credit/source note</label>
+                                    <input id="intro_image_source_note" name="intro_image_source_note" value="{{ old('intro_image_source_note', $survey->intro_image_source_note) }}" placeholder="Dokumentasi peneliti / licensed image source" class="mt-2 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm">
+                                </div>
+                                <div class="lg:col-span-2">
+                                    <label for="intro_image_caption" class="block text-sm font-medium text-slate-700">Image caption</label>
+                                    <textarea id="intro_image_caption" name="intro_image_caption" rows="2" placeholder="Gambar bersifat ilustratif dan tidak memengaruhi jawaban responden." class="mt-2 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm leading-6 shadow-sm">{{ old('intro_image_caption', $survey->intro_image_caption) }}</textarea>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div class="lg:col-span-2">
                         <label for="intro_text" class="block text-sm font-medium text-slate-700">Intro narrative / explanation</label>

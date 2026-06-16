@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class Survey extends Model
@@ -87,6 +88,10 @@ class Survey extends Model
         'respondent_instruction',
         'consent_text',
         'require_consent_before_start',
+        'intro_image_path',
+        'intro_image_alt_text',
+        'intro_image_caption',
+        'intro_image_source_note',
         'schema',
         'status',
         'identity_mode',
@@ -234,6 +239,15 @@ class Survey extends Model
     public function analysisPilotRuns(): HasMany
     {
         return $this->hasMany(AnalysisPilotRun::class);
+    }
+
+    public function introImageUrl(): ?string
+    {
+        if (blank($this->intro_image_path)) {
+            return null;
+        }
+
+        return Storage::disk('public')->url($this->intro_image_path);
     }
 
     public function distributionBatches(): HasMany

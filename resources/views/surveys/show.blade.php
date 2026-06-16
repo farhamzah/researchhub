@@ -9,7 +9,8 @@
 <body class="bg-gray-50 text-gray-950 antialiased">
     <main class="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
         @php
-            $hasIntro = filled($survey->intro_text);
+            $introImageUrl = $survey->introImageUrl();
+            $hasIntro = filled($survey->intro_text) || filled($introImageUrl);
             $showQuestionsImmediately = ! $hasIntro || $errors->any() || old('intro_consent') === '1';
             $introConsentText = $survey->consent_text ?: 'Saya telah membaca penjelasan di atas dan bersedia melanjutkan.';
         @endphp
@@ -33,15 +34,35 @@
             <section id="survey-intro" data-intro-gate class="{{ $showQuestionsImmediately ? 'hidden' : '' }} rounded-lg border border-emerald-200 bg-white p-6 shadow-sm">
                 <p class="text-sm font-semibold uppercase tracking-wide text-emerald-700">Survey Introduction</p>
                 <h2 class="mt-2 text-2xl font-semibold">{{ $survey->intro_title ?: $survey->title }}</h2>
-                <p class="mt-4 whitespace-pre-line text-sm leading-7 text-gray-700">{{ $survey->intro_text }}</p>
 
-                <dl class="mt-5 grid gap-3 sm:grid-cols-2">
-                    @if ($survey->estimated_duration)
-                        <div class="rounded-md border border-gray-200 bg-gray-50 p-4">
-                            <dt class="text-xs font-semibold uppercase tracking-wide text-gray-500">Estimated time</dt>
-                            <dd class="mt-1 text-sm font-semibold text-gray-900">{{ $survey->estimated_duration }}</dd>
-                        </div>
-                    @endif
+                @if ($survey->estimated_duration)
+                    <div class="mt-4 rounded-md border border-gray-200 bg-gray-50 p-4">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Estimated time</p>
+                        <p class="mt-1 text-sm font-semibold text-gray-900">{{ $survey->estimated_duration }}</p>
+                    </div>
+                @endif
+
+                @if ($introImageUrl)
+                    <figure class="mt-5 overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
+                        <img src="{{ $introImageUrl }}" alt="{{ $survey->intro_image_alt_text }}" loading="lazy" decoding="async" class="aspect-video w-full object-cover">
+                        @if ($survey->intro_image_caption || $survey->intro_image_source_note)
+                            <figcaption class="border-t border-gray-200 px-4 py-3 text-xs leading-5 text-gray-600">
+                                @if ($survey->intro_image_caption)
+                                    <span>{{ $survey->intro_image_caption }}</span>
+                                @endif
+                                @if ($survey->intro_image_source_note)
+                                    <span class="block text-gray-500">{{ $survey->intro_image_source_note }}</span>
+                                @endif
+                            </figcaption>
+                        @endif
+                    </figure>
+                @endif
+
+                @if ($survey->intro_text)
+                    <p class="mt-5 whitespace-pre-line text-sm leading-7 text-gray-700">{{ $survey->intro_text }}</p>
+                @endif
+
+                <dl class="mt-5 grid gap-3">
                     @if ($survey->privacy_statement)
                         <div class="rounded-md border border-gray-200 bg-gray-50 p-4">
                             <dt class="text-xs font-semibold uppercase tracking-wide text-gray-500">Privacy</dt>

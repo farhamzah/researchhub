@@ -90,6 +90,8 @@ class AdminSurveyBuilderController extends Controller
     {
         Gate::authorize('update', $survey);
 
+        $removeIntroImage = $request->boolean('remove_intro_image');
+
         $data = $request->validate([
             'intro_title' => ['nullable', 'string', 'max:255'],
             'intro_text' => ['nullable', 'string', 'max:10000'],
@@ -98,6 +100,16 @@ class AdminSurveyBuilderController extends Controller
             'respondent_instruction' => ['nullable', 'string', 'max:10000'],
             'consent_text' => ['nullable', 'string', 'max:10000'],
             'require_consent_before_start' => ['nullable', 'boolean'],
+            'intro_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'intro_image_alt_text' => [
+                Rule::requiredIf(fn (): bool => ! $removeIntroImage && ($request->hasFile('intro_image') || filled($survey->intro_image_path))),
+                'nullable',
+                'string',
+                'max:255',
+            ],
+            'intro_image_caption' => ['nullable', 'string', 'max:500'],
+            'intro_image_source_note' => ['nullable', 'string', 'max:255'],
+            'remove_intro_image' => ['nullable', 'boolean'],
         ]);
 
         $updateIntro->handle($request->user(), $survey, $data, $request);

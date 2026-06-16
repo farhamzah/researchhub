@@ -215,6 +215,11 @@ class Survey extends Model
         return $this->hasMany(AnalysisSynthesisItem::class);
     }
 
+    public function distributionBatches(): HasMany
+    {
+        return $this->hasMany(SurveyDistributionBatch::class);
+    }
+
     public function canReceiveResponses(): bool
     {
         return $this->status === self::STATUS_PUBLISHED && $this->is_public;

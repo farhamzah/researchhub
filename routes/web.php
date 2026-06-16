@@ -8,6 +8,7 @@ use App\Http\Controllers\AdminProjectTimelineController;
 use App\Http\Controllers\AdminProjectValidatorController;
 use App\Http\Controllers\AdminSurveyAnalysisController;
 use App\Http\Controllers\AdminSurveyBuilderController;
+use App\Http\Controllers\AdminSurveyDistributionController;
 use App\Http\Controllers\AdminSurveyReadabilityController;
 use App\Http\Controllers\AdminSurveyReadabilityReportController;
 use App\Http\Controllers\AdminSurveyReadabilityResultController;
@@ -147,6 +148,20 @@ Route::middleware('auth')->group(function (): void {
 
     Route::get('/admin/surveys/{survey}/builder', [AdminSurveyBuilderController::class, 'index'])
         ->name('admin.surveys.builder.index');
+    Route::get('/admin/surveys/{survey}/distribution', [AdminSurveyDistributionController::class, 'index'])
+        ->name('admin.surveys.distribution.index');
+    Route::get('/admin/surveys/{survey}/distribution/report', [AdminSurveyDistributionController::class, 'report'])
+        ->name('admin.surveys.distribution.report');
+    Route::put('/admin/surveys/{survey}/distribution/batches/{audience}', [AdminSurveyDistributionController::class, 'updateBatch'])
+        ->name('admin.surveys.distribution.batches.update');
+    Route::post('/admin/surveys/{survey}/distribution/validation/assignments/{assignment}/generate-link', [AdminSurveyDistributionController::class, 'generateValidationLink'])
+        ->name('admin.surveys.distribution.validation.generate-link');
+    Route::post('/admin/surveys/{survey}/distribution/validation/assignments/{assignment}/revoke-link', [AdminSurveyDistributionController::class, 'revokeValidationLink'])
+        ->name('admin.surveys.distribution.validation.revoke-link');
+    Route::post('/admin/surveys/{survey}/distribution/readability/participants/{participant}/generate-link', [AdminSurveyDistributionController::class, 'generateReadabilityLink'])
+        ->name('admin.surveys.distribution.readability.generate-link');
+    Route::post('/admin/surveys/{survey}/distribution/readability/participants/{participant}/revoke-link', [AdminSurveyDistributionController::class, 'revokeReadabilityLink'])
+        ->name('admin.surveys.distribution.readability.revoke-link');
     Route::put('/admin/surveys/{survey}/builder/intro', [AdminSurveyBuilderController::class, 'updateIntro'])
         ->name('admin.surveys.builder.intro.update');
     Route::post('/admin/surveys/{survey}/builder/pages', [AdminSurveyBuilderController::class, 'storePage'])

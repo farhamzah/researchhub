@@ -59,6 +59,7 @@
             <h2 class="text-lg font-semibold">Petunjuk validasi</h2>
             <p class="mt-2">Bapak/Ibu diminta memberikan penilaian terhadap setiap butir instrumen berdasarkan kriteria yang tersedia.</p>
             <ul class="mt-3 list-disc space-y-1 pl-5">
+                <li>Form ini digunakan untuk menilai kualitas butir instrumen, bukan untuk menjawab survey sebagai responden.</li>
                 <li>Gunakan skala penilaian yang disediakan.</li>
                 <li>Komentar dapat diberikan untuk membantu perbaikan redaksi, relevansi, atau kejelasan butir.</li>
                 <li>Setelah dikirim, isian tidak dapat diubah melalui link ini.</li>

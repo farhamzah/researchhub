@@ -147,6 +147,8 @@ Route::middleware('auth')->group(function (): void {
 
     Route::get('/admin/surveys/{survey}/builder', [AdminSurveyBuilderController::class, 'index'])
         ->name('admin.surveys.builder.index');
+    Route::put('/admin/surveys/{survey}/builder/intro', [AdminSurveyBuilderController::class, 'updateIntro'])
+        ->name('admin.surveys.builder.intro.update');
     Route::post('/admin/surveys/{survey}/builder/pages', [AdminSurveyBuilderController::class, 'storePage'])
         ->name('admin.surveys.builder.pages.store');
     Route::put('/admin/surveys/{survey}/builder/pages/{page}', [AdminSurveyBuilderController::class, 'updatePage'])

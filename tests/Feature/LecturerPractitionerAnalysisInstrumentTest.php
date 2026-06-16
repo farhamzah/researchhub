@@ -33,6 +33,9 @@ class LecturerPractitionerAnalysisInstrumentTest extends TestCase
 
         $this->assertSame($mainSurvey->id, $lecturerSurvey->parent_survey_id);
         $this->assertSame(Survey::ANALYSIS_GROUP_PHARMVR_ADDIE, $lecturerSurvey->analysis_group_key);
+        $this->assertSame('Pengantar Kuesioner Analisis Kebutuhan Dosen PharmVR', $lecturerSurvey->intro_title);
+        $this->assertSame('10-15 menit', $lecturerSurvey->estimated_duration);
+        $this->assertTrue($lecturerSurvey->require_consent_before_start);
         $this->assertSame(8, $lecturerSurvey->pages()->count());
         $this->assertDatabaseHas('survey_questions', [
             'survey_id' => $lecturerSurvey->id,
@@ -64,6 +67,9 @@ class LecturerPractitionerAnalysisInstrumentTest extends TestCase
             ->firstOrFail();
 
         $this->assertSame($mainSurvey->id, $form->parent_survey_id);
+        $this->assertSame('Pengantar Wawancara Praktisi/Ahli CPOB PharmVR', $form->intro_title);
+        $this->assertStringContainsString('inisial', $form->privacy_statement);
+        $this->assertTrue($form->require_consent_before_start);
         $this->assertSame(3, $form->pages()->count());
         $this->assertDatabaseHas('survey_questions', [
             'survey_id' => $form->id,
@@ -124,11 +130,14 @@ class LecturerPractitionerAnalysisInstrumentTest extends TestCase
 
         $this->get(route('survey.show', ['survey' => $lecturerSurvey->fresh()->slug]))
             ->assertOk()
-            ->assertSeeText('Kuesioner Analisis Kebutuhan Dosen PharmVR');
+            ->assertSeeText('Kuesioner Analisis Kebutuhan Dosen PharmVR')
+            ->assertSeeText('Pengantar Kuesioner Analisis Kebutuhan Dosen PharmVR')
+            ->assertSeeText('Saya telah membaca penjelasan di atas dan bersedia melanjutkan.');
 
         $this->get(route('survey.show', ['survey' => $practitionerSurvey->fresh()->slug]))
             ->assertOk()
-            ->assertSeeText('Pedoman Wawancara Praktisi/Ahli CPOB PharmVR');
+            ->assertSeeText('Pedoman Wawancara Praktisi/Ahli CPOB PharmVR')
+            ->assertSeeText('Pengantar Wawancara Praktisi/Ahli CPOB PharmVR');
     }
 
     public function test_generate_draft_synthesis_includes_lecturer_and_practitioner_data(): void

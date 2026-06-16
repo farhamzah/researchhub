@@ -33,6 +33,13 @@ class CreateSurveyAction
             'instrument_type' => ['nullable', 'string', Rule::in(Survey::INSTRUMENT_TYPES)],
             'parent_survey_id' => ['nullable', 'string', 'exists:surveys,id'],
             'analysis_group_key' => ['nullable', 'string', 'max:255'],
+            'intro_title' => ['nullable', 'string', 'max:255'],
+            'intro_text' => ['nullable', 'string', 'max:10000'],
+            'estimated_duration' => ['nullable', 'string', 'max:100'],
+            'privacy_statement' => ['nullable', 'string', 'max:10000'],
+            'respondent_instruction' => ['nullable', 'string', 'max:10000'],
+            'consent_text' => ['nullable', 'string', 'max:10000'],
+            'require_consent_before_start' => ['nullable', 'boolean'],
         ])->validate();
 
         $survey = Survey::create([
@@ -41,6 +48,13 @@ class CreateSurveyAction
             'title' => (string) $attributes['title'],
             'slug' => $this->uniqueSlug((string) ($attributes['slug'] ?? $attributes['title'])),
             'description' => $attributes['description'] ?? null,
+            'intro_title' => $attributes['intro_title'] ?? null,
+            'intro_text' => $attributes['intro_text'] ?? null,
+            'estimated_duration' => $attributes['estimated_duration'] ?? null,
+            'privacy_statement' => $attributes['privacy_statement'] ?? null,
+            'respondent_instruction' => $attributes['respondent_instruction'] ?? null,
+            'consent_text' => $attributes['consent_text'] ?? null,
+            'require_consent_before_start' => (bool) ($attributes['require_consent_before_start'] ?? false),
             'schema' => $attributes['schema'] ?? null,
             'identity_mode' => $identityMode,
             'instrument_type' => $attributes['instrument_type'] ?? null,

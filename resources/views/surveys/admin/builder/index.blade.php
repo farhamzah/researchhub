@@ -165,6 +165,56 @@
                 </div>
             </div>
 
+            <form method="POST" action="{{ route('admin.surveys.builder.intro.update', ['survey' => $survey]) }}" class="mt-5 rounded-lg border border-emerald-100 bg-emerald-50/60 p-5">
+                @csrf
+                @method('PUT')
+                <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Opening / Introduction</p>
+                        <h3 class="mt-1 text-lg font-semibold text-slate-950">Intro sebelum pertanyaan</h3>
+                        <p class="mt-1 text-sm leading-6 text-slate-600">Intro muncul sebelum pertanyaan pada public survey. Kosongkan narasi intro jika survey tidak membutuhkan halaman pembuka.</p>
+                    </div>
+                    <button type="submit" class="rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-600">
+                        Save Intro
+                    </button>
+                </div>
+
+                <div class="mt-5 grid gap-4 lg:grid-cols-2">
+                    <div>
+                        <label for="intro_title" class="block text-sm font-medium text-slate-700">Intro title</label>
+                        <input id="intro_title" name="intro_title" value="{{ old('intro_title', $survey->intro_title) }}" class="mt-2 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm">
+                    </div>
+                    <div>
+                        <label for="estimated_duration" class="block text-sm font-medium text-slate-700">Estimated completion time</label>
+                        <input id="estimated_duration" name="estimated_duration" value="{{ old('estimated_duration', $survey->estimated_duration) }}" placeholder="10-15 menit" class="mt-2 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm">
+                    </div>
+                    <div class="lg:col-span-2">
+                        <label for="intro_text" class="block text-sm font-medium text-slate-700">Intro narrative / explanation</label>
+                        <textarea id="intro_text" name="intro_text" rows="4" class="mt-2 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm leading-6 shadow-sm">{{ old('intro_text', $survey->intro_text) }}</textarea>
+                    </div>
+                    <div>
+                        <label for="privacy_statement" class="block text-sm font-medium text-slate-700">Privacy/confidentiality statement</label>
+                        <textarea id="privacy_statement" name="privacy_statement" rows="3" class="mt-2 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm leading-6 shadow-sm">{{ old('privacy_statement', $survey->privacy_statement) }}</textarea>
+                    </div>
+                    <div>
+                        <label for="respondent_instruction" class="block text-sm font-medium text-slate-700">Respondent instruction</label>
+                        <textarea id="respondent_instruction" name="respondent_instruction" rows="3" class="mt-2 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm leading-6 shadow-sm">{{ old('respondent_instruction', $survey->respondent_instruction) }}</textarea>
+                    </div>
+                    <div class="lg:col-span-2">
+                        <label for="consent_text" class="block text-sm font-medium text-slate-700">Consent checkbox text</label>
+                        <textarea id="consent_text" name="consent_text" rows="2" class="mt-2 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm leading-6 shadow-sm">{{ old('consent_text', $survey->consent_text ?: 'Saya telah membaca penjelasan di atas dan bersedia melanjutkan.') }}</textarea>
+                    </div>
+                    <input type="hidden" name="require_consent_before_start" value="0">
+                    <label class="flex items-start gap-3 rounded-md border border-emerald-200 bg-white p-4 text-sm leading-6 text-slate-700 lg:col-span-2">
+                        <input type="checkbox" name="require_consent_before_start" value="1" @checked(old('require_consent_before_start', $survey->require_consent_before_start)) class="mt-1 rounded border-slate-300 text-emerald-700">
+                        <span>
+                            <span class="block font-semibold text-slate-900">Require consent before showing questions</span>
+                            <span class="block text-slate-600">Respondents must check the intro consent box before continuing to the question form.</span>
+                        </span>
+                    </label>
+                </div>
+            </form>
+
             <div class="mt-5 rounded-md border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-900">
                 Identity mode controls whether respondent identity is collected or anonymized. Do not add sensitive personal data questions unless required by protocol and ethics approval.
             </div>

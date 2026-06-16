@@ -79,6 +79,13 @@ class Survey extends Model
         'title',
         'slug',
         'description',
+        'intro_title',
+        'intro_text',
+        'estimated_duration',
+        'privacy_statement',
+        'respondent_instruction',
+        'consent_text',
+        'require_consent_before_start',
         'schema',
         'status',
         'identity_mode',
@@ -95,6 +102,7 @@ class Survey extends Model
         return [
             'schema' => 'array',
             'is_public' => 'boolean',
+            'require_consent_before_start' => 'boolean',
             'published_at' => 'datetime',
             'closed_at' => 'datetime',
         ];

@@ -12,6 +12,7 @@ use App\Modules\Surveys\Actions\CreateSurveyQuestionAction;
 use App\Modules\Surveys\Actions\DeleteSurveyPageAction;
 use App\Modules\Surveys\Actions\DeleteSurveyQuestionAction;
 use App\Modules\Surveys\Actions\DuplicateSurveyQuestionAction;
+use App\Modules\Surveys\Actions\UpdateSurveyIntroAction;
 use App\Modules\Surveys\Actions\UpdateSurveyPageAction;
 use App\Modules\Surveys\Actions\UpdateSurveyQuestionAction;
 use App\Modules\Surveys\Services\SurveyBuilderReadinessService;
@@ -83,6 +84,27 @@ class AdminSurveyBuilderController extends Controller
         return redirect()
             ->route('admin.surveys.builder.index', ['survey' => $survey])
             ->with('status', 'survey-page-created');
+    }
+
+    public function updateIntro(Survey $survey, Request $request, UpdateSurveyIntroAction $updateIntro): RedirectResponse
+    {
+        Gate::authorize('update', $survey);
+
+        $data = $request->validate([
+            'intro_title' => ['nullable', 'string', 'max:255'],
+            'intro_text' => ['nullable', 'string', 'max:10000'],
+            'estimated_duration' => ['nullable', 'string', 'max:100'],
+            'privacy_statement' => ['nullable', 'string', 'max:10000'],
+            'respondent_instruction' => ['nullable', 'string', 'max:10000'],
+            'consent_text' => ['nullable', 'string', 'max:10000'],
+            'require_consent_before_start' => ['nullable', 'boolean'],
+        ]);
+
+        $updateIntro->handle($request->user(), $survey, $data, $request);
+
+        return redirect()
+            ->route('admin.surveys.builder.index', ['survey' => $survey])
+            ->with('status', 'survey-intro-updated');
     }
 
     public function updatePage(Survey $survey, SurveyPage $page, Request $request, UpdateSurveyPageAction $updatePage): RedirectResponse

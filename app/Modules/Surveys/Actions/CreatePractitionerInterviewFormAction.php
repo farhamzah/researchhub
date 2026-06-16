@@ -5,6 +5,7 @@ namespace App\Modules\Surveys\Actions;
 use App\Models\Survey;
 use App\Models\SurveyQuestion;
 use App\Models\User;
+use App\Modules\Surveys\Support\SurveyIntroTemplates;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -35,11 +36,32 @@ class CreatePractitionerInterviewFormAction
         }
 
         return DB::transaction(function () use ($user, $mainSurvey, $groupKey, $request): Survey {
-            if ($mainSurvey->analysis_group_key !== $groupKey || $mainSurvey->instrument_type === null) {
-                $mainSurvey->forceFill([
-                    'analysis_group_key' => $groupKey,
-                    'instrument_type' => $mainSurvey->instrument_type ?: Survey::INSTRUMENT_ANALYSIS_STUDENT,
-                ])->save();
+            $mainSurveyUpdates = [
+                'analysis_group_key' => $groupKey,
+                'instrument_type' => $mainSurvey->instrument_type ?: Survey::INSTRUMENT_ANALYSIS_STUDENT,
+            ];
+
+            foreach (SurveyIntroTemplates::studentPharmVr() as $key => $value) {
+                if ($key === 'require_consent_before_start') {
+                    $mainSurveyUpdates[$key] = $mainSurvey->require_consent_before_start ?: $value;
+
+                    continue;
+                }
+
+                $mainSurveyUpdates[$key] = filled($mainSurvey->{$key}) ? $mainSurvey->{$key} : $value;
+            }
+
+            $mainSurveyNeedsUpdate = false;
+            foreach ($mainSurveyUpdates as $key => $value) {
+                if ($mainSurvey->{$key} !== $value) {
+                    $mainSurveyNeedsUpdate = true;
+
+                    break;
+                }
+            }
+
+            if ($mainSurveyNeedsUpdate) {
+                $mainSurvey->forceFill($mainSurveyUpdates)->save();
             }
 
             $survey = $this->createSurvey->handle($user, $mainSurvey->project, [
@@ -49,6 +71,7 @@ class CreatePractitionerInterviewFormAction
                 'instrument_type' => Survey::INSTRUMENT_PRACTITIONER_INTERVIEW,
                 'parent_survey_id' => $mainSurvey->getKey(),
                 'analysis_group_key' => $groupKey,
+                ...SurveyIntroTemplates::practitionerPharmVr(),
             ], $request);
 
             $this->buildTemplate($user, $survey, $request);

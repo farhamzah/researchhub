@@ -31,6 +31,12 @@ class PublicSurveyController extends Controller
 
     public function store(Survey $survey, Request $request, SubmitSurveyResponseAction $submitSurveyResponse): View|RedirectResponse|Response
     {
+        if ($survey->canReceiveResponses() && $survey->require_consent_before_start && $request->input('intro_consent') !== '1') {
+            throw ValidationException::withMessages([
+                'intro_consent' => 'Please confirm that you have read the survey explanation before continuing.',
+            ]);
+        }
+
         try {
             $submitSurveyResponse->handle($survey, new SurveyResponseData(
                 answers: $request->input('answers', []),

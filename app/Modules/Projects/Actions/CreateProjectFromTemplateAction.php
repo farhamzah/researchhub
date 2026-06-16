@@ -18,6 +18,7 @@ use App\Models\User;
 use App\Modules\AuditLogs\Services\ActivityLogger;
 use App\Modules\Projects\Services\ProjectTemplateCatalogService;
 use App\Modules\ResearchLinks\Services\ResearchLinkUrlSafetyService;
+use App\Modules\Surveys\Support\SurveyIntroTemplates;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -190,8 +191,11 @@ class CreateProjectFromTemplateAction
             'title' => (string) $surveyTemplate['title'],
             'slug' => $this->uniqueSurveySlug((string) $surveyTemplate['title']),
             'description' => 'Starter survey dari template project. Belum dipublikasikan.',
+            ...SurveyIntroTemplates::studentPharmVr(),
             'status' => Survey::STATUS_DRAFT,
             'identity_mode' => Survey::IDENTITY_HIDDEN,
+            'instrument_type' => Survey::INSTRUMENT_ANALYSIS_STUDENT,
+            'analysis_group_key' => Survey::ANALYSIS_GROUP_PHARMVR_ADDIE,
             'is_public' => false,
         ]);
 

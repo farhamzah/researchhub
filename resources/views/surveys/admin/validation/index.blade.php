@@ -121,7 +121,7 @@
                 </div>
                 <div class="lg:col-span-3">
                     <label for="instructions" class="block text-sm font-medium text-gray-700">Instructions</label>
-                    <textarea id="instructions" name="instructions" rows="3" class="mt-2 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm">Mohon menilai setiap butir instrumen dengan skala 1-5 berdasarkan content relevance, language clarity, construct alignment, measurability, feasibility of use, dan ethical/privacy suitability.</textarea>
+                    <textarea id="instructions" name="instructions" rows="3" class="mt-2 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm">Mohon menilai kualitas setiap butir instrumen, bukan menjawab sebagai responden. Gunakan skala 1-5 berdasarkan content relevance, language clarity, construct alignment, measurability, feasibility of use, dan ethical/privacy suitability.</textarea>
                 </div>
                 <button type="submit" class="lg:col-span-3 rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-600">
                     Create Validation Round

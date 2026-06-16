@@ -140,6 +140,53 @@ class PublicSurveySubmissionTest extends TestCase
         ]);
     }
 
+    public function test_public_survey_intro_requires_consent_before_submission_when_enabled(): void
+    {
+        [$owner, $project, $survey] = $this->surveyFixture(Survey::IDENTITY_PSEUDONYM);
+        $survey->forceFill([
+            'intro_title' => 'Pengantar Kuesioner PharmVR',
+            'intro_text' => 'Kuesioner ini digunakan untuk analisis kebutuhan PharmVR.',
+            'estimated_duration' => '10-15 menit',
+            'privacy_statement' => 'Data dijaga rahasia dan digunakan hanya untuk penelitian.',
+            'respondent_instruction' => 'Pilih jawaban sesuai pengalaman belajar Anda.',
+            'consent_text' => 'Saya telah membaca penjelasan di atas dan bersedia melanjutkan.',
+            'require_consent_before_start' => true,
+        ])->save();
+        $this->attachQuestions($survey);
+        app(PublishSurveyAction::class)->handle($owner, $survey);
+
+        $this->get(route('survey.show', ['survey' => $survey->fresh()->slug]))
+            ->assertOk()
+            ->assertSeeText('Pengantar Kuesioner PharmVR')
+            ->assertSeeText('10-15 menit')
+            ->assertSeeText('Saya telah membaca penjelasan di atas dan bersedia melanjutkan.')
+            ->assertSee('data-intro-gate', false)
+            ->assertDontSee($project->title);
+
+        $validAnswers = [
+            'name_need' => 'Need intro and VR context',
+            'role' => 'student',
+            'consent' => '1',
+        ];
+
+        $this->from(route('survey.show', ['survey' => $survey->slug]))
+            ->post(route('survey.responses.store', ['survey' => $survey->slug]), [
+                'intro_consent' => '0',
+                'answers' => $validAnswers,
+            ])
+            ->assertRedirect(route('survey.show', ['survey' => $survey->slug]))
+            ->assertSessionHasErrors('intro_consent');
+
+        $this->post(route('survey.responses.store', ['survey' => $survey->slug]), [
+            'intro_consent' => '1',
+            'answers' => $validAnswers,
+        ])
+            ->assertOk()
+            ->assertSee('Response submitted');
+
+        $this->assertSame(1, SurveyResponse::count());
+    }
+
     /**
      * @return array{0: User, 1: ResearchProject, 2: Survey}
      */

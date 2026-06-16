@@ -116,6 +116,10 @@ class ProjectTemplateCreationTest extends TestCase
 
         $this->assertSame('Angket Evaluasi Pembelajaran PharmVR', $survey->title);
         $this->assertSame(Survey::STATUS_DRAFT, $survey->status);
+        $this->assertSame(Survey::INSTRUMENT_ANALYSIS_STUDENT, $survey->instrument_type);
+        $this->assertSame('Pengantar Kuesioner Analisis Kebutuhan PharmVR', $survey->intro_title);
+        $this->assertSame('10-15 menit', $survey->estimated_duration);
+        $this->assertTrue($survey->require_consent_before_start);
         $this->assertFalse((bool) $survey->is_public);
         $this->assertSame(4, SurveyQuestion::query()->where('survey_id', $survey->id)->count());
         $this->assertSame(7, Document::query()->where('project_id', $project->id)->count());

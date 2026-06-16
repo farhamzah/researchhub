@@ -99,6 +99,36 @@ class SurveyBuilderWizardTest extends TestCase
             ->assertSeeText('Delete locked');
     }
 
+    public function test_admin_can_configure_public_survey_intro_from_builder(): void
+    {
+        [$owner, $survey] = $this->surveyFixture();
+
+        $this->actingAs($owner)
+            ->put(route('admin.surveys.builder.intro.update', ['survey' => $survey]), [
+                'intro_title' => 'Pengantar Analisis Kebutuhan',
+                'intro_text' => 'Survey ini membantu peneliti memahami kebutuhan responden.',
+                'estimated_duration' => '10-15 menit',
+                'privacy_statement' => 'Data responden dijaga rahasia.',
+                'respondent_instruction' => 'Baca setiap pertanyaan sebelum menjawab.',
+                'consent_text' => 'Saya telah membaca penjelasan dan bersedia melanjutkan.',
+                'require_consent_before_start' => '1',
+            ])
+            ->assertRedirect(route('admin.surveys.builder.index', ['survey' => $survey]));
+
+        $survey->refresh();
+
+        $this->assertSame('Pengantar Analisis Kebutuhan', $survey->intro_title);
+        $this->assertSame('10-15 menit', $survey->estimated_duration);
+        $this->assertTrue($survey->require_consent_before_start);
+        $this->assertDatabaseHas('activity_logs', ['action' => 'survey.intro_updated']);
+
+        $this->actingAs($owner)
+            ->get(route('admin.surveys.builder.index', ['survey' => $survey]))
+            ->assertOk()
+            ->assertSeeText('Opening / Introduction')
+            ->assertSee('Pengantar Analisis Kebutuhan');
+    }
+
     public function test_unauthorized_user_cannot_view_builder_for_inaccessible_survey(): void
     {
         [, $survey] = $this->surveyFixture();

@@ -214,7 +214,7 @@
                                     @enderror
                                     <p class="mt-2 text-xs leading-5 text-slate-500">JPG, JPEG, PNG, or WEBP. Max 2MB. Recommended 16:9, 1200x675 or 1600x900. Use neutral research context imagery that does not imply a preferred answer.</p>
 
-                                    @if ($survey->introImageUrl())
+                                    @if ($survey->intro_image_path)
                                         <label class="mt-4 flex items-start gap-3 rounded-md border border-red-200 bg-red-50 p-3 text-sm leading-6 text-red-950">
                                             <input type="checkbox" name="remove_intro_image" value="1" @checked(old('remove_intro_image')) class="mt-1 rounded border-red-300 text-red-700">
                                             <span>Remove current intro image</span>
@@ -223,10 +223,12 @@
                                 </div>
 
                                 <div>
-                                    @if ($survey->introImageUrl())
-                                        <figure class="overflow-hidden rounded-md border border-slate-200 bg-slate-50">
-                                            <img src="{{ $survey->introImageUrl() }}" alt="{{ $survey->intro_image_alt_text }}" class="aspect-video w-full object-cover">
+                                    @if ($survey->intro_image_url)
+                                        <figure class="overflow-hidden rounded-xl border bg-slate-50">
+                                            <img src="{{ $survey->intro_image_url }}" alt="{{ $survey->intro_image_alt_text ?: 'Survey intro illustration' }}" class="max-h-80 w-full object-contain">
                                         </figure>
+                                    @elseif ($survey->intro_image_path)
+                                        <div class="flex aspect-video items-center justify-center rounded-md border border-amber-200 bg-amber-50 p-4 text-center text-sm leading-6 text-amber-900">Intro image path is saved, but the file could not be found in public storage.</div>
                                     @else
                                         <div class="flex aspect-video items-center justify-center rounded-md border border-dashed border-slate-300 bg-slate-50 text-sm text-slate-500">No intro image uploaded</div>
                                     @endif

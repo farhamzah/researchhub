@@ -41,6 +41,13 @@ class SurveyIntroImageTest extends TestCase
 
         $this->assertStringStartsWith("surveys/{$survey->id}/intro/intro-illustration-", $survey->intro_image_path);
         Storage::disk('public')->assertExists($survey->intro_image_path);
+        $this->assertStringContainsString('/storage/surveys/', $survey->intro_image_url);
+
+        $this->actingAs($owner)
+            ->get(route('admin.surveys.builder.index', ['survey' => $survey]))
+            ->assertOk()
+            ->assertSee($survey->intro_image_url, false)
+            ->assertSee('Ilustrasi responden membaca pengantar survey penelitian');
 
         app(PublishSurveyAction::class)->handle($owner, $survey);
 
@@ -48,7 +55,7 @@ class SurveyIntroImageTest extends TestCase
             ->assertOk()
             ->assertSee('loading="lazy"', false)
             ->assertSee('decoding="async"', false)
-            ->assertSee(Storage::disk('public')->url($survey->intro_image_path), false)
+            ->assertSee($survey->intro_image_url, false)
             ->assertSee('Ilustrasi responden membaca pengantar survey penelitian')
             ->assertSeeText('Gambar bersifat ilustratif dan tidak memengaruhi jawaban responden.')
             ->assertSeeText('Sumber: Dokumentasi peneliti.')
@@ -142,6 +149,40 @@ class SurveyIntroImageTest extends TestCase
             ->assertSeeText('5 menit')
             ->assertDontSee('<figure', false)
             ->assertDontSee('No intro image uploaded');
+    }
+
+    public function test_missing_intro_image_file_does_not_render_broken_image_tag(): void
+    {
+        Storage::fake('public');
+        [$owner, $survey] = $this->surveyFixture();
+
+        $this->actingAs($owner)->put(route('admin.surveys.builder.intro.update', ['survey' => $survey]), [
+            'intro_text' => 'Intro with missing storage file.',
+            'intro_image' => UploadedFile::fake()->image('intro.png', 1200, 675)->size(256),
+            'intro_image_alt_text' => 'Missing intro image',
+        ]);
+
+        $survey->refresh();
+        Storage::disk('public')->assertExists($survey->intro_image_path);
+        Storage::disk('public')->delete($survey->intro_image_path);
+
+        $survey->refresh();
+
+        $this->assertNull($survey->intro_image_url);
+
+        $this->actingAs($owner)
+            ->get(route('admin.surveys.builder.index', ['survey' => $survey]))
+            ->assertOk()
+            ->assertSeeText('Intro image path is saved, but the file could not be found in public storage.')
+            ->assertDontSee('src="/storage/surveys/', false);
+
+        app(PublishSurveyAction::class)->handle($owner, $survey);
+
+        $this->get(route('survey.show', ['survey' => $survey->slug]))
+            ->assertOk()
+            ->assertSeeText('Intro with missing storage file.')
+            ->assertDontSee('Missing intro image')
+            ->assertDontSee('src="/storage/surveys/', false);
     }
 
     public function test_intro_image_upload_requires_valid_image_size_and_alt_text(): void

@@ -241,13 +241,22 @@ class Survey extends Model
         return $this->hasMany(AnalysisPilotRun::class);
     }
 
-    public function introImageUrl(): ?string
+    public function getIntroImageUrlAttribute(): ?string
     {
         if (blank($this->intro_image_path)) {
             return null;
         }
 
+        if (! Storage::disk('public')->exists($this->intro_image_path)) {
+            return null;
+        }
+
         return Storage::disk('public')->url($this->intro_image_path);
+    }
+
+    public function introImageUrl(): ?string
+    {
+        return $this->intro_image_url;
     }
 
     public function distributionBatches(): HasMany

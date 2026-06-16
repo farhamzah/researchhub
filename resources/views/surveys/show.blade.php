@@ -9,7 +9,7 @@
 <body class="bg-gray-50 text-gray-950 antialiased">
     <main class="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
         @php
-            $introImageUrl = $survey->introImageUrl();
+            $introImageUrl = $survey->intro_image_url;
             $hasIntro = filled($survey->intro_text) || filled($introImageUrl);
             $showQuestionsImmediately = ! $hasIntro || $errors->any() || old('intro_consent') === '1';
             $introConsentText = $survey->consent_text ?: 'Saya telah membaca penjelasan di atas dan bersedia melanjutkan.';
@@ -44,7 +44,7 @@
 
                 @if ($introImageUrl)
                     <figure class="mt-5 overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
-                        <img src="{{ $introImageUrl }}" alt="{{ $survey->intro_image_alt_text }}" loading="lazy" decoding="async" class="aspect-video w-full object-cover">
+                        <img src="{{ $introImageUrl }}" alt="{{ $survey->intro_image_alt_text ?: 'Survey intro illustration' }}" loading="lazy" decoding="async" class="aspect-video w-full object-cover">
                         @if ($survey->intro_image_caption || $survey->intro_image_source_note)
                             <figcaption class="border-t border-gray-200 px-4 py-3 text-xs leading-5 text-gray-600">
                                 @if ($survey->intro_image_caption)

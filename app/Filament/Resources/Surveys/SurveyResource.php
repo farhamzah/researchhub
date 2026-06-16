@@ -149,7 +149,7 @@ class SurveyResource extends Resource
                     ->visible(fn (Survey $record): bool => auth()->user()?->can('view', $record) ?? false)
                     ->url(fn (Survey $record): string => route('admin.surveys.responses.index', ['survey' => $record])),
                 Action::make('analysis')
-                    ->label('Analysis')
+                    ->label('Analysis Dashboard')
                     ->icon('heroicon-o-chart-bar')
                     ->visible(fn (Survey $record): bool => auth()->user()?->can('runAnalysis', $record) ?? false)
                     ->url(fn (Survey $record): string => route('admin.surveys.analysis.index', ['survey' => $record])),

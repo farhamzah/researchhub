@@ -8,11 +8,11 @@ use App\Http\Controllers\AdminProjectTimelineController;
 use App\Http\Controllers\AdminProjectValidatorController;
 use App\Http\Controllers\AdminSurveyAnalysisController;
 use App\Http\Controllers\AdminSurveyBuilderController;
-use App\Http\Controllers\AdminSurveyResponseController;
-use App\Http\Controllers\AdminSurveyResponseExportController;
 use App\Http\Controllers\AdminSurveyReadabilityController;
 use App\Http\Controllers\AdminSurveyReadabilityReportController;
 use App\Http\Controllers\AdminSurveyReadabilityResultController;
+use App\Http\Controllers\AdminSurveyResponseController;
+use App\Http\Controllers\AdminSurveyResponseExportController;
 use App\Http\Controllers\AdminSurveyScoringController;
 use App\Http\Controllers\AdminSurveyValidationController;
 use App\Http\Controllers\AdminSurveyValidationReportController;
@@ -122,6 +122,16 @@ Route::middleware('auth')->group(function (): void {
         ->name('admin.surveys.analysis.index');
     Route::post('/admin/surveys/{survey}/analysis', [AdminSurveyAnalysisController::class, 'run'])
         ->name('admin.surveys.analysis.run');
+    Route::get('/admin/surveys/{survey}/analysis/report', [AdminSurveyAnalysisController::class, 'report'])
+        ->name('admin.surveys.analysis.report');
+    Route::post('/admin/surveys/{survey}/analysis/synthesis-items', [AdminSurveyAnalysisController::class, 'storeSynthesisItem'])
+        ->name('admin.surveys.analysis.synthesis-items.store');
+    Route::put('/admin/surveys/{survey}/analysis/synthesis-items/{synthesisItem}', [AdminSurveyAnalysisController::class, 'updateSynthesisItem'])
+        ->name('admin.surveys.analysis.synthesis-items.update');
+    Route::delete('/admin/surveys/{survey}/analysis/synthesis-items/{synthesisItem}', [AdminSurveyAnalysisController::class, 'deleteSynthesisItem'])
+        ->name('admin.surveys.analysis.synthesis-items.delete');
+    Route::post('/admin/surveys/{survey}/analysis/generate-synthesis', [AdminSurveyAnalysisController::class, 'generateSynthesis'])
+        ->name('admin.surveys.analysis.generate-synthesis');
     Route::get('/admin/analysis/results/{analysisResult}', [AdminSurveyAnalysisController::class, 'show'])
         ->name('admin.analysis.results.show');
     Route::get('/admin/analysis/{analysisResult}/export/csv', [AdminAnalysisExportController::class, 'csv'])

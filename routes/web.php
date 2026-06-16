@@ -11,6 +11,7 @@ use App\Http\Controllers\AdminSurveyAnalysisPackageController;
 use App\Http\Controllers\AdminSurveyBuilderController;
 use App\Http\Controllers\AdminSurveyCollectionMonitoringController;
 use App\Http\Controllers\AdminSurveyDistributionController;
+use App\Http\Controllers\AdminSurveyPreflightQaController;
 use App\Http\Controllers\AdminSurveyReadabilityController;
 use App\Http\Controllers\AdminSurveyReadabilityReportController;
 use App\Http\Controllers\AdminSurveyReadabilityResultController;
@@ -147,6 +148,16 @@ Route::middleware('auth')->group(function (): void {
         ->name('admin.surveys.analysis-package.export-doc');
     Route::post('/admin/surveys/{survey}/analysis-package/finalize', [AdminSurveyAnalysisPackageController::class, 'finalize'])
         ->name('admin.surveys.analysis-package.finalize');
+    Route::get('/admin/surveys/{survey}/preflight', [AdminSurveyPreflightQaController::class, 'index'])
+        ->name('admin.surveys.preflight.index');
+    Route::post('/admin/surveys/{survey}/preflight/fix-student-open-questions', [AdminSurveyPreflightQaController::class, 'fixStudentOpenQuestions'])
+        ->name('admin.surveys.preflight.fix-student-open-questions');
+    Route::post('/admin/surveys/{survey}/preflight/mark-ready', [AdminSurveyPreflightQaController::class, 'markReady'])
+        ->name('admin.surveys.preflight.mark-ready');
+    Route::get('/admin/surveys/{survey}/preflight/report', [AdminSurveyPreflightQaController::class, 'report'])
+        ->name('admin.surveys.preflight.report');
+    Route::get('/admin/surveys/{survey}/preflight/export.csv', [AdminSurveyPreflightQaController::class, 'exportCsv'])
+        ->name('admin.surveys.preflight.export');
     Route::post('/admin/surveys/{survey}/analysis/synthesis-items', [AdminSurveyAnalysisController::class, 'storeSynthesisItem'])
         ->name('admin.surveys.analysis.synthesis-items.store');
     Route::put('/admin/surveys/{survey}/analysis/synthesis-items/{synthesisItem}', [AdminSurveyAnalysisController::class, 'updateSynthesisItem'])

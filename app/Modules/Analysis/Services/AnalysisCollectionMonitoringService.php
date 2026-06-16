@@ -409,6 +409,7 @@ class AnalysisCollectionMonitoringService
             'Distribution Center' => route('admin.surveys.distribution.index', ['survey' => $survey]),
             'Collection Monitoring' => route('admin.surveys.collection-monitoring.index', ['survey' => $survey]),
             'Analysis Package' => route('admin.surveys.analysis-package.index', ['survey' => $survey]),
+            'Preflight QA' => route('admin.surveys.preflight.index', ['survey' => $survey]),
             'Back to Surveys' => route('filament.admin.resources.surveys.index'),
         ];
     }

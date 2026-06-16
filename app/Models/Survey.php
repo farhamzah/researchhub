@@ -226,6 +226,11 @@ class Survey extends Model
         return $this->hasOne(AnalysisDocumentPackage::class);
     }
 
+    public function analysisPreflightReviews(): HasMany
+    {
+        return $this->hasMany(AnalysisPreflightReview::class);
+    }
+
     public function distributionBatches(): HasMany
     {
         return $this->hasMany(SurveyDistributionBatch::class);

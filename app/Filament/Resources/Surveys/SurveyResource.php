@@ -168,6 +168,11 @@ class SurveyResource extends Resource
                     ->icon('heroicon-o-academic-cap')
                     ->visible(fn (Survey $record): bool => auth()->user()?->can('manageValidation', $record) ?? false)
                     ->url(fn (Survey $record): string => route('admin.surveys.validation.index', ['survey' => $record])),
+                Action::make('readability')
+                    ->label('Readability Test')
+                    ->icon('heroicon-o-eye')
+                    ->visible(fn (Survey $record): bool => auth()->user()?->can('manageValidation', $record) ?? false)
+                    ->url(fn (Survey $record): string => route('admin.surveys.readability.index', ['survey' => $record])),
                 DeleteAction::make()
                     ->visible(fn (Survey $record): bool => auth()->user()?->can('delete', $record) ?? false),
             ]);

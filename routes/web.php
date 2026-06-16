@@ -10,12 +10,16 @@ use App\Http\Controllers\AdminSurveyAnalysisController;
 use App\Http\Controllers\AdminSurveyBuilderController;
 use App\Http\Controllers\AdminSurveyResponseController;
 use App\Http\Controllers\AdminSurveyResponseExportController;
+use App\Http\Controllers\AdminSurveyReadabilityController;
+use App\Http\Controllers\AdminSurveyReadabilityReportController;
+use App\Http\Controllers\AdminSurveyReadabilityResultController;
 use App\Http\Controllers\AdminSurveyScoringController;
 use App\Http\Controllers\AdminSurveyValidationController;
 use App\Http\Controllers\AdminSurveyValidationReportController;
 use App\Http\Controllers\AdminSurveyValidationResultController;
 use App\Http\Controllers\PublicSupervisionReviewController;
 use App\Http\Controllers\PublicSurveyController;
+use App\Http\Controllers\PublicSurveyReadabilityController;
 use App\Http\Controllers\PublicSurveyValidationController;
 use App\Modules\DriveIntegration\Controllers\GoogleDriveOAuthController;
 use App\Modules\ReviewLinks\Controllers\AdminDocumentReviewLinkController;
@@ -179,6 +183,27 @@ Route::middleware('auth')->group(function (): void {
         ->name('admin.surveys.validation.assignments.revoke-link');
     Route::put('/admin/surveys/{survey}/validation/revisions/{revision}', [AdminSurveyValidationController::class, 'updateRevision'])
         ->name('admin.surveys.validation.revisions.update');
+
+    Route::get('/admin/surveys/{survey}/readability', [AdminSurveyReadabilityController::class, 'index'])
+        ->name('admin.surveys.readability.index');
+    Route::post('/admin/surveys/{survey}/readability/rounds', [AdminSurveyReadabilityController::class, 'storeRound'])
+        ->name('admin.surveys.readability.rounds.store');
+    Route::put('/admin/surveys/{survey}/readability/rounds/{round}', [AdminSurveyReadabilityController::class, 'updateRound'])
+        ->name('admin.surveys.readability.rounds.update');
+    Route::get('/admin/surveys/{survey}/readability/rounds/{round}/results', AdminSurveyReadabilityResultController::class)
+        ->name('admin.surveys.readability.results.show');
+    Route::get('/admin/surveys/{survey}/readability/report', [AdminSurveyReadabilityReportController::class, 'latest'])
+        ->name('admin.surveys.readability.report.latest');
+    Route::get('/admin/surveys/{survey}/readability/rounds/{round}/report', AdminSurveyReadabilityReportController::class)
+        ->name('admin.surveys.readability.report');
+    Route::post('/admin/surveys/{survey}/readability/rounds/{round}/participants', [AdminSurveyReadabilityController::class, 'storeParticipant'])
+        ->name('admin.surveys.readability.participants.store');
+    Route::post('/admin/surveys/{survey}/readability/participants/{participant}/generate-link', [AdminSurveyReadabilityController::class, 'generateLink'])
+        ->name('admin.surveys.readability.participants.generate-link');
+    Route::post('/admin/surveys/{survey}/readability/participants/{participant}/revoke-link', [AdminSurveyReadabilityController::class, 'revokeLink'])
+        ->name('admin.surveys.readability.participants.revoke-link');
+    Route::put('/admin/surveys/{survey}/readability/revisions/{revision}', [AdminSurveyReadabilityController::class, 'updateRevision'])
+        ->name('admin.surveys.readability.revisions.update');
 });
 
 Route::middleware('throttle:review-links')->group(function (): void {
@@ -209,6 +234,10 @@ Route::middleware('throttle:surveys')->group(function (): void {
         ->name('validator.surveys.show');
     Route::post('/validator/surveys/{token}', [PublicSurveyValidationController::class, 'store'])
         ->name('validator.surveys.store');
+    Route::get('/readability/survey/{token}', [PublicSurveyReadabilityController::class, 'show'])
+        ->name('readability.survey.show');
+    Route::post('/readability/survey/{token}', [PublicSurveyReadabilityController::class, 'store'])
+        ->name('readability.survey.store');
 });
 
 Route::middleware('throttle:review-links')->group(function (): void {

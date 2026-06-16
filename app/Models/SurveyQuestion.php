@@ -84,4 +84,9 @@ class SurveyQuestion extends Model
     {
         return $this->hasMany(SurveyValidationScore::class);
     }
+
+    public function readabilityFeedback(): HasMany
+    {
+        return $this->hasMany(SurveyReadabilityQuestionFeedback::class);
+    }
 }

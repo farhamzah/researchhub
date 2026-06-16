@@ -70,6 +70,9 @@
                     <a href="{{ route('filament.admin.resources.surveys.index') }}" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">
                         Back to Surveys
                     </a>
+                    <a href="{{ route('admin.surveys.readability.index', ['survey' => $survey]) }}" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">
+                        Readability Test
+                    </a>
                     @if ($survey->project)
                         <a href="{{ route('admin.projects.journey.show', ['researchProject' => $survey->project]) }}" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">
                             Open Project Journey
@@ -549,6 +552,9 @@
                 <div class="flex flex-wrap gap-2">
                     <a href="{{ route('admin.surveys.validation.index', ['survey' => $survey]) }}" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">
                         Open Expert Validation
+                    </a>
+                    <a href="{{ route('admin.surveys.readability.index', ['survey' => $survey]) }}" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">
+                        Readability Test
                     </a>
                     @if ($builderWizard['validation']['round_id'])
                         <a href="{{ route('admin.surveys.validation.results.show', ['survey' => $survey, 'round' => $builderWizard['validation']['round_id']]) }}" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">

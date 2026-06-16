@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AnalysisPilotRun;
 use App\Models\Survey;
+use App\Modules\Analysis\Services\AnalysisRespondentPackageService;
 use App\Modules\Surveys\Actions\SubmitSurveyResponseAction;
 use App\Modules\Surveys\DTOs\SurveyResponseData;
 use Illuminate\Http\RedirectResponse;
@@ -13,10 +15,21 @@ use Illuminate\View\View;
 
 class PublicSurveyController extends Controller
 {
-    public function show(Survey $survey): View
+    public function show(Survey $survey, Request $request, AnalysisRespondentPackageService $respondentPackage): View|Response
     {
         if (! $survey->canReceiveResponses()) {
             return view('surveys.unavailable');
+        }
+
+        $pilotToken = $request->query('pilot');
+        $pilotRun = $respondentPackage->resolvePilotRun($survey, is_string($pilotToken) ? $pilotToken : null);
+
+        if (filled($pilotToken) && ! $pilotRun) {
+            return response()
+                ->view('surveys.unavailable', [
+                    'title' => 'Pilot link is no longer active.',
+                    'message' => 'This pilot test link is invalid, expired, or revoked. Request a fresh pilot link from the researcher.',
+                ], 403);
         }
 
         $survey->load([
@@ -26,11 +39,28 @@ class PublicSurveyController extends Controller
 
         return view('surveys.show', [
             'survey' => $survey,
+            'pilotRun' => $pilotRun,
+            'pilotToken' => $pilotToken,
         ]);
     }
 
-    public function store(Survey $survey, Request $request, SubmitSurveyResponseAction $submitSurveyResponse): View|RedirectResponse|Response
-    {
+    public function store(
+        Survey $survey,
+        Request $request,
+        SubmitSurveyResponseAction $submitSurveyResponse,
+        AnalysisRespondentPackageService $respondentPackage,
+    ): View|RedirectResponse|Response {
+        $pilotToken = $request->input('pilot');
+        $pilotRun = $respondentPackage->resolvePilotRun($survey, is_string($pilotToken) ? $pilotToken : null);
+
+        if (filled($pilotToken) && ! $pilotRun) {
+            return response()
+                ->view('surveys.unavailable', [
+                    'title' => 'Pilot link is no longer active.',
+                    'message' => 'This pilot test link is invalid, expired, or revoked. It was not stored as real respondent data.',
+                ], 403);
+        }
+
         if ($survey->canReceiveResponses() && $survey->require_consent_before_start && $request->input('intro_consent') !== '1') {
             throw ValidationException::withMessages([
                 'intro_consent' => 'Please confirm that you have read the survey explanation before continuing.',
@@ -41,7 +71,7 @@ class PublicSurveyController extends Controller
             $submitSurveyResponse->handle($survey, new SurveyResponseData(
                 answers: $request->input('answers', []),
                 identity: $request->input('identity', []),
-            ), $request);
+            ), $request, $pilotRun);
         } catch (ValidationException $exception) {
             if (array_key_exists('survey', $exception->errors())) {
                 return response()
@@ -51,6 +81,8 @@ class PublicSurveyController extends Controller
             throw $exception;
         }
 
-        return view('surveys.thank-you');
+        return view('surveys.thank-you', [
+            'isPilot' => $pilotRun instanceof AnalysisPilotRun,
+        ]);
     }
 }

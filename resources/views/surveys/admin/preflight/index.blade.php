@@ -44,6 +44,7 @@
                     @endforeach
                     <a href="{{ route('admin.surveys.preflight.report', ['survey' => $survey]) }}" target="_blank" class="rounded-md border border-blue-300 bg-white px-4 py-2 text-sm font-semibold text-blue-800 shadow-sm hover:bg-blue-50">Printable QA Report</a>
                     <a href="{{ route('admin.surveys.preflight.export', ['survey' => $survey]) }}" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">Export CSV</a>
+                    <a href="{{ route('admin.surveys.respondent-package.index', ['survey' => $survey]) }}" class="rounded-md border border-amber-300 bg-white px-4 py-2 text-sm font-semibold text-amber-900 shadow-sm hover:bg-amber-50">Respondent Package</a>
                 </div>
             </div>
         </section>

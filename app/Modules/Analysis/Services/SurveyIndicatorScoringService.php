@@ -26,7 +26,8 @@ class SurveyIndicatorScoringService
     {
         $survey->loadMissing(['indicators.scale', 'questionScorings.question']);
         $submittedResponses = $survey->responses()
-            ->where('status', SurveyResponse::STATUS_SUBMITTED)
+            ->submitted()
+            ->official()
             ->with('answers')
             ->get();
 

@@ -15,6 +15,7 @@ use App\Http\Controllers\AdminSurveyPreflightQaController;
 use App\Http\Controllers\AdminSurveyReadabilityController;
 use App\Http\Controllers\AdminSurveyReadabilityReportController;
 use App\Http\Controllers\AdminSurveyReadabilityResultController;
+use App\Http\Controllers\AdminSurveyRespondentPackageController;
 use App\Http\Controllers\AdminSurveyResponseController;
 use App\Http\Controllers\AdminSurveyResponseExportController;
 use App\Http\Controllers\AdminSurveyScoringController;
@@ -158,6 +159,20 @@ Route::middleware('auth')->group(function (): void {
         ->name('admin.surveys.preflight.report');
     Route::get('/admin/surveys/{survey}/preflight/export.csv', [AdminSurveyPreflightQaController::class, 'exportCsv'])
         ->name('admin.surveys.preflight.export');
+    Route::get('/admin/surveys/{survey}/respondent-package', [AdminSurveyRespondentPackageController::class, 'index'])
+        ->name('admin.surveys.respondent-package.index');
+    Route::post('/admin/surveys/{survey}/respondent-package/pilot/{audience}/generate', [AdminSurveyRespondentPackageController::class, 'generatePilot'])
+        ->name('admin.surveys.respondent-package.pilot.generate');
+    Route::post('/admin/surveys/{survey}/respondent-package/pilot-runs/{pilotRun}/revoke', [AdminSurveyRespondentPackageController::class, 'revokePilot'])
+        ->name('admin.surveys.respondent-package.pilot.revoke');
+    Route::put('/admin/surveys/{survey}/respondent-package/pilot-runs/{pilotRun}/checklist', [AdminSurveyRespondentPackageController::class, 'updateChecklist'])
+        ->name('admin.surveys.respondent-package.pilot.checklist');
+    Route::post('/admin/surveys/{survey}/respondent-package/pilot-runs/{pilotRun}/fail', [AdminSurveyRespondentPackageController::class, 'markFailed'])
+        ->name('admin.surveys.respondent-package.pilot.fail');
+    Route::post('/admin/surveys/{survey}/respondent-package/test-responses/clear', [AdminSurveyRespondentPackageController::class, 'clearAllTestResponses'])
+        ->name('admin.surveys.respondent-package.test-responses.clear');
+    Route::post('/admin/surveys/{survey}/respondent-package/test-responses/{targetSurvey}/clear', [AdminSurveyRespondentPackageController::class, 'clearTargetTestResponses'])
+        ->name('admin.surveys.respondent-package.test-responses.clear-target');
     Route::post('/admin/surveys/{survey}/analysis/synthesis-items', [AdminSurveyAnalysisController::class, 'storeSynthesisItem'])
         ->name('admin.surveys.analysis.synthesis-items.store');
     Route::put('/admin/surveys/{survey}/analysis/synthesis-items/{synthesisItem}', [AdminSurveyAnalysisController::class, 'updateSynthesisItem'])

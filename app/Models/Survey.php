@@ -231,6 +231,11 @@ class Survey extends Model
         return $this->hasMany(AnalysisPreflightReview::class);
     }
 
+    public function analysisPilotRuns(): HasMany
+    {
+        return $this->hasMany(AnalysisPilotRun::class);
+    }
+
     public function distributionBatches(): HasMany
     {
         return $this->hasMany(SurveyDistributionBatch::class);

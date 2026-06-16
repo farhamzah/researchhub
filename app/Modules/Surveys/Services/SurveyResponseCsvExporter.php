@@ -50,6 +50,7 @@ class SurveyResponseCsvExporter
         $questions = $this->exportableQuestions($survey);
         $headers = $this->headers($questions, $withIdentity);
         $responses = $survey->responses()
+            ->official()
             ->with(['survey.project', 'respondent', 'answers.question'])
             ->oldest('submitted_at')
             ->get();

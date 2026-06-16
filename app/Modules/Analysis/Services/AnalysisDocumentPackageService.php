@@ -155,7 +155,11 @@ class AnalysisDocumentPackageService
             'survey' => $survey,
             'sections' => $this->sections($survey),
             'question_count' => $survey->questions->where('type', '!=', SurveyQuestion::TYPE_HIDDEN)->count(),
-            'response_count' => $survey->responses->where('status', SurveyResponse::STATUS_SUBMITTED)->count(),
+            'response_count' => $survey->responses
+                ->where('status', SurveyResponse::STATUS_SUBMITTED)
+                ->where('is_test_response', false)
+                ->where('excluded_from_analysis', false)
+                ->count(),
             'status' => Str::title(str_replace('_', ' ', $survey->status)),
             'intro_status' => $this->introStatus($survey),
         ];
@@ -389,6 +393,7 @@ class AnalysisDocumentPackageService
             'Collection Monitoring' => route('admin.surveys.collection-monitoring.index', ['survey' => $survey]),
             'Analysis Package' => route('admin.surveys.analysis-package.index', ['survey' => $survey]),
             'Preflight QA' => route('admin.surveys.preflight.index', ['survey' => $survey]),
+            'Respondent Package' => route('admin.surveys.respondent-package.index', ['survey' => $survey]),
             'Back to Surveys' => route('filament.admin.resources.surveys.index'),
         ];
     }

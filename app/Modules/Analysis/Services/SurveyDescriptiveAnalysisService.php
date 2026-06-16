@@ -5,7 +5,6 @@ namespace App\Modules\Analysis\Services;
 use App\Models\Survey;
 use App\Models\SurveyAnswer;
 use App\Models\SurveyQuestion;
-use App\Models\SurveyResponse;
 use Illuminate\Support\Collection;
 
 class SurveyDescriptiveAnalysisService
@@ -24,7 +23,8 @@ class SurveyDescriptiveAnalysisService
         $survey->loadMissing(['project', 'questions']);
 
         $submittedResponses = $survey->responses()
-            ->where('status', SurveyResponse::STATUS_SUBMITTED)
+            ->submitted()
+            ->official()
             ->with('answers.question')
             ->get();
 
@@ -59,7 +59,7 @@ class SurveyDescriptiveAnalysisService
                 'identity_mode' => $survey->identity_mode,
             ],
             'summary' => [
-                'response_count' => $survey->responses()->count(),
+                'response_count' => $survey->responses()->official()->count(),
                 'submitted_count' => $submittedResponses->count(),
                 'completion_count' => $submittedResponses->count(),
                 'analyzed_question_count' => $questionSummaries->count(),

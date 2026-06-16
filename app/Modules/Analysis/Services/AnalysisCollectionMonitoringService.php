@@ -129,7 +129,7 @@ class AnalysisCollectionMonitoringService
                 'instrument' => $instruments[AnalysisCollectionTarget::SOURCE_STUDENT_QUESTIONNAIRE],
                 'audience' => SurveyDistributionBatch::AUDIENCE_STUDENT,
                 'current' => $this->submittedResponses($instruments[AnalysisCollectionTarget::SOURCE_STUDENT_QUESTIONNAIRE]),
-                'assigned' => $instruments[AnalysisCollectionTarget::SOURCE_STUDENT_QUESTIONNAIRE]?->responses->count() ?? 0,
+                'assigned' => $this->officialResponses($instruments[AnalysisCollectionTarget::SOURCE_STUDENT_QUESTIONNAIRE]),
                 'metric_label' => 'Submitted responses',
                 'link_route' => $instruments[AnalysisCollectionTarget::SOURCE_STUDENT_QUESTIONNAIRE]
                     ? route('admin.surveys.responses.index', ['survey' => $instruments[AnalysisCollectionTarget::SOURCE_STUDENT_QUESTIONNAIRE]])
@@ -139,7 +139,7 @@ class AnalysisCollectionMonitoringService
                 'instrument' => $instruments[AnalysisCollectionTarget::SOURCE_LECTURER_QUESTIONNAIRE],
                 'audience' => SurveyDistributionBatch::AUDIENCE_LECTURER,
                 'current' => $this->submittedResponses($instruments[AnalysisCollectionTarget::SOURCE_LECTURER_QUESTIONNAIRE]),
-                'assigned' => $instruments[AnalysisCollectionTarget::SOURCE_LECTURER_QUESTIONNAIRE]?->responses->count() ?? 0,
+                'assigned' => $this->officialResponses($instruments[AnalysisCollectionTarget::SOURCE_LECTURER_QUESTIONNAIRE]),
                 'metric_label' => 'Submitted responses',
                 'link_route' => $instruments[AnalysisCollectionTarget::SOURCE_LECTURER_QUESTIONNAIRE]
                     ? route('admin.surveys.responses.index', ['survey' => $instruments[AnalysisCollectionTarget::SOURCE_LECTURER_QUESTIONNAIRE]])
@@ -149,7 +149,7 @@ class AnalysisCollectionMonitoringService
                 'instrument' => $instruments[AnalysisCollectionTarget::SOURCE_PRACTITIONER_INTERVIEW],
                 'audience' => SurveyDistributionBatch::AUDIENCE_PRACTITIONER,
                 'current' => $this->submittedResponses($instruments[AnalysisCollectionTarget::SOURCE_PRACTITIONER_INTERVIEW]),
-                'assigned' => $instruments[AnalysisCollectionTarget::SOURCE_PRACTITIONER_INTERVIEW]?->responses->count() ?? 0,
+                'assigned' => $this->officialResponses($instruments[AnalysisCollectionTarget::SOURCE_PRACTITIONER_INTERVIEW]),
                 'metric_label' => 'Submitted responses',
                 'link_route' => $instruments[AnalysisCollectionTarget::SOURCE_PRACTITIONER_INTERVIEW]
                     ? route('admin.surveys.responses.index', ['survey' => $instruments[AnalysisCollectionTarget::SOURCE_PRACTITIONER_INTERVIEW]])
@@ -239,6 +239,20 @@ class AnalysisCollectionMonitoringService
 
         return $survey->responses
             ->where('status', SurveyResponse::STATUS_SUBMITTED)
+            ->where('is_test_response', false)
+            ->where('excluded_from_analysis', false)
+            ->count();
+    }
+
+    private function officialResponses(?Survey $survey): int
+    {
+        if (! $survey) {
+            return 0;
+        }
+
+        return $survey->responses
+            ->where('is_test_response', false)
+            ->where('excluded_from_analysis', false)
             ->count();
     }
 
@@ -410,6 +424,7 @@ class AnalysisCollectionMonitoringService
             'Collection Monitoring' => route('admin.surveys.collection-monitoring.index', ['survey' => $survey]),
             'Analysis Package' => route('admin.surveys.analysis-package.index', ['survey' => $survey]),
             'Preflight QA' => route('admin.surveys.preflight.index', ['survey' => $survey]),
+            'Respondent Package' => route('admin.surveys.respondent-package.index', ['survey' => $survey]),
             'Back to Surveys' => route('filament.admin.resources.surveys.index'),
         ];
     }

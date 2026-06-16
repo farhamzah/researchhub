@@ -56,7 +56,7 @@ class SurveyDistributionCenterService
     {
         $groupKey = $survey->analysis_group_key ?: Survey::ANALYSIS_GROUP_PHARMVR_ADDIE;
         $related = Survey::query()
-            ->withCount('responses')
+            ->withCount(['responses' => fn ($query) => $query->official()])
             ->where('project_id', $survey->project_id)
             ->where(function ($query) use ($survey, $groupKey): void {
                 $query->where('id', $survey->getKey())
@@ -119,7 +119,7 @@ class SurveyDistributionCenterService
         return [
             'label' => $label,
             'status' => $survey?->canReceiveResponses() ? 'ready' : ($survey ? 'draft' : 'missing'),
-            'value' => $survey ? $survey->responses->count().' responses' : 'Missing',
+            'value' => $survey ? $this->officialResponses($survey).' responses' : 'Missing',
         ];
     }
 
@@ -167,7 +167,7 @@ class SurveyDistributionCenterService
                     'intro_complete' => $instrument ? $this->introComplete($instrument) : false,
                     'consent_required' => (bool) ($instrument?->require_consent_before_start),
                     'question_count' => $instrument?->questions->count() ?? 0,
-                    'response_count' => $instrument?->responses->count() ?? 0,
+                    'response_count' => $this->officialResponses($instrument),
                     'builder_route' => $instrument ? route('admin.surveys.builder.index', ['survey' => $instrument]) : null,
                     'responses_route' => $instrument ? route('admin.surveys.responses.index', ['survey' => $instrument]) : null,
                     'create_route' => $config['create_route'] ?? null,
@@ -354,6 +354,18 @@ class SurveyDistributionCenterService
             && filled($survey->estimated_duration)
             && filled($survey->privacy_statement)
             && filled($survey->respondent_instruction);
+    }
+
+    private function officialResponses(?Survey $survey): int
+    {
+        if (! $survey) {
+            return 0;
+        }
+
+        return $survey->responses
+            ->where('is_test_response', false)
+            ->where('excluded_from_analysis', false)
+            ->count();
     }
 
     private function fillTemplate(string $template, ?Survey $survey, ?string $link, User $user): string

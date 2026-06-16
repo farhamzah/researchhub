@@ -12,6 +12,9 @@
             <p class="text-sm font-semibold uppercase tracking-wide text-emerald-700">MyRiset Survey</p>
             <h1 class="mt-3 text-2xl font-semibold">Response submitted</h1>
             <p class="mt-2 text-sm leading-6 text-gray-600">Thank you. Your response has been recorded.</p>
+            @if ($isPilot ?? false)
+                <p class="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">Pilot test response stored as test data and excluded from Analysis results.</p>
+            @endif
         </section>
     </main>
 </body>

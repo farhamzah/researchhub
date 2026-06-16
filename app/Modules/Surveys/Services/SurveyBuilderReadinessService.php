@@ -59,7 +59,7 @@ class SurveyBuilderReadinessService
     {
         return [
             'question_count' => $survey->questions->count(),
-            'response_count' => (int) ($survey->responses_count ?? $survey->responses->count()),
+            'response_count' => $this->officialResponseCount($survey),
             'submitted_response_count' => $submittedResponses,
             'validation_status' => $round
                 ? sprintf('%s, %d validator submitted', $this->label((string) $round->status), $round->assignments->where('status', SurveyValidationAssignment::STATUS_SUBMITTED)->count())
@@ -220,10 +220,13 @@ class SurveyBuilderReadinessService
      */
     private function responses(Survey $survey, ?AnalysisResult $analysis, int $submittedResponses): array
     {
-        $lastResponse = $survey->responses->sortByDesc('submitted_at')->first();
+        $officialResponses = $survey->responses
+            ->where('is_test_response', false)
+            ->where('excluded_from_analysis', false);
+        $lastResponse = $officialResponses->sortByDesc('submitted_at')->first();
 
         return [
-            'response_count' => (int) ($survey->responses_count ?? $survey->responses->count()),
+            'response_count' => $officialResponses->count(),
             'submitted_count' => $submittedResponses,
             'last_response_at' => $lastResponse?->submitted_at?->format('Y-m-d H:i'),
             'analysis_title' => $analysis?->title,
@@ -235,6 +238,16 @@ class SurveyBuilderReadinessService
     {
         return $survey->responses
             ->where('status', SurveyResponse::STATUS_SUBMITTED)
+            ->where('is_test_response', false)
+            ->where('excluded_from_analysis', false)
+            ->count();
+    }
+
+    private function officialResponseCount(Survey $survey): int
+    {
+        return $survey->responses
+            ->where('is_test_response', false)
+            ->where('excluded_from_analysis', false)
             ->count();
     }
 

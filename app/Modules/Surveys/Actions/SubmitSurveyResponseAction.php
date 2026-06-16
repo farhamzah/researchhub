@@ -2,8 +2,10 @@
 
 namespace App\Modules\Surveys\Actions;
 
+use App\Models\AnalysisPilotRun;
 use App\Models\Survey;
 use App\Models\SurveyResponse;
+use App\Modules\Analysis\Services\AnalysisRespondentPackageService;
 use App\Modules\AuditLogs\Services\ActivityLogger;
 use App\Modules\Surveys\DTOs\SurveyResponseData;
 use App\Modules\Surveys\Services\RespondentIdentityService;
@@ -18,9 +20,10 @@ class SubmitSurveyResponseAction
         private readonly ActivityLogger $activityLogger,
         private readonly SurveyAnswerValidationService $answerValidation,
         private readonly RespondentIdentityService $identityService,
+        private readonly AnalysisRespondentPackageService $respondentPackageService,
     ) {}
 
-    public function handle(Survey $survey, SurveyResponseData $data, ?Request $request = null): SurveyResponse
+    public function handle(Survey $survey, SurveyResponseData $data, ?Request $request = null, ?AnalysisPilotRun $pilotRun = null): SurveyResponse
     {
         $survey->loadMissing(['project', 'questions', 'respondents']);
 
@@ -40,8 +43,9 @@ class SubmitSurveyResponseAction
             throw $exception;
         }
 
-        return DB::transaction(function () use ($survey, $data, $validatedAnswers, $request): SurveyResponse {
+        return DB::transaction(function () use ($survey, $data, $validatedAnswers, $request, $pilotRun): SurveyResponse {
             $respondent = $this->identityService->createForSurvey($survey, $data->identity);
+            $isPilot = $pilotRun instanceof AnalysisPilotRun;
 
             $response = SurveyResponse::create([
                 'survey_id' => $survey->getKey(),
@@ -50,9 +54,14 @@ class SubmitSurveyResponseAction
                 'submitted_at' => now(),
                 'ip_address' => $request?->ip(),
                 'user_agent' => $request?->userAgent(),
+                'is_test_response' => $isPilot,
+                'test_label' => $isPilot ? $pilotRun->audience_type.' pilot '.now()->format('Ymd-His') : null,
+                'pilot_run_id' => $pilotRun?->getKey(),
+                'excluded_from_analysis' => $isPilot,
                 'metadata' => [
                     'identity_mode' => $survey->identity_mode,
                     'answer_count' => count($validatedAnswers),
+                    'is_pilot_test' => $isPilot,
                 ],
             ]);
 
@@ -75,7 +84,12 @@ class SubmitSurveyResponseAction
                 'identity_mode' => $survey->identity_mode,
                 'answer_count' => count($validatedAnswers),
                 'has_respondent' => $respondent !== null,
+                'is_test_response' => $isPilot,
             ], $request);
+
+            if ($pilotRun) {
+                $this->respondentPackageService->markSubmitted($pilotRun);
+            }
 
             return $response->load('answers');
         });

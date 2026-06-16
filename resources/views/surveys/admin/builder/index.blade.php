@@ -88,6 +88,9 @@
                     <a href="{{ route('admin.surveys.preflight.index', ['survey' => $survey]) }}" class="rounded-md border border-emerald-300 bg-white px-4 py-2 text-sm font-semibold text-emerald-800 shadow-sm hover:bg-emerald-50">
                         Preflight QA
                     </a>
+                    <a href="{{ route('admin.surveys.respondent-package.index', ['survey' => $survey]) }}" class="rounded-md border border-amber-300 bg-white px-4 py-2 text-sm font-semibold text-amber-900 shadow-sm hover:bg-amber-50">
+                        Respondent Package
+                    </a>
                     @if ($survey->project)
                         <a href="{{ route('admin.projects.journey.show', ['researchProject' => $survey->project]) }}" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">
                             Open Project Journey

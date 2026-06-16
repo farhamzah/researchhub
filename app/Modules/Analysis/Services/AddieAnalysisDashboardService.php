@@ -38,7 +38,9 @@ class AddieAnalysisDashboardService
         ]);
 
         $submittedResponses = $survey->responses
-            ->filter(fn (SurveyResponse $response): bool => $response->status === SurveyResponse::STATUS_SUBMITTED)
+            ->filter(fn (SurveyResponse $response): bool => $response->status === SurveyResponse::STATUS_SUBMITTED
+                && ! $response->is_test_response
+                && ! $response->excluded_from_analysis)
             ->values();
         $responseSummary = $this->responseSummary($survey, $submittedResponses);
         $priority = $this->prioritySummary($responseSummary);
@@ -147,8 +149,8 @@ class AddieAnalysisDashboardService
     {
         $related = Survey::query()
             ->withCount([
-                'responses',
-                'responses as submitted_responses_count' => fn ($query) => $query->where('status', SurveyResponse::STATUS_SUBMITTED),
+                'responses' => fn ($query) => $query->official(),
+                'responses as submitted_responses_count' => fn ($query) => $query->submitted()->official(),
             ])
             ->where('project_id', $survey->project_id)
             ->where(function ($query) use ($survey): void {
@@ -162,8 +164,8 @@ class AddieAnalysisDashboardService
         return [
             'student' => $this->instrumentCard(
                 $survey->fresh(['project'])->loadCount([
-                    'responses',
-                    'responses as submitted_responses_count' => fn ($query) => $query->where('status', SurveyResponse::STATUS_SUBMITTED),
+                    'responses' => fn ($query) => $query->official(),
+                    'responses as submitted_responses_count' => fn ($query) => $query->submitted()->official(),
                 ]),
                 'Student Questionnaire',
                 'Instrumen utama analisis kebutuhan mahasiswa.',
@@ -519,7 +521,9 @@ class AddieAnalysisDashboardService
         return $related
             ->flatMap(function (Survey $instrument): array {
                 $submittedResponses = $instrument->responses
-                    ->filter(fn (SurveyResponse $response): bool => $response->status === SurveyResponse::STATUS_SUBMITTED)
+                    ->filter(fn (SurveyResponse $response): bool => $response->status === SurveyResponse::STATUS_SUBMITTED
+                        && ! $response->is_test_response
+                        && ! $response->excluded_from_analysis)
                     ->values();
 
                 if ($submittedResponses->isEmpty()) {

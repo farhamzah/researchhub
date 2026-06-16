@@ -14,6 +14,13 @@
             $introConsentText = $survey->consent_text ?: 'Saya telah membaca penjelasan di atas dan bersedia melanjutkan.';
         @endphp
 
+        @if (($pilotRun ?? null) instanceof \App\Models\AnalysisPilotRun)
+            <section class="mb-6 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm leading-6 text-amber-950">
+                <p class="font-semibold">PILOT TEST MODE</p>
+                <p class="mt-1">This submission will be recorded as test data and excluded from analysis. Do not send this pilot link to real respondents.</p>
+            </section>
+        @endif
+
         <header class="mb-8 border-b border-gray-200 pb-6">
             <p class="text-sm font-semibold uppercase tracking-wide text-emerald-700">MyRiset Survey</p>
             <h1 class="mt-2 text-3xl font-semibold">{{ $survey->title }}</h1>
@@ -69,6 +76,9 @@
         <form id="survey-response-form" method="POST" action="{{ route('survey.responses.store', ['survey' => $survey->slug]) }}" class="{{ $showQuestionsImmediately ? '' : 'hidden' }} space-y-6">
             @csrf
             <input type="hidden" id="intro_consent" name="intro_consent" value="{{ old('intro_consent', $survey->require_consent_before_start ? '0' : '1') }}">
+            @if (filled($pilotToken ?? null))
+                <input type="hidden" name="pilot" value="{{ $pilotToken }}">
+            @endif
 
             @if (in_array($survey->identity_mode, [\App\Models\Survey::IDENTITY_FULL, \App\Models\Survey::IDENTITY_HIDDEN], true))
                 <section class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">

@@ -53,6 +53,7 @@ class SurveyResponseExportRowBuilder
     public function buildForSurvey(Survey $survey, ?User $viewer = null, bool $withIdentity = false): array
     {
         return $survey->responses()
+            ->official()
             ->with(['survey.project', 'respondent', 'answers.question'])
             ->latest('submitted_at')
             ->get()

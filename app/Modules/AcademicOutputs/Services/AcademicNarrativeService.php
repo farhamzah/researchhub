@@ -10,7 +10,6 @@ use App\Models\SupervisionFollowUpItem;
 use App\Models\SupervisionSession;
 use App\Models\Survey;
 use App\Models\SurveyQuestion;
-use App\Models\SurveyResponse;
 use App\Models\SurveyValidationRound;
 use App\Modules\Projects\Services\ProjectResearchJourneyService;
 use App\Modules\Validation\Services\SurveyValidationResultService;
@@ -122,7 +121,8 @@ class AcademicNarrativeService
         $survey->loadMissing(['analysisResults']);
 
         $submittedCount = $survey->responses()
-            ->where('status', SurveyResponse::STATUS_SUBMITTED)
+            ->submitted()
+            ->official()
             ->count();
         $latestAnalysis = $survey->analysisResults()
             ->latest()

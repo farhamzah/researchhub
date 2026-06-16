@@ -22,6 +22,7 @@ class AdminSurveyResponseController extends Controller
 
         $survey->load(['project', 'questions']);
         $responses = $survey->responses()
+            ->official()
             ->with(['respondent', 'answers'])
             ->latest('submitted_at')
             ->paginate(25);

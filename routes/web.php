@@ -8,6 +8,7 @@ use App\Http\Controllers\AdminProjectTimelineController;
 use App\Http\Controllers\AdminProjectValidatorController;
 use App\Http\Controllers\AdminSurveyAnalysisController;
 use App\Http\Controllers\AdminSurveyBuilderController;
+use App\Http\Controllers\AdminSurveyCollectionMonitoringController;
 use App\Http\Controllers\AdminSurveyDistributionController;
 use App\Http\Controllers\AdminSurveyReadabilityController;
 use App\Http\Controllers\AdminSurveyReadabilityReportController;
@@ -125,6 +126,14 @@ Route::middleware('auth')->group(function (): void {
         ->name('admin.surveys.analysis.run');
     Route::get('/admin/surveys/{survey}/analysis/report', [AdminSurveyAnalysisController::class, 'report'])
         ->name('admin.surveys.analysis.report');
+    Route::get('/admin/surveys/{survey}/collection-monitoring', [AdminSurveyCollectionMonitoringController::class, 'index'])
+        ->name('admin.surveys.collection-monitoring.index');
+    Route::put('/admin/surveys/{survey}/collection-monitoring/targets/{target}', [AdminSurveyCollectionMonitoringController::class, 'updateTarget'])
+        ->name('admin.surveys.collection-monitoring.targets.update');
+    Route::get('/admin/surveys/{survey}/collection-monitoring/report', [AdminSurveyCollectionMonitoringController::class, 'report'])
+        ->name('admin.surveys.collection-monitoring.report');
+    Route::get('/admin/surveys/{survey}/collection-monitoring/export.csv', [AdminSurveyCollectionMonitoringController::class, 'exportCsv'])
+        ->name('admin.surveys.collection-monitoring.export');
     Route::post('/admin/surveys/{survey}/analysis/synthesis-items', [AdminSurveyAnalysisController::class, 'storeSynthesisItem'])
         ->name('admin.surveys.analysis.synthesis-items.store');
     Route::put('/admin/surveys/{survey}/analysis/synthesis-items/{synthesisItem}', [AdminSurveyAnalysisController::class, 'updateSynthesisItem'])

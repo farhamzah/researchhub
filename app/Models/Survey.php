@@ -215,6 +215,11 @@ class Survey extends Model
         return $this->hasMany(AnalysisSynthesisItem::class);
     }
 
+    public function analysisCollectionTargets(): HasMany
+    {
+        return $this->hasMany(AnalysisCollectionTarget::class);
+    }
+
     public function distributionBatches(): HasMany
     {
         return $this->hasMany(SurveyDistributionBatch::class);

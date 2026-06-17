@@ -222,6 +222,8 @@ Route::middleware('auth')->group(function (): void {
         ->name('admin.surveys.builder.templates.pharmvr-student-needs');
     Route::post('/admin/surveys/{survey}/builder/templates/pharmvr-student-needs/fill-missing', [AdminSurveyBuilderController::class, 'fillMissingPharmVrStudentNeedsTemplate'])
         ->name('admin.surveys.builder.templates.pharmvr-student-needs.fill-missing');
+    Route::post('/admin/surveys/{survey}/builder/templates/pharmvr-student-needs/normalize', [AdminSurveyBuilderController::class, 'normalizePharmVrStudentNeedsTemplate'])
+        ->name('admin.surveys.builder.templates.pharmvr-student-needs.normalize');
     Route::post('/admin/surveys/{survey}/builder/pages', [AdminSurveyBuilderController::class, 'storePage'])
         ->name('admin.surveys.builder.pages.store');
     Route::put('/admin/surveys/{survey}/builder/pages/{page}', [AdminSurveyBuilderController::class, 'updatePage'])

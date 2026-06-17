@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\ResearchProject;
 use App\Models\Survey;
 use App\Models\SurveyQuestion;
+use App\Models\SurveyResponse;
 use App\Models\User;
 use App\Modules\AcademicOutputs\Services\AcademicNarrativeService;
 use App\Modules\Surveys\Actions\CreateSurveyAction;
@@ -327,12 +328,24 @@ class SurveyBuilderBulkUxTest extends TestCase
 
         $this->assertSame(8, $templateSurvey->pages()->count());
         $this->assertSame(10, $templateSurvey->indicators()->count());
+        $this->assertSame(43, $templateSurvey->questions()->count());
+        $this->assertDatabaseHas('survey_questions', [
+            'survey_id' => $templateSurvey->id,
+            'question_key' => 'B1',
+            'label' => 'Nama responden',
+            'help_text' => 'Nama digunakan hanya untuk kebutuhan administrasi, pengecekan data, dan pengelolaan respons penelitian. Identitas responden akan disamarkan dalam pelaporan hasil.',
+            'is_required' => true,
+        ]);
         $this->assertDatabaseHas('survey_questions', [
             'survey_id' => $templateSurvey->id,
             'question_key' => 'F6',
             'type' => SurveyQuestion::TYPE_LIKERT,
         ]);
         $this->assertFalse((bool) $templateSurvey->questions()->where('question_key', 'F6')->firstOrFail()->scoring->is_scored);
+        $this->assertSame(['risk_item' => true, 'not_positive_readiness' => true], $templateSurvey->questions()->where('question_key', 'F6')->firstOrFail()->scoring->settings);
+        $this->assertSame(3, $templateSurvey->questions()->where('question_key', 'G1')->firstOrFail()->settings['max_selections']);
+        $this->assertTrue((bool) $templateSurvey->questions()->where('question_key', 'G1')->firstOrFail()->is_required);
+        $this->assertSame(3, $templateSurvey->questions()->where('question_key', 'G2')->firstOrFail()->settings['max_selections']);
 
         $templateSurvey->load([
             'questions.scoring.indicator.scale',
@@ -341,8 +354,8 @@ class SurveyBuilderBulkUxTest extends TestCase
             'responses',
         ]);
         $rows = collect(app(SurveyBuilderReadinessService::class)->build($templateSurvey)['scoring']['rows']);
-        $this->assertSame('Not scoreable', $rows->firstWhere('question', 'Saya bersedia menjadi responden penelitian ini.')['status']);
-        $this->assertSame('Not scoreable', $rows->firstWhere('question', 'Saya memahami bahwa data digunakan hanya untuk penelitian.')['status']);
+        $this->assertSame('Not scoreable', $rows->firstWhere('question', 'Saya telah membaca penjelasan mengenai tujuan kuesioner ini dan bersedia mengisi kuesioner secara sukarela.')['status']);
+        $this->assertSame('Not scoreable', $rows->firstWhere('question', 'Saya memahami bahwa data yang dikumpulkan akan digunakan untuk kebutuhan analisis pengembangan media pembelajaran PharmVR. Identitas responden tidak akan ditampilkan dalam laporan dan hasil penelitian akan disajikan secara agregat atau disamarkan.')['status']);
     }
 
     public function test_pharmvr_template_blocks_duplicate_keys_and_fill_missing_adds_only_missing_questions(): void
@@ -361,7 +374,7 @@ class SurveyBuilderBulkUxTest extends TestCase
             ->get(route('admin.surveys.builder.index', ['survey' => $survey]))
             ->assertOk()
             ->assertSeeText('Missing PharmVR keys')
-            ->assertSeeText('38 keys')
+            ->assertSeeText('35 keys')
             ->assertSeeText('C1')
             ->assertSee('H5');
 
@@ -377,7 +390,7 @@ class SurveyBuilderBulkUxTest extends TestCase
             ->post(route('admin.surveys.builder.templates.pharmvr-student-needs.fill-missing', ['survey' => $survey]))
             ->assertRedirect(route('admin.surveys.builder.index', ['survey' => $survey]));
 
-        $this->assertSame(46, $survey->questions()->count());
+        $this->assertSame(43, $survey->questions()->count());
         $this->assertSame(1, $survey->questions()->where('question_key', 'A1')->count());
         $this->assertDatabaseHas('survey_questions', [
             'survey_id' => $survey->id,
@@ -385,8 +398,92 @@ class SurveyBuilderBulkUxTest extends TestCase
         ]);
         $this->assertDatabaseHas('survey_questions', [
             'survey_id' => $survey->id,
+            'question_key' => 'D1',
+            'label' => 'Saya merasa sulit membayangkan bentuk ruang produksi farmasi hanya dari penjelasan teori.',
+        ]);
+        $this->assertContains('Hygiene', $survey->questions()->where('question_key', 'G1')->firstOrFail()->options['choices']);
+        $this->assertSame(3, $survey->questions()->where('question_key', 'G1')->firstOrFail()->settings['max_selections']);
+        $this->assertDatabaseHas('survey_questions', [
+            'survey_id' => $survey->id,
             'question_key' => 'H5',
         ]);
+    }
+
+    public function test_pharmvr_wording_normalization_updates_zero_response_survey_and_blocks_with_responses(): void
+    {
+        [$owner, $survey] = $this->surveyFixture();
+
+        $this->actingAs($owner)
+            ->post(route('admin.surveys.builder.templates.pharmvr-student-needs', ['survey' => $survey]))
+            ->assertRedirect(route('admin.surveys.builder.index', ['survey' => $survey]));
+
+        $survey->questions()->where('question_key', 'A1')->firstOrFail()->forceFill([
+            'label' => 'Old consent wording',
+            'help_text' => null,
+            'type' => SurveyQuestion::TYPE_SHORT_TEXT,
+        ])->save();
+        $survey->questions()->where('question_key', 'B1')->firstOrFail()->forceFill([
+            'label' => 'Program studi atau institusi.',
+            'help_text' => null,
+            'is_required' => false,
+        ])->save();
+        $survey->questions()->where('question_key', 'G1')->firstOrFail()->forceFill([
+            'label' => 'Old scene choices',
+            'options' => ['choices' => ['Old option']],
+            'settings' => ['max_selections' => 9],
+            'is_required' => false,
+        ])->save();
+        $f6 = $survey->questions()->where('question_key', 'F6')->firstOrFail();
+        $f6->scoring()->update([
+            'is_scored' => true,
+            'score_min' => 1,
+            'score_max' => 5,
+            'settings' => null,
+        ]);
+
+        $this->actingAs($owner)
+            ->get(route('admin.surveys.builder.index', ['survey' => $survey]))
+            ->assertOk()
+            ->assertSeeText('Normalize PharmVR wording preview')
+            ->assertSeeText('question updates detected');
+
+        $this->actingAs($owner)
+            ->post(route('admin.surveys.builder.templates.pharmvr-student-needs.normalize', ['survey' => $survey]))
+            ->assertRedirect(route('admin.surveys.builder.index', ['survey' => $survey]));
+
+        $survey->refresh();
+        $this->assertDatabaseHas('survey_questions', [
+            'survey_id' => $survey->id,
+            'question_key' => 'A1',
+            'type' => SurveyQuestion::TYPE_CONSENT,
+            'label' => 'Saya telah membaca penjelasan mengenai tujuan kuesioner ini dan bersedia mengisi kuesioner secara sukarela.',
+        ]);
+        $this->assertDatabaseHas('survey_questions', [
+            'survey_id' => $survey->id,
+            'question_key' => 'B1',
+            'label' => 'Nama responden',
+            'help_text' => 'Nama digunakan hanya untuk kebutuhan administrasi, pengecekan data, dan pengelolaan respons penelitian. Identitas responden akan disamarkan dalam pelaporan hasil.',
+            'is_required' => true,
+        ]);
+        $this->assertContains('Hygiene', $survey->questions()->where('question_key', 'G1')->firstOrFail()->options['choices']);
+        $this->assertSame(3, $survey->questions()->where('question_key', 'G1')->firstOrFail()->settings['max_selections']);
+        $this->assertFalse((bool) $survey->questions()->where('question_key', 'F6')->firstOrFail()->scoring->is_scored);
+        $this->assertSame(0, app(SurveyBuilderReadinessService::class)->build($survey->fresh(['questions.scoring.indicator.scale', 'indicators.questionScorings', 'analysisResults', 'validationRounds.assignments.scores', 'responses']))['scoring']['missing']);
+
+        SurveyResponse::create([
+            'survey_id' => $survey->id,
+            'status' => SurveyResponse::STATUS_SUBMITTED,
+            'submitted_at' => now(),
+        ]);
+        $survey->questions()->where('question_key', 'B1')->firstOrFail()->forceFill(['label' => 'Changed after response'])->save();
+
+        $this->actingAs($owner)
+            ->from(route('admin.surveys.builder.index', ['survey' => $survey]))
+            ->post(route('admin.surveys.builder.templates.pharmvr-student-needs.normalize', ['survey' => $survey]))
+            ->assertRedirect(route('admin.surveys.builder.index', ['survey' => $survey]))
+            ->assertSessionHasErrors('template');
+
+        $this->assertSame('Changed after response', $survey->questions()->where('question_key', 'B1')->firstOrFail()->label);
     }
 
     /**

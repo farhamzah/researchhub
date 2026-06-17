@@ -28,7 +28,10 @@ class PublicSurveySubmissionTest extends TestCase
         $this->get(route('survey.show', ['survey' => $survey->slug]))
             ->assertOk()
             ->assertSee($survey->title)
-            ->assertDontSee($project->title);
+            ->assertDontSee($project->title)
+            ->assertSee('type="checkbox" name="answers[consent]"', false)
+            ->assertDontSee('type="text" name="answers[consent]"', false)
+            ->assertDontSee('Tulis jawaban singkat di sini');
 
         $this->post(route('survey.responses.store', ['survey' => $survey->slug]), [
             'answers' => [

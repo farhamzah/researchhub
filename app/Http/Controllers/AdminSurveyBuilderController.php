@@ -62,6 +62,7 @@ class AdminSurveyBuilderController extends Controller
                 'surveyAnalysis' => $academicNarratives->surveyAnalysisSummary($survey),
             ],
             'pharmVrTemplatePreview' => $pharmVrTemplate->previewMissing($survey),
+            'pharmVrNormalizationPreview' => $pharmVrTemplate->previewNormalization($survey),
             'questionTypes' => config('researchhub_surveys.question_types', []),
             'hasResponses' => $survey->responses_count > 0,
             'optionQuestionTypes' => [
@@ -198,6 +199,17 @@ class AdminSurveyBuilderController extends Controller
         return redirect()
             ->route('admin.surveys.builder.index', ['survey' => $survey])
             ->with('status', 'survey-pharmvr-template-filled-missing-'.$result['questions']);
+    }
+
+    public function normalizePharmVrStudentNeedsTemplate(Survey $survey, Request $request, PharmVrStudentNeedsSurveyTemplateService $template): RedirectResponse
+    {
+        Gate::authorize('update', $survey);
+
+        $result = $template->normalizeExisting($request->user(), $survey);
+
+        return redirect()
+            ->route('admin.surveys.builder.index', ['survey' => $survey])
+            ->with('status', 'survey-pharmvr-template-normalized-'.$result['questions']);
     }
 
     public function updatePage(Survey $survey, SurveyPage $page, Request $request, UpdateSurveyPageAction $updatePage): RedirectResponse

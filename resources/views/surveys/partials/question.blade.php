@@ -103,9 +103,9 @@
 
                 @case(\App\Models\SurveyQuestion::TYPE_CONSENT)
                     <input type="hidden" name="answers[{{ $key }}]" value="0">
-                    <label class="flex items-center gap-2 text-sm text-gray-700">
+                    <label class="flex items-start gap-3 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950">
                         <input id="question_{{ $key }}" type="checkbox" name="answers[{{ $key }}]" value="1" @checked(old("answers.{$key}") === '1') class="rounded border-gray-300 text-emerald-700">
-                        I agree
+                        <span>Saya menyetujui pernyataan ini.</span>
                     </label>
                     @break
 

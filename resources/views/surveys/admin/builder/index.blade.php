@@ -469,6 +469,10 @@
                             @csrf
                             <button type="submit" @disabled($hasResponses) onclick="return confirm('Fill only missing PharmVR sections? Existing question keys will not be overwritten.')" class="rounded-md border border-blue-300 bg-white px-4 py-2 text-sm font-semibold text-blue-900 shadow-sm hover:bg-blue-100 disabled:bg-slate-300">Fill Missing PharmVR Sections</button>
                         </form>
+                        <form method="POST" action="{{ route('admin.surveys.builder.templates.pharmvr-student-needs.normalize', ['survey' => $survey]) }}">
+                            @csrf
+                            <button type="submit" @disabled($hasResponses || $pharmVrNormalizationPreview['change_count'] === 0) onclick="return confirm('Normalize existing PharmVR wording? This only runs when the survey has zero responses and will preserve question IDs.')" class="rounded-md border border-emerald-300 bg-white px-4 py-2 text-sm font-semibold text-emerald-900 shadow-sm hover:bg-emerald-50 disabled:bg-slate-300">Normalize PharmVR Student Survey Wording</button>
+                        </form>
                         <form method="POST" action="{{ route('admin.surveys.builder.templates.pharmvr-student-needs', ['survey' => $survey]) }}">
                             @csrf
                             <button type="submit" @disabled($hasResponses) onclick="return confirm('{{ $survey->questions->isNotEmpty() ? 'This survey already has questions. Creating the full template will be blocked if duplicate keys are found. Continue?' : 'Create the full PharmVR Student Needs Survey template in this survey?' }}')" class="rounded-md bg-blue-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:bg-slate-300">Create PharmVR Student Needs Survey</button>
@@ -492,6 +496,32 @@
                         <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Fill missing pages</p>
                         <p class="mt-1 truncate text-sm text-slate-700" title="{{ implode(', ', $pharmVrTemplatePreview['missing_pages']) }}">{{ $pharmVrTemplatePreview['missing_pages'] === [] ? 'No missing sections' : implode(', ', $pharmVrTemplatePreview['missing_pages']) }}</p>
                     </div>
+                </div>
+
+                <div class="mt-4 rounded-md border border-emerald-100 bg-white p-4">
+                    <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Normalize PharmVR wording preview</p>
+                            <p class="mt-1 text-sm text-slate-700">{{ $pharmVrNormalizationPreview['change_count'] }} question updates detected; {{ count($pharmVrNormalizationPreview['missing_keys']) }} approved keys missing.</p>
+                            @if ($pharmVrNormalizationPreview['response_count'] > 0)
+                                <p class="mt-1 text-sm font-semibold text-red-700">Normalization is blocked because this survey already has responses.</p>
+                            @endif
+                        </div>
+                        <span class="rounded-md border border-emerald-100 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800">{{ $pharmVrNormalizationPreview['response_count'] }} responses</span>
+                    </div>
+                    @if ($pharmVrNormalizationPreview['changes'] !== [])
+                        <div class="mt-3 max-h-28 overflow-y-auto text-xs leading-5 text-slate-600">
+                            @foreach (array_slice($pharmVrNormalizationPreview['changes'], 0, 8) as $change)
+                                <p><span class="font-mono font-semibold">{{ $change['key'] }}</span>: {{ implode(', ', $change['fields']) }}</p>
+                            @endforeach
+                            @if ($pharmVrNormalizationPreview['change_count'] > 8)
+                                <p>+ {{ $pharmVrNormalizationPreview['change_count'] - 8 }} more changes</p>
+                            @endif
+                        </div>
+                    @endif
+                    @if ($pharmVrNormalizationPreview['missing_keys'] !== [])
+                        <p class="mt-3 truncate text-xs text-amber-800" title="{{ implode(', ', $pharmVrNormalizationPreview['missing_keys']) }}">Missing approved keys: {{ implode(', ', $pharmVrNormalizationPreview['missing_keys']) }}</p>
+                    @endif
                 </div>
 
                 <form method="POST" action="{{ route('admin.surveys.builder.bulk-questions.preview', ['survey' => $survey]) }}" class="mt-5 space-y-4">
@@ -787,6 +817,11 @@
                                             <textarea disabled rows="4" placeholder="{{ $previewQuestion['placeholder'] }}" class="mt-3 block w-full rounded-md border border-slate-300 bg-slate-50 px-3 py-2 text-sm"></textarea>
                                         @elseif ($previewQuestion['type'] === SurveyQuestion::TYPE_HIDDEN)
                                             <p class="mt-3 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500">{{ $previewQuestion['placeholder'] }}</p>
+                                        @elseif ($previewQuestion['type'] === SurveyQuestion::TYPE_CONSENT)
+                                            <label class="mt-3 flex items-start gap-3 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950">
+                                                <input type="checkbox" disabled class="mt-1 rounded border-amber-300 text-emerald-700">
+                                                <span>Saya menyetujui pernyataan ini.</span>
+                                            </label>
                                         @else
                                             <input disabled placeholder="{{ $previewQuestion['placeholder'] }}" class="mt-3 block w-full rounded-md border border-slate-300 bg-slate-50 px-3 py-2 text-sm">
                                         @endif

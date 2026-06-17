@@ -3,8 +3,19 @@
     $scoringStatus = function ($question) use ($supportedTypes): string {
         $scoring = $question->scoring;
 
+        if (in_array($question->type, [
+            \App\Models\SurveyQuestion::TYPE_SHORT_TEXT,
+            \App\Models\SurveyQuestion::TYPE_LONG_TEXT,
+            \App\Models\SurveyQuestion::TYPE_DATE,
+            \App\Models\SurveyQuestion::TYPE_CONSENT,
+            \App\Models\SurveyQuestion::TYPE_HIDDEN,
+            \App\Models\SurveyQuestion::TYPE_LIKERT_MATRIX,
+        ], true)) {
+            return 'Not scoreable';
+        }
+
         if (! in_array($question->type, $supportedTypes, true)) {
-            return $scoring && ! $scoring->is_scored ? 'Descriptive' : 'Not scoreable';
+            return 'Not scoreable';
         }
 
         if (! $scoring || ! $scoring->is_scored) {

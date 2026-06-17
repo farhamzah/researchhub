@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Modules\AcademicOutputs\Services\AcademicNarrativeService;
 use App\Modules\Surveys\Actions\CreateSurveyAction;
 use App\Modules\Surveys\Actions\PublishSurveyAction;
+use App\Modules\Surveys\Services\SurveyBuilderReadinessService;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -112,6 +113,91 @@ class SurveyBuilderBulkUxTest extends TestCase
         ]);
         $this->assertSame(2, $survey->questions()->count());
         $this->assertSame(2, $indicator->questionScorings()->count());
+    }
+
+    public function test_bulk_import_uses_normalized_existing_indicator_match(): void
+    {
+        [$owner, $survey] = $this->surveyFixture();
+        $indicator = $survey->indicators()->create([
+            'name' => 'Pengalaman Pembelajaran CPOB/GMP',
+            'slug' => 'pengalaman-pembelajaran-cpob-gmp',
+        ]);
+
+        $input = str_replace('INDICATOR: Pengalaman Pembelajaran CPOB/GMP', 'INDICATOR: pengalaman pembelajaran CPOB / GMP', $this->bulkText());
+
+        $this->actingAs($owner)
+            ->post(route('admin.surveys.builder.bulk-questions.preview', ['survey' => $survey]), [
+                'indicator_strategy' => 'create',
+                'bulk_input' => $input,
+            ])
+            ->assertRedirect(route('admin.surveys.builder.index', ['survey' => $survey]))
+            ->assertSessionHas('bulk_question_preview', function (array $preview): bool {
+                return $preview['existing_indicators_used'] === ['Pengalaman Pembelajaran CPOB/GMP']
+                    && $preview['new_indicators_to_create'] === []
+                    && $preview['page']['order'] === 3
+                    && $preview['question_type'] === SurveyQuestion::TYPE_LIKERT
+                    && $preview['required'] === true;
+            });
+
+        $this->actingAs($owner)
+            ->get(route('admin.surveys.builder.index', ['survey' => $survey]))
+            ->assertOk()
+            ->assertSeeText('Existing indicators used')
+            ->assertSeeText('Pengalaman Pembelajaran CPOB/GMP')
+            ->assertSeeText('Page order: 3')
+            ->assertSeeText('Question type: Likert | Required: Yes')
+            ->assertSeeText('Configured');
+
+        $this->actingAs($owner)
+            ->post(route('admin.surveys.builder.bulk-questions.import', ['survey' => $survey]), [
+                'indicator_strategy' => 'create',
+                'bulk_input' => $input,
+            ])
+            ->assertRedirect(route('admin.surveys.builder.index', ['survey' => $survey]));
+
+        $this->assertSame(1, $survey->indicators()->count());
+        $this->assertSame(2, $indicator->questionScorings()->count());
+    }
+
+    public function test_bulk_import_warns_and_blocks_near_duplicate_indicator_creation(): void
+    {
+        [$owner, $survey] = $this->surveyFixture();
+        $survey->indicators()->create([
+            'name' => 'Pengalaman Pembelajaran CPOB/GMP',
+            'slug' => 'pengalaman-pembelajaran-cpob-gmp',
+        ]);
+
+        $input = str_replace('INDICATOR: Pengalaman Pembelajaran CPOB/GMP', 'INDICATOR: Pengalaman Belajar CPOB/GMP', $this->bulkText());
+
+        $this->actingAs($owner)
+            ->post(route('admin.surveys.builder.bulk-questions.preview', ['survey' => $survey]), [
+                'indicator_strategy' => 'create',
+                'bulk_input' => $input,
+            ])
+            ->assertRedirect(route('admin.surveys.builder.index', ['survey' => $survey]))
+            ->assertSessionHas('bulk_question_preview', function (array $preview): bool {
+                return $preview['possible_duplicate_indicators'] === ['Pengalaman Pembelajaran CPOB/GMP']
+                    && str_contains(implode(' ', $preview['warnings']), 'Possible existing indicator found');
+            });
+
+        $this->actingAs($owner)
+            ->get(route('admin.surveys.builder.index', ['survey' => $survey]))
+            ->assertOk()
+            ->assertSeeText('Possible duplicates')
+            ->assertSeeText('Pengalaman Pembelajaran CPOB/GMP')
+            ->assertSeeText('Import is blocked until the indicator name is corrected or indicator linking is skipped.');
+
+        $this->actingAs($owner)
+            ->from(route('admin.surveys.builder.index', ['survey' => $survey]))
+            ->post(route('admin.surveys.builder.bulk-questions.import', ['survey' => $survey]), [
+                'indicator_strategy' => 'create',
+                'bulk_input' => $input,
+            ])
+            ->assertRedirect(route('admin.surveys.builder.index', ['survey' => $survey]))
+            ->assertSessionHasErrors('indicator_strategy');
+
+        $this->assertSame(1, $survey->indicators()->count());
+        $this->assertSame(0, $survey->questions()->count());
     }
 
     public function test_bulk_json_import_creates_missing_indicator_when_requested(): void
@@ -247,6 +333,60 @@ class SurveyBuilderBulkUxTest extends TestCase
             'type' => SurveyQuestion::TYPE_LIKERT,
         ]);
         $this->assertFalse((bool) $templateSurvey->questions()->where('question_key', 'F6')->firstOrFail()->scoring->is_scored);
+
+        $templateSurvey->load([
+            'questions.scoring.indicator.scale',
+            'analysisResults',
+            'validationRounds.assignments.scores',
+            'responses',
+        ]);
+        $rows = collect(app(SurveyBuilderReadinessService::class)->build($templateSurvey)['scoring']['rows']);
+        $this->assertSame('Not scoreable', $rows->firstWhere('question', 'Saya bersedia menjadi responden penelitian ini.')['status']);
+        $this->assertSame('Not scoreable', $rows->firstWhere('question', 'Saya memahami bahwa data digunakan hanya untuk penelitian.')['status']);
+    }
+
+    public function test_pharmvr_template_blocks_duplicate_keys_and_fill_missing_adds_only_missing_questions(): void
+    {
+        [$owner, $survey] = $this->surveyFixture();
+        foreach (['A1', 'A2', 'A3', 'B1', 'B2', 'B3', 'B4', 'B5'] as $index => $key) {
+            $survey->questions()->create([
+                'question_key' => $key,
+                'type' => str_starts_with($key, 'A') ? SurveyQuestion::TYPE_CONSENT : SurveyQuestion::TYPE_SHORT_TEXT,
+                'label' => "Existing {$key}",
+                'sort_order' => $index + 1,
+            ]);
+        }
+
+        $this->actingAs($owner)
+            ->get(route('admin.surveys.builder.index', ['survey' => $survey]))
+            ->assertOk()
+            ->assertSeeText('Missing PharmVR keys')
+            ->assertSeeText('38 keys')
+            ->assertSeeText('C1')
+            ->assertSee('H5');
+
+        $this->actingAs($owner)
+            ->from(route('admin.surveys.builder.index', ['survey' => $survey]))
+            ->post(route('admin.surveys.builder.templates.pharmvr-student-needs', ['survey' => $survey]))
+            ->assertRedirect(route('admin.surveys.builder.index', ['survey' => $survey]))
+            ->assertSessionHasErrors('template');
+
+        $this->assertSame(8, $survey->questions()->count());
+
+        $this->actingAs($owner)
+            ->post(route('admin.surveys.builder.templates.pharmvr-student-needs.fill-missing', ['survey' => $survey]))
+            ->assertRedirect(route('admin.surveys.builder.index', ['survey' => $survey]));
+
+        $this->assertSame(46, $survey->questions()->count());
+        $this->assertSame(1, $survey->questions()->where('question_key', 'A1')->count());
+        $this->assertDatabaseHas('survey_questions', [
+            'survey_id' => $survey->id,
+            'question_key' => 'C1',
+        ]);
+        $this->assertDatabaseHas('survey_questions', [
+            'survey_id' => $survey->id,
+            'question_key' => 'H5',
+        ]);
     }
 
     /**

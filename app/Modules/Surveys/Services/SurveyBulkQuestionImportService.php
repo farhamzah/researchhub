@@ -8,6 +8,7 @@ use App\Models\SurveyPage;
 use App\Models\SurveyQuestion;
 use App\Models\User;
 use App\Modules\AuditLogs\Services\ActivityLogger;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -22,23 +23,34 @@ class SurveyBulkQuestionImportService
     public function preview(Survey $survey, string $input, string $indicatorStrategy = 'create'): array
     {
         $payload = $this->parse($input);
-        $this->validatePayload($survey, $payload, $indicatorStrategy);
+        $this->validatePayload($survey, $payload, $indicatorStrategy, false);
 
         $indicatorName = $payload['defaults']['indicator'] ?? null;
-        $indicator = $indicatorName
-            ? $survey->indicators->first(fn (SurveyIndicator $indicator): bool => strcasecmp($indicator->name, (string) $indicatorName) === 0)
+        $indicatorMatch = $this->indicatorMatch($survey, $indicatorName);
+        $indicator = $indicatorMatch['exact'];
+        $existingKeys = $this->existingQuestionKeys($survey, $payload);
+        $duplicateKeys = $this->duplicateImportKeys($payload);
+        $newIndicator = $indicatorName && ! $indicator && $indicatorMatch['near'] === null && $indicatorStrategy === 'create'
+            ? (string) $indicatorName
             : null;
 
         return [
             'page' => $payload['page'],
-            'page_exists' => $survey->pages->contains(fn (SurveyPage $page): bool => strcasecmp((string) $page->title, (string) $payload['page']['title']) === 0),
+            'page_exists' => $this->pageExists($survey, $payload['page']['title']),
             'indicator' => $indicatorName,
             'indicator_exists' => $indicator !== null,
+            'indicator_match' => $indicator?->name,
+            'existing_indicators_used' => $indicator ? [$indicator->name] : [],
+            'new_indicators_to_create' => $newIndicator ? [$newIndicator] : [],
+            'possible_duplicate_indicators' => $indicatorMatch['near'] ? [$indicatorMatch['near']->name] : [],
             'indicator_strategy' => $indicatorStrategy,
             'questions' => $payload['questions'],
             'question_count' => count($payload['questions']),
-            'scoring' => $this->previewScoringRows($payload, $indicator !== null || $indicatorStrategy === 'create'),
-            'warnings' => $this->warnings($payload, $indicator !== null, $indicatorStrategy),
+            'duplicate_keys' => $duplicateKeys->merge($existingKeys)->unique()->values()->all(),
+            'question_type' => $payload['defaults']['type'],
+            'required' => (bool) $payload['defaults']['required'],
+            'scoring' => $this->previewScoringRows($payload, $indicator !== null || $newIndicator !== null),
+            'warnings' => $this->warnings($payload, $indicatorMatch, $indicatorStrategy, $existingKeys, $duplicateKeys),
         ];
     }
 
@@ -48,7 +60,7 @@ class SurveyBulkQuestionImportService
     public function import(User $user, Survey $survey, string $input, string $indicatorStrategy = 'create'): array
     {
         $payload = $this->parse($input);
-        $this->validatePayload($survey, $payload, $indicatorStrategy);
+        $this->validatePayload($survey, $payload, $indicatorStrategy, true);
 
         return DB::transaction(function () use ($user, $survey, $payload, $indicatorStrategy): array {
             $page = $this->page($survey, $payload['page']);
@@ -235,7 +247,7 @@ class SurveyBulkQuestionImportService
     /**
      * @param  array<string, mixed>  $payload
      */
-    private function validatePayload(Survey $survey, array $payload, string $indicatorStrategy): void
+    private function validatePayload(Survey $survey, array $payload, string $indicatorStrategy, bool $forImport = true): void
     {
         if (! in_array($indicatorStrategy, ['create', 'skip', 'cancel'], true)) {
             throw ValidationException::withMessages(['indicator_strategy' => 'Choose create, skip, or cancel for missing indicators.']);
@@ -249,15 +261,14 @@ class SurveyBulkQuestionImportService
             throw ValidationException::withMessages(['bulk_input' => 'Bulk import needs at least one question row.']);
         }
 
-        $keys = collect($payload['questions'])->pluck('key')->map(fn (string $key): string => trim($key))->filter();
-        $duplicateKeys = $keys->duplicates()->values();
+        $duplicateKeys = $this->duplicateImportKeys($payload);
 
-        if ($duplicateKeys->isNotEmpty()) {
+        if ($forImport && $duplicateKeys->isNotEmpty()) {
             throw ValidationException::withMessages(['bulk_input' => 'Duplicate question keys in import: '.$duplicateKeys->join(', ')]);
         }
 
-        $existingKeys = $survey->questions()->whereIn('question_key', $keys->all())->pluck('question_key');
-        if ($existingKeys->isNotEmpty()) {
+        $existingKeys = $this->existingQuestionKeys($survey, $payload);
+        if ($forImport && $existingKeys->isNotEmpty()) {
             throw ValidationException::withMessages(['bulk_input' => 'Question keys already exist: '.$existingKeys->join(', ')]);
         }
 
@@ -266,9 +277,18 @@ class SurveyBulkQuestionImportService
         }
 
         if ($payload['defaults']['indicator'] && $indicatorStrategy === 'cancel') {
-            $exists = $survey->indicators->contains(fn (SurveyIndicator $indicator): bool => strcasecmp($indicator->name, (string) $payload['defaults']['indicator']) === 0);
-            if (! $exists) {
+            $match = $this->indicatorMatch($survey, $payload['defaults']['indicator']);
+            if (! $match['exact']) {
                 throw ValidationException::withMessages(['indicator_strategy' => 'Indicator does not exist. Choose create or skip to continue.']);
+            }
+        }
+
+        if ($forImport && $payload['defaults']['indicator'] && $indicatorStrategy === 'create') {
+            $match = $this->indicatorMatch($survey, $payload['defaults']['indicator']);
+            if (! $match['exact'] && $match['near']) {
+                throw ValidationException::withMessages([
+                    'indicator_strategy' => 'Possible existing indicator found: '.$match['near']->name.'. Use that existing indicator name exactly, or choose skip if this import should be descriptive.',
+                ]);
             }
         }
     }
@@ -297,7 +317,8 @@ class SurveyBulkQuestionImportService
             return null;
         }
 
-        $indicator = $survey->indicators()->whereRaw('lower(name) = ?', [mb_strtolower((string) $indicatorName)])->first();
+        $match = $this->indicatorMatch($survey, $indicatorName);
+        $indicator = $match['exact'];
         if ($indicator instanceof SurveyIndicator || $indicatorStrategy === 'skip') {
             return $indicator;
         }
@@ -366,16 +387,35 @@ class SurveyBulkQuestionImportService
 
     /**
      * @param  array<string, mixed>  $payload
+     * @param  array{exact: ?SurveyIndicator, near: ?SurveyIndicator}  $indicatorMatch
+     * @param  Collection<int, string>  $existingKeys
+     * @param  Collection<int, string>  $duplicateKeys
      * @return array<int, string>
      */
-    private function warnings(array $payload, bool $indicatorExists, string $indicatorStrategy): array
+    private function warnings(array $payload, array $indicatorMatch, string $indicatorStrategy, Collection $existingKeys, Collection $duplicateKeys): array
     {
         $warnings = [];
 
-        if (($payload['defaults']['indicator'] ?? null) && ! $indicatorExists) {
+        if (($payload['defaults']['indicator'] ?? null) && ! $indicatorMatch['exact']) {
+            if ($indicatorMatch['near']) {
+                $warnings[] = 'Possible existing indicator found: '.$indicatorMatch['near']->name.'. Use existing instead of creating new?';
+            }
+
             $warnings[] = $indicatorStrategy === 'create'
-                ? 'Indicator will be created before questions are imported.'
+                ? ($indicatorMatch['near'] ? 'Import is blocked until the indicator name is corrected or indicator linking is skipped.' : 'New indicator will be created before questions are imported.')
                 : 'Questions will be imported without an indicator link.';
+        }
+
+        if ($indicatorMatch['exact']) {
+            $warnings[] = 'Existing indicator will be reused: '.$indicatorMatch['exact']->name.'.';
+        }
+
+        if ($existingKeys->isNotEmpty()) {
+            $warnings[] = 'Question keys already exist and must be removed before import: '.$existingKeys->join(', ').'.';
+        }
+
+        if ($duplicateKeys->isNotEmpty()) {
+            $warnings[] = 'Duplicate question keys inside this import: '.$duplicateKeys->join(', ').'.';
         }
 
         if ($payload['defaults']['type'] !== SurveyQuestion::TYPE_LIKERT) {
@@ -383,5 +423,77 @@ class SurveyBulkQuestionImportService
         }
 
         return $warnings;
+    }
+
+    private function pageExists(Survey $survey, string $title): bool
+    {
+        return $survey->pages->contains(fn (SurveyPage $page): bool => $this->normalizeName((string) $page->title) === $this->normalizeName($title));
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return Collection<int, string>
+     */
+    private function duplicateImportKeys(array $payload): Collection
+    {
+        return collect($payload['questions'])
+            ->pluck('key')
+            ->map(fn (string $key): string => trim($key))
+            ->filter()
+            ->duplicates()
+            ->values();
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return Collection<int, string>
+     */
+    private function existingQuestionKeys(Survey $survey, array $payload): Collection
+    {
+        $keys = collect($payload['questions'])->pluck('key')->map(fn (string $key): string => trim($key))->filter();
+
+        return $survey->questions()->whereIn('question_key', $keys->all())->pluck('question_key');
+    }
+
+    /**
+     * @return array{exact: ?SurveyIndicator, near: ?SurveyIndicator}
+     */
+    private function indicatorMatch(Survey $survey, mixed $name): array
+    {
+        if (! filled($name)) {
+            return ['exact' => null, 'near' => null];
+        }
+
+        $normalized = $this->normalizeName((string) $name);
+        $indicators = $survey->relationLoaded('indicators') ? $survey->indicators : $survey->indicators()->get();
+        $exact = $indicators->first(fn (SurveyIndicator $indicator): bool => $this->normalizeName($indicator->name) === $normalized);
+
+        if ($exact instanceof SurveyIndicator) {
+            return ['exact' => $exact, 'near' => null];
+        }
+
+        $near = $indicators
+            ->map(function (SurveyIndicator $indicator) use ($normalized): array {
+                similar_text($normalized, $this->normalizeName($indicator->name), $percent);
+
+                return ['indicator' => $indicator, 'percent' => $percent];
+            })
+            ->sortByDesc('percent')
+            ->first();
+
+        return [
+            'exact' => null,
+            'near' => $near && $near['percent'] >= 82 ? $near['indicator'] : null,
+        ];
+    }
+
+    private function normalizeName(string $value): string
+    {
+        return Str::of($value)
+            ->lower()
+            ->replaceMatches('/\s*\/\s*/', '/')
+            ->replaceMatches('/\s+/', ' ')
+            ->trim()
+            ->toString();
     }
 }

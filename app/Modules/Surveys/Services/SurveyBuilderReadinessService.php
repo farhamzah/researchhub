@@ -164,7 +164,7 @@ class SurveyBuilderReadinessService
             SurveyQuestion::TYPE_CONSENT,
             SurveyQuestion::TYPE_HIDDEN,
         ], true)) {
-            return $scoring && ! $scoring->is_scored ? 'Descriptive' : 'Not scoreable';
+            return 'Not scoreable';
         }
 
         if ($question->type === SurveyQuestion::TYPE_LIKERT_MATRIX) {

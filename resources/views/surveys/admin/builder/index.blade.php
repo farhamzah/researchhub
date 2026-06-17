@@ -408,7 +408,10 @@
                                 @method('PUT')
                                 <div class="grid gap-3">
                                     <input name="title" value="{{ $page->title }}" placeholder="Untitled page" class="rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm">
-                                    <input name="description" value="{{ $page->description }}" placeholder="Description" class="rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm">
+                                    <input name="description" value="{{ $page->description }}" title="{{ $page->description }}" placeholder="Description" class="rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm">
+                                    @if ($page->description)
+                                        <p class="truncate text-xs leading-5 text-slate-500" title="{{ $page->description }}">{{ $page->description }}</p>
+                                    @endif
                                     <input name="sort_order" type="number" min="0" value="{{ $page->sort_order }}" class="rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm">
                                 </div>
                                 <div class="mt-3 flex flex-wrap gap-2">
@@ -461,10 +464,34 @@
                         <h3 class="mt-1 text-lg font-semibold text-blue-950">Paste text or JSON instrument sections</h3>
                         <p class="mt-1 text-sm leading-6 text-blue-900">Preview before import. Imports are transactional and duplicate question keys stop the whole import.</p>
                     </div>
-                    <form method="POST" action="{{ route('admin.surveys.builder.templates.pharmvr-student-needs', ['survey' => $survey]) }}">
-                        @csrf
-                        <button type="submit" @disabled($hasResponses) onclick="return confirm('Create the PharmVR Student Needs Survey template in this survey?')" class="rounded-md bg-blue-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:bg-slate-300">Create PharmVR Student Needs Survey</button>
-                    </form>
+                    <div class="flex flex-wrap gap-2">
+                        <form method="POST" action="{{ route('admin.surveys.builder.templates.pharmvr-student-needs.fill-missing', ['survey' => $survey]) }}">
+                            @csrf
+                            <button type="submit" @disabled($hasResponses) onclick="return confirm('Fill only missing PharmVR sections? Existing question keys will not be overwritten.')" class="rounded-md border border-blue-300 bg-white px-4 py-2 text-sm font-semibold text-blue-900 shadow-sm hover:bg-blue-100 disabled:bg-slate-300">Fill Missing PharmVR Sections</button>
+                        </form>
+                        <form method="POST" action="{{ route('admin.surveys.builder.templates.pharmvr-student-needs', ['survey' => $survey]) }}">
+                            @csrf
+                            <button type="submit" @disabled($hasResponses) onclick="return confirm('{{ $survey->questions->isNotEmpty() ? 'This survey already has questions. Creating the full template will be blocked if duplicate keys are found. Continue?' : 'Create the full PharmVR Student Needs Survey template in this survey?' }}')" class="rounded-md bg-blue-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:bg-slate-300">Create PharmVR Student Needs Survey</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="mt-4 grid gap-3 md:grid-cols-3">
+                    <div class="rounded-md border border-blue-100 bg-white p-3">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-blue-700">PharmVR template keys</p>
+                        <p class="mt-1 text-sm text-blue-950">{{ $pharmVrTemplatePreview['existing_count'] }} existing / {{ $pharmVrTemplatePreview['template_count'] }} total</p>
+                    </div>
+                    <div class="rounded-md border border-emerald-100 bg-white p-3">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Missing PharmVR keys</p>
+                        <p class="mt-1 text-sm text-emerald-950">{{ $pharmVrTemplatePreview['missing_count'] }} keys</p>
+                        @if ($pharmVrTemplatePreview['missing_count'] > 0)
+                            <p class="mt-1 truncate text-xs text-emerald-800" title="{{ implode(', ', $pharmVrTemplatePreview['missing_keys']) }}">{{ implode(', ', array_slice($pharmVrTemplatePreview['missing_keys'], 0, 14)) }}{{ $pharmVrTemplatePreview['missing_count'] > 14 ? ', ...' : '' }}</p>
+                        @endif
+                    </div>
+                    <div class="rounded-md border border-slate-200 bg-white p-3">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Fill missing pages</p>
+                        <p class="mt-1 truncate text-sm text-slate-700" title="{{ implode(', ', $pharmVrTemplatePreview['missing_pages']) }}">{{ $pharmVrTemplatePreview['missing_pages'] === [] ? 'No missing sections' : implode(', ', $pharmVrTemplatePreview['missing_pages']) }}</p>
+                    </div>
                 </div>
 
                 <form method="POST" action="{{ route('admin.surveys.builder.bulk-questions.preview', ['survey' => $survey]) }}" class="mt-5 space-y-4">
@@ -489,10 +516,26 @@
                         <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                             <div>
                                 <p class="text-sm font-semibold text-slate-950">Bulk import preview</p>
-                                <p class="mt-1 text-sm text-slate-600">Page: {{ $bulkPreview['page']['title'] }} ({{ $bulkPreview['page_exists'] ? 'existing' : 'will be created' }})</p>
-                                <p class="mt-1 text-sm text-slate-600">Indicator: {{ $bulkPreview['indicator'] ?: 'none' }} ({{ $bulkPreview['indicator_exists'] ? 'existing' : $bulkPreview['indicator_strategy'] }})</p>
+                                <p class="mt-1 text-sm text-slate-600">Page: {{ $bulkPreview['page']['title'] }} ({{ $bulkPreview['page_exists'] ? 'existing page will be reused' : 'will be created' }})</p>
+                                <p class="mt-1 text-sm text-slate-600">Page order: {{ $bulkPreview['page']['order'] ?: 'next available' }}</p>
+                                <p class="mt-1 text-sm text-slate-600">Question type: {{ str($bulkPreview['question_type'])->replace('_', ' ')->title() }} | Required: {{ $bulkPreview['required'] ? 'Yes' : 'No' }}</p>
+                                <p class="mt-1 text-sm text-slate-600">Indicator input: {{ $bulkPreview['indicator'] ?: 'none' }}</p>
                             </div>
                             <span class="rounded-md border border-blue-200 bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-900">{{ $bulkPreview['question_count'] }} questions</span>
+                        </div>
+                        <div class="mt-4 grid gap-3 md:grid-cols-3">
+                            <div class="rounded-md border border-emerald-100 bg-emerald-50 p-3">
+                                <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Existing indicators used</p>
+                                <p class="mt-1 text-sm text-emerald-950">{{ collect($bulkPreview['existing_indicators_used'])->join(', ') ?: 'None' }}</p>
+                            </div>
+                            <div class="rounded-md border border-blue-100 bg-blue-50 p-3">
+                                <p class="text-xs font-semibold uppercase tracking-wide text-blue-700">New indicators to create</p>
+                                <p class="mt-1 text-sm text-blue-950">{{ collect($bulkPreview['new_indicators_to_create'])->join(', ') ?: 'None' }}</p>
+                            </div>
+                            <div class="rounded-md border border-amber-100 bg-amber-50 p-3">
+                                <p class="text-xs font-semibold uppercase tracking-wide text-amber-700">Possible duplicates</p>
+                                <p class="mt-1 text-sm text-amber-950">{{ collect($bulkPreview['possible_duplicate_indicators'])->join(', ') ?: 'None' }}</p>
+                            </div>
                         </div>
                         @if ($bulkPreview['warnings'] !== [])
                             <ul class="mt-3 list-disc pl-5 text-sm leading-6 text-amber-800">
@@ -507,6 +550,7 @@
                                     <tr>
                                         <th class="px-3 py-2">Key</th>
                                         <th class="px-3 py-2">Question</th>
+                                        <th class="px-3 py-2">Indicator</th>
                                         <th class="px-3 py-2">Scoring</th>
                                     </tr>
                                 </thead>
@@ -516,6 +560,7 @@
                                         <tr>
                                             <td class="px-3 py-2 font-mono text-xs">{{ $previewQuestion['key'] }}</td>
                                             <td class="px-3 py-2">{{ $previewQuestion['text'] }}</td>
+                                            <td class="px-3 py-2">{{ $previewScoring['indicator'] ?? 'None' }}</td>
                                             <td class="px-3 py-2">{{ $previewScoring['status'] ?? 'Descriptive' }}</td>
                                         </tr>
                                     @endforeach

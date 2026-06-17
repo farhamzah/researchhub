@@ -102,6 +102,117 @@ class PharmVrStudentNeedsSurveyTemplateService
     }
 
     /**
+     * @return array<string, mixed>
+     */
+    public function previewMissing(Survey $survey): array
+    {
+        $questions = collect($this->questions());
+        $templateKeys = $questions->pluck('key');
+        $existingKeys = $survey->questions()->whereIn('question_key', $templateKeys->all())->pluck('question_key');
+        $missingQuestions = $questions
+            ->reject(fn (array $question): bool => $existingKeys->contains($question['key']))
+            ->values();
+
+        return [
+            'template_count' => $questions->count(),
+            'existing_count' => $existingKeys->count(),
+            'missing_count' => $missingQuestions->count(),
+            'existing_keys' => $existingKeys->values()->all(),
+            'missing_keys' => $missingQuestions->pluck('key')->all(),
+            'missing_pages' => $missingQuestions->pluck('page')->unique()->values()->all(),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function fillMissing(User $user, Survey $survey): array
+    {
+        $existingKeys = $survey->questions()->pluck('question_key')->all();
+        $missingQuestions = collect($this->questions())
+            ->reject(fn (array $question): bool => in_array($question['key'], $existingKeys, true))
+            ->values();
+
+        if ($missingQuestions->isEmpty()) {
+            throw ValidationException::withMessages([
+                'template' => 'All PharmVR template question keys already exist in this survey.',
+            ]);
+        }
+
+        return DB::transaction(function () use ($user, $survey, $missingQuestions): array {
+            $scale = $survey->scales()->firstOrCreate(
+                ['slug' => 'likert-1-5'],
+                [
+                    'name' => 'Skala Likert 1-5',
+                    'description' => '1 = Sangat tidak setuju sampai 5 = Sangat setuju.',
+                    'sort_order' => 1,
+                ],
+            );
+
+            $pages = collect($this->pages())
+                ->mapWithKeys(fn (array $page): array => [
+                    $page['title'] => $survey->pages()->firstOrCreate(
+                        ['title' => $page['title']],
+                        ['description' => $page['description'], 'sort_order' => $page['order']],
+                    ),
+                ]);
+
+            $indicators = collect($this->indicators())
+                ->mapWithKeys(fn (array $indicator): array => [
+                    $indicator['name'] => $this->indicator($survey, $scale, $indicator),
+                ]);
+            $sortOrder = (int) $survey->questions()->max('sort_order');
+
+            foreach ($missingQuestions as $question) {
+                $sortOrder++;
+                $model = $survey->questions()->create([
+                    'page_id' => $pages->get($question['page'])?->id,
+                    'question_key' => $question['key'],
+                    'type' => $question['type'],
+                    'label' => $question['label'],
+                    'help_text' => $question['help'] ?? null,
+                    'options' => $question['options'] ?? null,
+                    'settings' => $question['settings'] ?? null,
+                    'is_required' => (bool) ($question['required'] ?? false),
+                    'sort_order' => $sortOrder,
+                ]);
+
+                $indicator = $indicators->get($question['indicator'] ?? '');
+                if ($indicator instanceof SurveyIndicator && ($question['score'] ?? false)) {
+                    $model->scoring()->create([
+                        'survey_id' => $survey->id,
+                        'survey_indicator_id' => $indicator->id,
+                        'is_scored' => true,
+                        'score_min' => 1,
+                        'score_max' => 5,
+                        'weight' => 1,
+                        'is_reverse_scored' => false,
+                    ]);
+                } elseif (isset($question['indicator'])) {
+                    $model->scoring()->create([
+                        'survey_id' => $survey->id,
+                        'survey_indicator_id' => $indicator?->id,
+                        'is_scored' => false,
+                        'weight' => 1,
+                        'settings' => $question['settings_extra'] ?? null,
+                    ]);
+                }
+            }
+
+            $this->activityLogger->log('survey.pharmvr_student_needs_template_filled_missing', $user, $survey->project, $survey, [
+                'survey_id' => $survey->id,
+                'question_count' => $missingQuestions->count(),
+            ]);
+
+            return [
+                'pages' => $pages->count(),
+                'indicators' => $indicators->count(),
+                'questions' => $missingQuestions->count(),
+            ];
+        });
+    }
+
+    /**
      * @return array<int, array{title: string, description: string, order: int}>
      */
     private function pages(): array

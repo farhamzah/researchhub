@@ -30,6 +30,7 @@ class AdminSurveyBuilderController extends Controller
         Survey $survey,
         SurveyBuilderReadinessService $readiness,
         AcademicNarrativeService $academicNarratives,
+        PharmVrStudentNeedsSurveyTemplateService $pharmVrTemplate,
     ): View {
         Gate::authorize('update', $survey);
 
@@ -60,6 +61,7 @@ class AdminSurveyBuilderController extends Controller
                     : 'Ringkasan validasi ahli belum tersedia karena survey ini belum memiliki putaran validasi.',
                 'surveyAnalysis' => $academicNarratives->surveyAnalysisSummary($survey),
             ],
+            'pharmVrTemplatePreview' => $pharmVrTemplate->previewMissing($survey),
             'questionTypes' => config('researchhub_surveys.question_types', []),
             'hasResponses' => $survey->responses_count > 0,
             'optionQuestionTypes' => [
@@ -185,6 +187,17 @@ class AdminSurveyBuilderController extends Controller
         return redirect()
             ->route('admin.surveys.builder.index', ['survey' => $survey])
             ->with('status', 'survey-pharmvr-template-created-'.$result['questions']);
+    }
+
+    public function fillMissingPharmVrStudentNeedsTemplate(Survey $survey, Request $request, PharmVrStudentNeedsSurveyTemplateService $template): RedirectResponse
+    {
+        Gate::authorize('update', $survey);
+
+        $result = $template->fillMissing($request->user(), $survey);
+
+        return redirect()
+            ->route('admin.surveys.builder.index', ['survey' => $survey])
+            ->with('status', 'survey-pharmvr-template-filled-missing-'.$result['questions']);
     }
 
     public function updatePage(Survey $survey, SurveyPage $page, Request $request, UpdateSurveyPageAction $updatePage): RedirectResponse

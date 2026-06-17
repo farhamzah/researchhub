@@ -15,8 +15,8 @@ class SurveyIndicatorScoringService
     private const SUPPORTED_TYPES = [
         SurveyQuestion::TYPE_LIKERT,
         SurveyQuestion::TYPE_SINGLE_CHOICE,
+        SurveyQuestion::TYPE_MULTIPLE_CHOICE,
         SurveyQuestion::TYPE_NUMBER,
-        SurveyQuestion::TYPE_CONSENT,
     ];
 
     /**
@@ -126,9 +126,7 @@ class SurveyIndicatorScoringService
             SurveyQuestion::TYPE_LIKERT,
             SurveyQuestion::TYPE_NUMBER => is_numeric($value) ? (float) $value : null,
             SurveyQuestion::TYPE_SINGLE_CHOICE => $this->choiceScore($scoring, $value),
-            SurveyQuestion::TYPE_CONSENT => filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) === null
-                ? null
-                : (filter_var($value, FILTER_VALIDATE_BOOLEAN) ? 1.0 : 0.0),
+            SurveyQuestion::TYPE_MULTIPLE_CHOICE => $this->multipleChoiceScore($scoring, $value),
             default => null,
         };
 
@@ -164,6 +162,17 @@ class SurveyIndicatorScoringService
         }
 
         return null;
+    }
+
+    private function multipleChoiceScore(SurveyQuestionScoring $scoring, mixed $value): ?float
+    {
+        $values = is_array($value) ? $value : [$value];
+        $scores = collect($values)
+            ->map(fn (mixed $singleValue): ?float => $this->choiceScore($scoring, $singleValue))
+            ->filter(fn (?float $score): bool => $score !== null)
+            ->values();
+
+        return $scores->isEmpty() ? null : (float) $scores->avg();
     }
 
     private function clamp(float $score, SurveyQuestionScoring $scoring): float

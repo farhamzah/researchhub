@@ -91,6 +91,11 @@ class SurveyAnswerValidationService
 
         $allowed = $this->allowedOptionValues($question);
         $answers = array_values(array_unique(array_map('strval', $value)));
+        $maxSelections = (int) Arr::get($question->settings ?? [], 'max_selections', 0);
+
+        if ($maxSelections > 0 && count($answers) > $maxSelections) {
+            $this->fail($question->question_key, "Choose at most {$maxSelections} options.");
+        }
 
         foreach ($answers as $answer) {
             if (! in_array($answer, $allowed, true)) {
@@ -124,7 +129,9 @@ class SurveyAnswerValidationService
         }
 
         $rows = array_map('strval', Arr::get($question->options ?? [], 'rows', []));
-        $columns = array_map('strval', Arr::get($question->options ?? [], 'columns', $this->likertScale($question)));
+        $columns = array_map(fn (mixed $column): string => is_array($column)
+            ? (string) ($column['value'] ?? $column['label'] ?? '')
+            : (string) $column, Arr::get($question->options ?? [], 'columns', $this->likertScale($question)));
         $validated = [];
 
         foreach ($rows as $row) {

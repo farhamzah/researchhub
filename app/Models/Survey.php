@@ -81,6 +81,7 @@ class Survey extends Model
         'title',
         'slug',
         'description',
+        'instrument_summary_override',
         'intro_title',
         'intro_text',
         'estimated_duration',

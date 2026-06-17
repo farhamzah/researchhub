@@ -7,6 +7,10 @@
     $scale = $question->settings['scale'] ?? $options['scale'] ?? config('researchhub_surveys.default_likert_scale', [1, 2, 3, 4, 5]);
     $rows = $options['rows'] ?? [];
     $columns = $options['columns'] ?? $scale;
+    $columnValue = fn ($column) => is_array($column) ? (string) ($column['value'] ?? $column['label'] ?? '') : (string) $column;
+    $columnLabel = fn ($column) => is_array($column)
+        ? trim((string) ($column['value'] ?? '').(filled($column['label'] ?? null) ? ' — '.(string) $column['label'] : ''))
+        : (string) $column;
 @endphp
 
 @if ($question->type === \App\Models\SurveyQuestion::TYPE_HIDDEN)
@@ -69,7 +73,7 @@
                                 <tr>
                                     <th class="py-2 pr-3 text-left font-medium text-gray-500">Item</th>
                                     @foreach ($columns as $column)
-                                        <th class="px-3 py-2 text-center font-medium text-gray-500">{{ $column }}</th>
+                                        <th class="px-3 py-2 text-center font-medium text-gray-500">{{ $columnLabel($column) }}</th>
                                     @endforeach
                                 </tr>
                             </thead>
@@ -79,7 +83,7 @@
                                         <td class="py-2 pr-3 text-gray-700">{{ $row }}</td>
                                         @foreach ($columns as $column)
                                             <td class="px-3 py-2 text-center">
-                                                <input type="radio" name="answers[{{ $key }}][{{ $row }}]" value="{{ $column }}" @checked((string) old("answers.{$key}.{$row}") === (string) $column) class="border-gray-300 text-emerald-700">
+                                                <input type="radio" name="answers[{{ $key }}][{{ $row }}]" value="{{ $columnValue($column) }}" @checked((string) old("answers.{$key}.{$row}") === $columnValue($column)) class="border-gray-300 text-emerald-700">
                                             </td>
                                         @endforeach
                                     </tr>

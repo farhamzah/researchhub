@@ -212,6 +212,14 @@ Route::middleware('auth')->group(function (): void {
         ->name('admin.surveys.distribution.readability.revoke-link');
     Route::put('/admin/surveys/{survey}/builder/intro', [AdminSurveyBuilderController::class, 'updateIntro'])
         ->name('admin.surveys.builder.intro.update');
+    Route::put('/admin/surveys/{survey}/builder/instrument-summary', [AdminSurveyBuilderController::class, 'updateInstrumentSummary'])
+        ->name('admin.surveys.builder.instrument-summary.update');
+    Route::post('/admin/surveys/{survey}/builder/bulk-questions/preview', [AdminSurveyBuilderController::class, 'previewBulkQuestions'])
+        ->name('admin.surveys.builder.bulk-questions.preview');
+    Route::post('/admin/surveys/{survey}/builder/bulk-questions/import', [AdminSurveyBuilderController::class, 'importBulkQuestions'])
+        ->name('admin.surveys.builder.bulk-questions.import');
+    Route::post('/admin/surveys/{survey}/builder/templates/pharmvr-student-needs', [AdminSurveyBuilderController::class, 'createPharmVrStudentNeedsTemplate'])
+        ->name('admin.surveys.builder.templates.pharmvr-student-needs');
     Route::post('/admin/surveys/{survey}/builder/pages', [AdminSurveyBuilderController::class, 'storePage'])
         ->name('admin.surveys.builder.pages.store');
     Route::put('/admin/surveys/{survey}/builder/pages/{page}', [AdminSurveyBuilderController::class, 'updatePage'])
@@ -243,6 +251,8 @@ Route::middleware('auth')->group(function (): void {
         ->name('admin.surveys.scoring.indicators.delete');
     Route::put('/admin/surveys/{survey}/scoring/questions/{question}', [AdminSurveyScoringController::class, 'updateQuestionScoring'])
         ->name('admin.surveys.scoring.questions.update');
+    Route::post('/admin/surveys/{survey}/scoring/questions/{question}/convert-matrix', [AdminSurveyScoringController::class, 'convertMatrixQuestion'])
+        ->name('admin.surveys.scoring.questions.convert-matrix');
 
     Route::get('/admin/surveys/{survey}/validation', [AdminSurveyValidationController::class, 'index'])
         ->name('admin.surveys.validation.index');

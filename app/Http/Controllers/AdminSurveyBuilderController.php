@@ -15,7 +15,9 @@ use App\Modules\Surveys\Actions\DuplicateSurveyQuestionAction;
 use App\Modules\Surveys\Actions\UpdateSurveyIntroAction;
 use App\Modules\Surveys\Actions\UpdateSurveyPageAction;
 use App\Modules\Surveys\Actions\UpdateSurveyQuestionAction;
+use App\Modules\Surveys\Services\PharmVrStudentNeedsSurveyTemplateService;
 use App\Modules\Surveys\Services\SurveyBuilderReadinessService;
+use App\Modules\Surveys\Services\SurveyBulkQuestionImportService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -117,6 +119,72 @@ class AdminSurveyBuilderController extends Controller
         return redirect()
             ->route('admin.surveys.builder.index', ['survey' => $survey])
             ->with('status', 'survey-intro-updated');
+    }
+
+    public function updateInstrumentSummary(Survey $survey, Request $request): RedirectResponse
+    {
+        Gate::authorize('update', $survey);
+
+        $data = $request->validate([
+            'instrument_summary_override' => ['nullable', 'string', 'max:10000'],
+            'summary_action' => ['required', Rule::in(['use_manual', 'clear_manual', 'generate'])],
+        ]);
+
+        if ($data['summary_action'] === 'clear_manual' || $data['summary_action'] === 'generate') {
+            $survey->forceFill(['instrument_summary_override' => null])->save();
+        }
+
+        if ($data['summary_action'] === 'use_manual') {
+            $survey->forceFill([
+                'instrument_summary_override' => $data['instrument_summary_override'] ?? null,
+            ])->save();
+        }
+
+        return redirect()
+            ->route('admin.surveys.builder.index', ['survey' => $survey])
+            ->with('status', 'survey-instrument-summary-updated');
+    }
+
+    public function previewBulkQuestions(Survey $survey, Request $request, SurveyBulkQuestionImportService $bulkImport): RedirectResponse
+    {
+        Gate::authorize('update', $survey);
+
+        $data = $request->validate([
+            'bulk_input' => ['required', 'string', 'max:50000'],
+            'indicator_strategy' => ['required', Rule::in(['create', 'skip', 'cancel'])],
+        ]);
+
+        return redirect()
+            ->route('admin.surveys.builder.index', ['survey' => $survey])
+            ->withInput($data)
+            ->with('bulk_question_preview', $bulkImport->preview($survey, $data['bulk_input'], $data['indicator_strategy']));
+    }
+
+    public function importBulkQuestions(Survey $survey, Request $request, SurveyBulkQuestionImportService $bulkImport): RedirectResponse
+    {
+        Gate::authorize('update', $survey);
+
+        $data = $request->validate([
+            'bulk_input' => ['required', 'string', 'max:50000'],
+            'indicator_strategy' => ['required', Rule::in(['create', 'skip', 'cancel'])],
+        ]);
+
+        $result = $bulkImport->import($request->user(), $survey, $data['bulk_input'], $data['indicator_strategy']);
+
+        return redirect()
+            ->route('admin.surveys.builder.index', ['survey' => $survey])
+            ->with('status', 'survey-bulk-questions-imported-'.$result['question_count']);
+    }
+
+    public function createPharmVrStudentNeedsTemplate(Survey $survey, Request $request, PharmVrStudentNeedsSurveyTemplateService $template): RedirectResponse
+    {
+        Gate::authorize('update', $survey);
+
+        $result = $template->create($request->user(), $survey);
+
+        return redirect()
+            ->route('admin.surveys.builder.index', ['survey' => $survey])
+            ->with('status', 'survey-pharmvr-template-created-'.$result['questions']);
     }
 
     public function updatePage(Survey $survey, SurveyPage $page, Request $request, UpdateSurveyPageAction $updatePage): RedirectResponse
@@ -250,7 +318,10 @@ class AdminSurveyBuilderController extends Controller
 
         if ($type === SurveyQuestion::TYPE_LIKERT_MATRIX) {
             $rows = $this->cleanList($request->input('matrix_rows', []));
-            $columns = $this->cleanList($request->input('matrix_columns', []));
+            $columns = $this->matrixColumns(
+                $request->input('matrix_column_values', []),
+                $request->input('matrix_column_labels', []),
+            );
 
             if ($rows !== [] || $columns !== []) {
                 $request->merge([
@@ -261,6 +332,35 @@ class AdminSurveyBuilderController extends Controller
                 ]);
             }
         }
+    }
+
+    /**
+     * @return array<int, array{value: string, label: string}>
+     */
+    private function matrixColumns(mixed $values, mixed $labels): array
+    {
+        if (! is_array($values) || ! is_array($labels)) {
+            return [];
+        }
+
+        $columns = [];
+        $max = max(count($values), count($labels));
+
+        for ($index = 0; $index < $max; $index++) {
+            $value = trim((string) ($values[$index] ?? ''));
+            $label = trim((string) ($labels[$index] ?? ''));
+
+            if ($value === '' && $label === '') {
+                continue;
+            }
+
+            $columns[] = [
+                'value' => $value !== '' ? $value : (string) ($index + 1),
+                'label' => $label,
+            ];
+        }
+
+        return $columns;
     }
 
     /**

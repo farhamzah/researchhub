@@ -84,9 +84,13 @@
         </div>
         <div>
             <label class="block text-sm font-medium text-slate-700">Matrix columns</label>
+            <p class="mt-1 text-xs leading-5 text-slate-500">Isi label saja jika nilai skala sudah 1-5.</p>
             <div class="mt-2 space-y-2">
                 @foreach ($questionColumns as $column)
-                    <input name="matrix_columns[]" value="{{ old("matrix_columns.{$loop->index}", $column) }}" @readonly($isLocked) placeholder="Scale {{ $loop->iteration }}" class="block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm @if ($isLocked) bg-slate-100 text-slate-500 @endif">
+                    <div class="grid grid-cols-[80px_1fr] gap-2">
+                        <input name="matrix_column_values[]" value="{{ old("matrix_column_values.{$loop->index}", $column['value'] ?? $loop->iteration) }}" @readonly($isLocked) placeholder="{{ $loop->iteration }}" class="block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm @if ($isLocked) bg-slate-100 text-slate-500 @endif">
+                        <input name="matrix_column_labels[]" value="{{ old("matrix_column_labels.{$loop->index}", $column['label'] ?? '') }}" @readonly($isLocked) placeholder="Sangat tidak setuju" class="block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm @if ($isLocked) bg-slate-100 text-slate-500 @endif">
+                    </div>
                 @endforeach
             </div>
         </div>

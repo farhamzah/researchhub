@@ -25,6 +25,10 @@ class AcademicNarrativeService
 
     public function surveyInstrumentSummary(Survey $survey): string
     {
+        if (filled($survey->instrument_summary_override)) {
+            return (string) $survey->instrument_summary_override;
+        }
+
         $survey->loadMissing([
             'project',
             'questions.scoring.indicator',

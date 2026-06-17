@@ -31,15 +31,23 @@
     $matrixRows = function (?SurveyQuestion $question): array {
         $rows = $question?->options['rows'] ?? [];
 
-        return array_pad(array_slice(array_map('strval', is_array($rows) ? $rows : []), 0, 4), 4, '');
+        return array_pad(array_slice(array_map('strval', is_array($rows) ? $rows : []), 0, 12), 12, '');
     };
     $matrixColumns = function (?SurveyQuestion $question): array {
         $options = $question?->options ?? [];
         $settings = $question?->settings ?? [];
         $columns = $options['columns'] ?? $settings['scale'] ?? config('researchhub_surveys.default_likert_scale', [1, 2, 3, 4, 5]);
 
-        return array_pad(array_slice(array_map('strval', is_array($columns) ? $columns : []), 0, 5), 5, '');
+        $columns = collect(is_array($columns) ? $columns : [])
+            ->map(fn ($column, $index): array => is_array($column)
+                ? ['value' => (string) ($column['value'] ?? $index + 1), 'label' => (string) ($column['label'] ?? $column['value'] ?? '')]
+                : ['value' => (string) ($index + 1), 'label' => (string) $column])
+            ->values()
+            ->all();
+
+        return array_pad(array_slice($columns, 0, 7), 7, ['value' => '', 'label' => '']);
     };
+    $bulkPreview = session('bulk_question_preview');
 @endphp
 
 <!DOCTYPE html>
@@ -180,6 +188,24 @@
                 </div>
             </div>
 
+            <form method="POST" action="{{ route('admin.surveys.builder.instrument-summary.update', ['survey' => $survey]) }}" class="mt-6 rounded-lg border border-slate-200 bg-slate-50 p-5">
+                @csrf
+                @method('PUT')
+                <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Survey Instrument Summary</p>
+                        <h3 class="mt-1 text-lg font-semibold text-slate-950">{{ $survey->instrument_summary_override ? 'Manual summary active' : 'Auto summary active' }}</h3>
+                        <p class="mt-1 text-sm leading-6 text-slate-600">Auto summary stays available as fallback. Use the manual field when the researcher needs dissertation-ready wording.</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button type="submit" name="summary_action" value="generate" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">Generate Summary</button>
+                        <button type="submit" name="summary_action" value="use_manual" class="rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-600">Use Manual Summary</button>
+                        <button type="submit" name="summary_action" value="clear_manual" class="rounded-md border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-700 shadow-sm hover:bg-red-50">Clear Manual Summary</button>
+                    </div>
+                </div>
+                <textarea name="instrument_summary_override" rows="5" class="mt-4 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm leading-6 shadow-sm" placeholder="Write a manual instrument summary for proposal/dissertation documentation.">{{ old('instrument_summary_override', $survey->instrument_summary_override ?: $academicNarratives['surveyInstrument']) }}</textarea>
+            </form>
+
             <form method="POST" action="{{ route('admin.surveys.builder.intro.update', ['survey' => $survey]) }}" enctype="multipart/form-data" class="mt-5 rounded-lg border border-emerald-100 bg-emerald-50/60 p-5">
                 @csrf
                 @method('PUT')
@@ -310,7 +336,7 @@
                 @forelse ($builderWizard['indicators'] as $indicator)
                     <article class="rounded-lg border border-slate-200 bg-slate-50 p-4">
                         <h3 class="font-semibold text-slate-950">{{ $indicator['name'] }}</h3>
-                        <p class="mt-1 text-sm text-slate-600">{{ $indicator['description'] ?: 'No description.' }}</p>
+                        <p class="mt-1 text-sm text-slate-600">{{ $indicator['description'] ?: 'No description yet. Add one from Manage Scoring.' }}</p>
                         <dl class="mt-4 space-y-2 text-sm">
                             <div class="flex justify-between gap-3">
                                 <dt class="text-slate-500">Scale</dt>
@@ -427,6 +453,78 @@
                     </form>
                 </section>
             </div>
+
+            <section id="bulk-add-questions" class="mt-6 rounded-lg border border-blue-200 bg-blue-50 p-5">
+                <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wide text-blue-800">Bulk Add Questions</p>
+                        <h3 class="mt-1 text-lg font-semibold text-blue-950">Paste text or JSON instrument sections</h3>
+                        <p class="mt-1 text-sm leading-6 text-blue-900">Preview before import. Imports are transactional and duplicate question keys stop the whole import.</p>
+                    </div>
+                    <form method="POST" action="{{ route('admin.surveys.builder.templates.pharmvr-student-needs', ['survey' => $survey]) }}">
+                        @csrf
+                        <button type="submit" @disabled($hasResponses) onclick="return confirm('Create the PharmVR Student Needs Survey template in this survey?')" class="rounded-md bg-blue-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:bg-slate-300">Create PharmVR Student Needs Survey</button>
+                    </form>
+                </div>
+
+                <form method="POST" action="{{ route('admin.surveys.builder.bulk-questions.preview', ['survey' => $survey]) }}" class="mt-5 space-y-4">
+                    @csrf
+                    <div>
+                        <label for="bulk_input" class="block text-sm font-medium text-blue-950">Bulk input</label>
+                        <textarea id="bulk_input" name="bulk_input" rows="12" class="mt-2 block w-full rounded-md border border-blue-200 px-3 py-2 font-mono text-xs leading-6 shadow-sm" placeholder="PAGE: Pengalaman Pembelajaran CPOB/GMP&#10;PAGE_ORDER: 3&#10;INDICATOR: Pengalaman Pembelajaran CPOB/GMP&#10;TYPE: likert&#10;REQUIRED: true&#10;SCALE: 1,2,3,4,5&#10;HELP: Pilih jawaban sesuai tingkat persetujuan Anda.&#10;&#10;C1 | Saya telah memperoleh materi dasar mengenai CPOB/GMP.">{{ old('bulk_input') }}</textarea>
+                    </div>
+                    <div class="grid gap-3 sm:grid-cols-[1fr_auto_auto]">
+                        <select name="indicator_strategy" class="rounded-md border border-blue-200 px-3 py-2 text-sm shadow-sm">
+                            <option value="create" @selected(old('indicator_strategy', 'create') === 'create')>Create missing indicator</option>
+                            <option value="skip" @selected(old('indicator_strategy') === 'skip')>Skip indicator link</option>
+                            <option value="cancel" @selected(old('indicator_strategy') === 'cancel')>Cancel if indicator missing</option>
+                        </select>
+                        <button type="submit" @disabled($hasResponses) class="rounded-md border border-blue-300 bg-white px-4 py-2 text-sm font-semibold text-blue-900 shadow-sm hover:bg-blue-100 disabled:bg-slate-300">Preview</button>
+                        <button type="submit" formaction="{{ route('admin.surveys.builder.bulk-questions.import', ['survey' => $survey]) }}" @disabled($hasResponses) class="rounded-md bg-blue-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:bg-slate-300">Import</button>
+                    </div>
+                </form>
+
+                @if (is_array($bulkPreview))
+                    <div class="mt-5 rounded-md border border-blue-200 bg-white p-4">
+                        <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                            <div>
+                                <p class="text-sm font-semibold text-slate-950">Bulk import preview</p>
+                                <p class="mt-1 text-sm text-slate-600">Page: {{ $bulkPreview['page']['title'] }} ({{ $bulkPreview['page_exists'] ? 'existing' : 'will be created' }})</p>
+                                <p class="mt-1 text-sm text-slate-600">Indicator: {{ $bulkPreview['indicator'] ?: 'none' }} ({{ $bulkPreview['indicator_exists'] ? 'existing' : $bulkPreview['indicator_strategy'] }})</p>
+                            </div>
+                            <span class="rounded-md border border-blue-200 bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-900">{{ $bulkPreview['question_count'] }} questions</span>
+                        </div>
+                        @if ($bulkPreview['warnings'] !== [])
+                            <ul class="mt-3 list-disc pl-5 text-sm leading-6 text-amber-800">
+                                @foreach ($bulkPreview['warnings'] as $warning)
+                                    <li>{{ $warning }}</li>
+                                @endforeach
+                            </ul>
+                        @endif
+                        <div class="mt-4 max-h-72 overflow-y-auto rounded-md border border-slate-200">
+                            <table class="min-w-full divide-y divide-slate-200 text-sm">
+                                <thead class="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                    <tr>
+                                        <th class="px-3 py-2">Key</th>
+                                        <th class="px-3 py-2">Question</th>
+                                        <th class="px-3 py-2">Scoring</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 bg-white">
+                                    @foreach ($bulkPreview['questions'] as $previewQuestion)
+                                        @php $previewScoring = collect($bulkPreview['scoring'])->firstWhere('key', $previewQuestion['key']); @endphp
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono text-xs">{{ $previewQuestion['key'] }}</td>
+                                            <td class="px-3 py-2">{{ $previewQuestion['text'] }}</td>
+                                            <td class="px-3 py-2">{{ $previewScoring['status'] ?? 'Descriptive' }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                @endif
+            </section>
 
             <div class="mt-6 space-y-5">
                 @forelse ($survey->questions as $question)

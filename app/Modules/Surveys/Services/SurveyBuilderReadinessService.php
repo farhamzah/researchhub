@@ -108,7 +108,7 @@ class SurveyBuilderReadinessService
             'is_scored' => (bool) $scoring?->is_scored,
             'option_count' => $this->optionCount($question),
             'options_preview' => $this->optionLabels($question),
-            'scoring_status' => $scoring && $scoring->is_scored && $scoring->indicator ? 'Configured' : ($scoring && $scoring->is_scored ? 'Missing indicator' : 'Not scored'),
+            'scoring_status' => $this->scoringStatus($question),
         ];
     }
 
@@ -121,14 +121,14 @@ class SurveyBuilderReadinessService
             SurveyQuestion::TYPE_SINGLE_CHOICE,
             SurveyQuestion::TYPE_MULTIPLE_CHOICE,
             SurveyQuestion::TYPE_LIKERT,
-            SurveyQuestion::TYPE_LIKERT_MATRIX,
+            SurveyQuestion::TYPE_NUMBER,
         ];
 
         $rows = $survey->questions
-            ->filter(fn (SurveyQuestion $question): bool => in_array($question->type, $scoreableTypes, true))
             ->values()
             ->map(function (SurveyQuestion $question): array {
                 $scoring = $question->scoring;
+                $status = $this->scoringStatus($question);
 
                 return [
                     'question' => $question->label,
@@ -139,18 +139,51 @@ class SurveyBuilderReadinessService
                         ? trim((string) $scoring->score_min).' - '.trim((string) $scoring->score_max)
                         : 'Not configured',
                     'weight' => $scoring?->weight,
-                    'status' => $scoring && $scoring->is_scored && $scoring->indicator ? 'Configured' : 'Missing',
+                    'status' => $status,
                 ];
             });
 
         return [
-            'total_scoreable' => $rows->count(),
+            'total_scoreable' => $rows->whereIn('status', ['Configured', 'Missing indicator', 'Missing scale/range'])->count(),
             'configured' => $rows->where('status', 'Configured')->count(),
             'with_indicator' => $rows->filter(fn (array $row): bool => filled($row['indicator']))->count(),
-            'missing' => $rows->where('status', 'Missing')->count(),
+            'missing' => $rows->whereIn('status', ['Missing indicator', 'Missing scale/range'])->count(),
             'indicators_used' => $rows->pluck('indicator')->filter()->unique()->count(),
             'rows' => $rows->all(),
         ];
+    }
+
+    private function scoringStatus(SurveyQuestion $question): string
+    {
+        $scoring = $question->scoring;
+
+        if (in_array($question->type, [
+            SurveyQuestion::TYPE_SHORT_TEXT,
+            SurveyQuestion::TYPE_LONG_TEXT,
+            SurveyQuestion::TYPE_DATE,
+            SurveyQuestion::TYPE_CONSENT,
+            SurveyQuestion::TYPE_HIDDEN,
+        ], true)) {
+            return $scoring && ! $scoring->is_scored ? 'Descriptive' : 'Not scoreable';
+        }
+
+        if ($question->type === SurveyQuestion::TYPE_LIKERT_MATRIX) {
+            return 'Not scoreable';
+        }
+
+        if (! $scoring || ! $scoring->is_scored) {
+            return 'Descriptive';
+        }
+
+        if (! $scoring->indicator) {
+            return 'Missing indicator';
+        }
+
+        if ($scoring->indicator->scale && ($scoring->score_min === null || $scoring->score_max === null)) {
+            return 'Missing scale/range';
+        }
+
+        return 'Configured';
     }
 
     /**
@@ -277,7 +310,7 @@ class SurveyBuilderReadinessService
 
         return collect($values)
             ->map(fn (mixed $value, mixed $key): string => is_array($value)
-                ? (string) ($value['label'] ?? $value['value'] ?? '')
+                ? trim((string) ($value['value'] ?? '').(filled($value['label'] ?? null) ? ' — '.(string) $value['label'] : ''))
                 : (is_string($key) && ! is_numeric($key) ? $key.'. '.$value : (string) $value))
             ->filter()
             ->values()

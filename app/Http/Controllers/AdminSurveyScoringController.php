@@ -15,6 +15,7 @@ use App\Modules\Surveys\Actions\UpdateSurveyQuestionScoringAction;
 use App\Modules\Surveys\Actions\UpdateSurveyScaleAction;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -36,7 +37,7 @@ class AdminSurveyScoringController extends Controller
         return view('surveys.admin.scoring.index', [
             'survey' => $survey,
             'hasResponses' => $survey->responses_count > 0,
-            'supportedTypes' => ['likert', 'single_choice', 'number', 'consent'],
+            'supportedTypes' => ['likert', 'single_choice', 'multiple_choice', 'number'],
         ]);
     }
 
@@ -92,6 +93,80 @@ class AdminSurveyScoringController extends Controller
         $updateScoring->handle($request->user(), $question, $this->questionScoringData($request, $survey), $request);
 
         return redirect()->route('admin.surveys.scoring.index', ['survey' => $survey])->with('status', 'survey-question-scoring-updated');
+    }
+
+    public function convertMatrixQuestion(Survey $survey, SurveyQuestion $question, Request $request): RedirectResponse
+    {
+        Gate::authorize('manageScoring', $survey);
+        abort_unless($question->survey_id === $survey->getKey(), 404);
+        abort_unless($question->type === SurveyQuestion::TYPE_LIKERT_MATRIX, 404);
+
+        if ($survey->responses()->where('status', 'submitted')->exists()) {
+            throw ValidationException::withMessages([
+                'scoring' => 'Matrix conversion is locked after submitted responses exist.',
+            ]);
+        }
+
+        $created = DB::transaction(function () use ($survey, $question): int {
+            $rows = collect($question->options['rows'] ?? [])->map(fn (mixed $row): string => trim((string) $row))->filter()->values();
+            $columns = collect($question->options['columns'] ?? $question->settings['scale'] ?? [1, 2, 3, 4, 5]);
+            $scale = $columns
+                ->map(fn (mixed $column): string => is_array($column) ? (string) ($column['value'] ?? $column['label'] ?? '') : (string) $column)
+                ->filter()
+                ->values()
+                ->all();
+            $sortOrder = (int) $question->sort_order;
+            $created = 0;
+
+            foreach ($rows as $index => $row) {
+                $key = $question->question_key.'_row_'.($index + 1);
+                if ($survey->questions()->where('question_key', $key)->exists()) {
+                    throw ValidationException::withMessages([
+                        'scoring' => "Cannot convert matrix because generated key {$key} already exists.",
+                    ]);
+                }
+
+                $newQuestion = $survey->questions()->create([
+                    'page_id' => $question->page_id,
+                    'question_key' => $key,
+                    'type' => SurveyQuestion::TYPE_LIKERT,
+                    'label' => $row,
+                    'help_text' => $question->help_text,
+                    'settings' => ['scale' => $scale],
+                    'is_required' => $question->is_required,
+                    'sort_order' => $sortOrder + $index + 1,
+                ]);
+
+                if ($question->scoring?->indicator) {
+                    $newQuestion->scoring()->create([
+                        'survey_id' => $survey->id,
+                        'survey_indicator_id' => $question->scoring->indicator->id,
+                        'is_scored' => true,
+                        'score_min' => $question->scoring->score_min ?? min($scale),
+                        'score_max' => $question->scoring->score_max ?? max($scale),
+                        'weight' => $question->scoring->weight ?? 1,
+                        'is_reverse_scored' => false,
+                    ]);
+                }
+
+                $created++;
+            }
+
+            $question->scoring()->updateOrCreate(
+                ['survey_question_id' => $question->id],
+                [
+                    'survey_id' => $survey->id,
+                    'is_scored' => false,
+                    'settings' => ['converted_to_likert_rows' => true],
+                ],
+            );
+
+            return $created;
+        });
+
+        return redirect()
+            ->route('admin.surveys.scoring.index', ['survey' => $survey])
+            ->with('status', 'survey-matrix-converted-'.$created);
     }
 
     /**

@@ -312,6 +312,7 @@ class AdminSurveyBuilderController extends Controller
             'help_text' => ['nullable', 'string', 'max:5000'],
             'options_json' => ['nullable', 'string', 'max:20000'],
             'settings_json' => ['nullable', 'string', 'max:20000'],
+            'max_selections' => ['nullable', 'integer', 'min:1', 'max:100'],
             'is_required' => ['nullable', 'boolean'],
             'sort_order' => ['nullable', 'integer', 'min:0', 'max:100000'],
         ]);
@@ -329,6 +330,21 @@ class AdminSurveyBuilderController extends Controller
                     'options_json' => json_encode(['choices' => $choices], JSON_THROW_ON_ERROR),
                 ]);
             }
+        }
+
+        if ($type === SurveyQuestion::TYPE_MULTIPLE_CHOICE) {
+            $settings = $this->jsonArray($request->input('settings_json'));
+            $maxSelections = $request->input('max_selections');
+
+            if (filled($maxSelections)) {
+                $settings['max_selections'] = (int) $maxSelections;
+            } else {
+                unset($settings['max_selections']);
+            }
+
+            $request->merge([
+                'settings_json' => $settings === [] ? null : json_encode($settings, JSON_THROW_ON_ERROR),
+            ]);
         }
 
         if ($type === SurveyQuestion::TYPE_LIKERT) {
@@ -401,5 +417,23 @@ class AdminSurveyBuilderController extends Controller
             fn (mixed $value): string => trim((string) $value),
             $values,
         ), fn (string $value): bool => $value !== ''));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function jsonArray(mixed $json): array
+    {
+        if (blank($json)) {
+            return [];
+        }
+
+        try {
+            $decoded = json_decode((string) $json, true, flags: JSON_THROW_ON_ERROR);
+        } catch (\JsonException) {
+            return [];
+        }
+
+        return is_array($decoded) && ! array_is_list($decoded) ? $decoded : [];
     }
 }

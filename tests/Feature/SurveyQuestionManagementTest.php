@@ -102,6 +102,7 @@ class SurveyQuestionManagementTest extends TestCase
         $likert = $survey->questions()->where('question_key', 'the_application_is_easy_to_use')->firstOrFail();
 
         $this->assertSame(['choices' => ['Video', 'Worksheet', 'Discussion']], $choice->options);
+        $this->assertNull($choice->settings);
         $this->assertSame(['scale' => ['1', '2', '3', '4', '5']], $likert->settings);
         $this->assertSame([1, 2, 3], $survey->questions()->pluck('sort_order')->all());
 
@@ -115,6 +116,46 @@ class SurveyQuestionManagementTest extends TestCase
             ->assertSee('Likert')
             ->assertSee('Additional feedback')
             ->assertSee('Short Text');
+    }
+
+    public function test_multiple_choice_max_selections_can_be_saved_from_builder(): void
+    {
+        [$owner, $project, $survey] = $this->surveyFixture();
+
+        $this->actingAs($owner)
+            ->post(route('admin.surveys.builder.questions.store', ['survey' => $survey]), [
+                'question_key' => 'priority_features',
+                'label' => 'Pilih maksimal 3 fitur prioritas.',
+                'type' => SurveyQuestion::TYPE_MULTIPLE_CHOICE,
+                'choice_options' => ['A', 'B', 'C', 'D'],
+                'max_selections' => 3,
+                'is_required' => '1',
+                'sort_order' => 1,
+            ])
+            ->assertRedirect(route('admin.surveys.builder.index', ['survey' => $survey]));
+
+        $question = $survey->questions()->where('question_key', 'priority_features')->firstOrFail();
+        $this->assertSame(3, $question->settings['max_selections']);
+
+        $this->actingAs($owner)
+            ->get(route('admin.surveys.builder.index', ['survey' => $survey]))
+            ->assertOk()
+            ->assertSee('Max selections')
+            ->assertSee('value="3"', false);
+
+        $this->actingAs($owner)
+            ->put(route('admin.surveys.builder.questions.update', ['survey' => $survey, 'question' => $question]), [
+                'question_key' => 'priority_features',
+                'label' => 'Pilih maksimal 2 fitur prioritas.',
+                'type' => SurveyQuestion::TYPE_MULTIPLE_CHOICE,
+                'choice_options' => ['A', 'B', 'C', 'D'],
+                'max_selections' => 2,
+                'is_required' => '1',
+                'sort_order' => 1,
+            ])
+            ->assertRedirect(route('admin.surveys.builder.index', ['survey' => $survey]));
+
+        $this->assertSame(2, $question->fresh()->settings['max_selections']);
     }
 
     public function test_builder_does_not_expose_respondent_identity(): void

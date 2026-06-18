@@ -5,6 +5,7 @@
     $questionScale = $scale($question);
     $questionRows = $matrixRows($question);
     $questionColumns = $matrixColumns($question);
+    $maxSelections = old('max_selections', data_get($question?->settings, 'max_selections'));
     $isLocked = $hasResponses && $question !== null;
 @endphp
 
@@ -58,6 +59,11 @@
         @foreach ($questionChoices as $choice)
             <input name="choice_options[]" value="{{ old("choice_options.{$loop->index}", $choice) }}" @readonly($isLocked) placeholder="Choice {{ $loop->iteration }}" class="rounded-md border border-blue-200 bg-white px-3 py-2 text-sm shadow-sm @if ($isLocked) bg-slate-100 text-slate-500 @endif">
         @endforeach
+    </div>
+    <div class="mt-4 max-w-xs">
+        <label class="block text-sm font-medium text-blue-950">Max selections</label>
+        <input name="max_selections" type="number" min="1" max="100" value="{{ $maxSelections }}" @readonly($isLocked) placeholder="3" class="mt-2 block w-full rounded-md border border-blue-200 bg-white px-3 py-2 text-sm shadow-sm @if ($isLocked) bg-slate-100 text-slate-500 @endif">
+        <p class="mt-1 text-xs leading-5 text-blue-800">Only applies to Multiple Choice. Leave blank for no selection limit.</p>
     </div>
 </div>
 

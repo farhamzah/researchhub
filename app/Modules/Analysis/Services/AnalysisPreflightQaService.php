@@ -715,14 +715,14 @@ class AnalysisPreflightQaService
 
             if ($scope === self::SCOPE_STUDENT_QUESTIONNAIRE && $source !== self::SCOPE_STUDENT_QUESTIONNAIRE) {
                 if (in_array($source, ['lecturer_questionnaire', 'practitioner_interview'], true)) {
-                    return $this->demote($check, 'info', 'Pending other instruments: '.$check['message']);
+                    return $this->demote($check, 'info', 'Pending other instruments: '.$check['message'], 'skipped');
                 }
 
                 if (in_array($source, ['expert_validation', 'readability_test'], true)) {
-                    return $this->demote($check, 'warning', 'Next workflow step: '.$check['message']);
+                    return $this->demote($check, 'warning', 'Next workflow step: '.$check['message'], 'skipped');
                 }
 
-                return $this->demote($check, 'warning', 'Pending later scope: '.$check['message']);
+                return $this->demote($check, 'warning', 'Pending later scope: '.$check['message'], 'skipped');
             }
 
             if ($scope === self::SCOPE_STUDENT_QUESTIONNAIRE && ($check['check_key'] ?? '') === 'student_questionnaire.public_access') {
@@ -741,11 +741,11 @@ class AnalysisPreflightQaService
                     return $check;
                 }
 
-                return $this->demote($check, 'warning', 'Pending earlier scope: '.$check['message']);
+                return $this->demote($check, 'warning', 'Pending earlier scope: '.$check['message'], 'skipped');
             }
 
             if ($scope !== $source) {
-                return $this->demote($check, 'warning', 'Pending later scope: '.$check['message']);
+                return $this->demote($check, 'warning', 'Pending later scope: '.$check['message'], 'skipped');
             }
 
             return $check;
@@ -756,14 +756,14 @@ class AnalysisPreflightQaService
      * @param  array<string, mixed>  $check
      * @return array<string, mixed>
      */
-    private function demote(array $check, string $severity, string $message): array
+    private function demote(array $check, string $severity, string $message, string $status = 'warning'): array
     {
-        if (($check['status'] ?? null) !== 'failed') {
+        if (($check['status'] ?? null) === 'passed') {
             return $check;
         }
 
         $check['severity'] = $severity;
-        $check['status'] = 'warning';
+        $check['status'] = $status;
         $check['message'] = $message;
         $check['recommendation'] = $message;
 

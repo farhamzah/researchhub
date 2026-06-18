@@ -126,15 +126,71 @@ class AnalysisPreflightQaTest extends TestCase
         );
 
         $this->assertSame(0, $qa['summary']['critical_failed']);
-        $this->assertSame('Needs Attention', $qa['summary']['overall_status']);
+        $this->assertSame('Ready to Send', $qa['summary']['overall_status']);
         $this->assertSame('enabled', $qa['student_readiness']['public_access']);
         $this->assertSame('pending', $qa['student_readiness']['readability']);
         $this->assertSame('pending', $qa['student_readiness']['expert_validation']);
 
         $checks = collect($qa['checks'])->keyBy('check_key');
         $this->assertSame('info', $checks->get('lecturer_questionnaire.exists')['severity']);
+        $this->assertSame('skipped', $checks->get('lecturer_questionnaire.exists')['status']);
         $this->assertSame('warning', $checks->get('validation.round')['severity']);
+        $this->assertSame('skipped', $checks->get('validation.round')['status']);
         $this->assertSame('warning', $checks->get('readability.round')['severity']);
+        $this->assertSame('skipped', $checks->get('readability.round')['status']);
+    }
+
+    public function test_builder_max_selection_setting_resolves_g1_g2_preflight_critical_issue(): void
+    {
+        [$admin, $survey] = $this->approvedStudentFixture();
+
+        foreach (['G1', 'G2'] as $key) {
+            $survey->questions()->where('question_key', $key)->firstOrFail()->forceFill([
+                'settings' => [],
+            ])->save();
+        }
+
+        $failedQa = app(AnalysisPreflightQaService::class)->build(
+            $survey->fresh(),
+            $admin,
+            AnalysisPreflightQaService::SCOPE_STUDENT_QUESTIONNAIRE,
+        );
+
+        $failedCheck = collect($failedQa['checks'])->firstWhere('check_key', 'student.g_priority_max_three');
+        $this->assertSame('failed', $failedCheck['status']);
+        $this->assertSame(1, $failedQa['summary']['critical_failed']);
+
+        foreach (['G1', 'G2'] as $key) {
+            $question = $survey->questions()->where('question_key', $key)->firstOrFail();
+
+            $this->actingAs($admin)
+                ->put(route('admin.surveys.builder.questions.update', ['survey' => $survey, 'question' => $question]), [
+                    'page_id' => $question->page_id,
+                    'question_key' => $question->question_key,
+                    'type' => SurveyQuestion::TYPE_MULTIPLE_CHOICE,
+                    'label' => $question->label,
+                    'help_text' => $question->help_text,
+                    'choice_options' => $question->options['choices'],
+                    'max_selections' => 3,
+                    'is_required' => '1',
+                    'sort_order' => $question->sort_order,
+                ])
+                ->assertRedirect(route('admin.surveys.builder.index', ['survey' => $survey]));
+
+            $this->assertSame(3, $question->fresh()->settings['max_selections']);
+        }
+
+        $qa = app(AnalysisPreflightQaService::class)->build(
+            $survey->fresh(),
+            $admin,
+            AnalysisPreflightQaService::SCOPE_STUDENT_QUESTIONNAIRE,
+        );
+
+        $check = collect($qa['checks'])->firstWhere('check_key', 'student.g_priority_max_three');
+        $this->assertSame('passed', $check['status']);
+        $this->assertSame(0, $qa['summary']['critical_failed']);
+        $this->assertSame('Ready to Send', $qa['summary']['overall_status']);
+        $this->assertTrue($qa['student_readiness']['g_priority_valid']);
     }
 
     public function test_public_access_is_warning_for_student_scope_and_critical_for_distribution_scope(): void

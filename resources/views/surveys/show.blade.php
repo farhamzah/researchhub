@@ -17,8 +17,8 @@
 
         @if (($pilotRun ?? null) instanceof \App\Models\AnalysisPilotRun)
             <section class="mb-6 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm leading-6 text-amber-950">
-                <p class="font-semibold">PILOT TEST MODE</p>
-                <p class="mt-1">This submission will be recorded as test data and excluded from analysis. Do not send this pilot link to real respondents.</p>
+                <p class="font-semibold">PILOT/REVIEWER MODE</p>
+                <p class="mt-1">This response is excluded from analysis. Use this link for supervisor/reviewer preview and pilot testing, not real respondent distribution.</p>
             </section>
         @endif
 

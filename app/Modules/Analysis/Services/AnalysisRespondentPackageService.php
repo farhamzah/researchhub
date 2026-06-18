@@ -158,9 +158,8 @@ class AnalysisRespondentPackageService
 
     public function markSubmitted(AnalysisPilotRun $pilotRun): void
     {
-        if ($pilotRun->status === AnalysisPilotRun::STATUS_ACTIVE) {
+        if ($pilotRun->submitted_at === null) {
             $pilotRun->update([
-                'status' => AnalysisPilotRun::STATUS_SUBMITTED,
                 'submitted_at' => now(),
             ]);
         }
@@ -284,6 +283,7 @@ class AnalysisRespondentPackageService
                     'instrument' => $instrument,
                     'latest_run' => $latest,
                     'status' => $latest?->status ?? 'not_generated',
+                    'link_status' => $this->pilotLinkStatus($latest),
                     'checklist' => $latest?->checklist_json ?? $this->emptyChecklist(),
                     'test_response_count' => $testResponses->count(),
                     'last_test_submission_at' => $testResponses->max('submitted_at'),
@@ -293,6 +293,23 @@ class AnalysisRespondentPackageService
             })
             ->values()
             ->all();
+    }
+
+    private function pilotLinkStatus(?AnalysisPilotRun $run): string
+    {
+        if (! $run instanceof AnalysisPilotRun || blank($run->token_hash)) {
+            return 'not_generated';
+        }
+
+        if ($run->status === AnalysisPilotRun::STATUS_REVOKED) {
+            return 'revoked';
+        }
+
+        if ($run->expires_at !== null && $run->expires_at->isPast()) {
+            return 'expired';
+        }
+
+        return 'active';
     }
 
     /**

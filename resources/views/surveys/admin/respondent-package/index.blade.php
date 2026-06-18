@@ -2,6 +2,7 @@
     $statusClass = fn (string $status): string => match ($status) {
         'Ready for Real Distribution', 'Pilot Passed', 'Ready', 'passed', 'submitted' => 'border-emerald-200 bg-emerald-50 text-emerald-900',
         'Ready for Pilot', 'Pilot In Progress', 'active' => 'border-blue-200 bg-blue-50 text-blue-900',
+        'expired' => 'border-amber-200 bg-amber-50 text-amber-900',
         'failed', 'Not Ready', 'Not ready', 'revoked' => 'border-red-200 bg-red-50 text-red-900',
         default => 'border-slate-200 bg-slate-50 text-slate-700',
     };
@@ -116,7 +117,7 @@
         <section class="mt-6 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
             <p class="text-xs font-semibold uppercase tracking-wide text-amber-700">Pilot/Test Links</p>
             <h2 class="mt-1 text-xl font-semibold">Do not send pilot links to real respondents</h2>
-            <p class="mt-2 text-sm text-slate-600">Pilot data is excluded from Analysis results.</p>
+            <p class="mt-2 text-sm text-slate-600">Pilot links can be shared with supervisors/reviewers for preview. Pilot responses are excluded from Analysis results.</p>
             <div class="mt-5 grid gap-4 xl:grid-cols-3">
                 @foreach ($package['pilot_rows'] as $row)
                     @php $run = $row['latest_run']; @endphp
@@ -124,7 +125,10 @@
                         <span class="rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-900">Pilot Link</span>
                         <h3 class="mt-3 font-semibold">{{ $row['label'] }}</h3>
                         <p class="mt-1 text-sm text-slate-600">{{ $row['instrument']?->title ?? 'Instrument missing' }}</p>
-                        <p class="mt-3"><span class="rounded-full border px-2 py-1 text-xs font-semibold {{ $statusClass($row['status']) }}">{{ str($row['status'])->replace('_', ' ')->title() }}</span></p>
+                        <div class="mt-3 flex flex-wrap gap-2">
+                            <span class="rounded-full border px-2 py-1 text-xs font-semibold {{ $statusClass($row['link_status']) }}">Link: {{ str($row['link_status'])->replace('_', ' ')->title() }}</span>
+                            <span class="rounded-full border px-2 py-1 text-xs font-semibold {{ $statusClass($row['status']) }}">Checklist: {{ str($row['status'])->replace('_', ' ')->title() }}</span>
+                        </div>
                         <p class="mt-3 text-sm text-slate-600">Test responses: <span class="font-semibold">{{ $row['test_response_count'] }}</span></p>
                         <p class="text-sm text-slate-600">Last test submission: {{ $row['last_test_submission_at'] ? \Illuminate\Support\Carbon::parse($row['last_test_submission_at'])->format('Y-m-d H:i') : 'None' }}</p>
 

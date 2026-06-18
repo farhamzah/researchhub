@@ -125,7 +125,8 @@ class AnalysisPilotRun extends Model
     public function scopeActive(Builder $query): Builder
     {
         return $query
-            ->where('status', self::STATUS_ACTIVE)
+            ->whereNotNull('token_hash')
+            ->where('status', '!=', self::STATUS_REVOKED)
             ->where(function (Builder $dateQuery): void {
                 $dateQuery->whereNull('expires_at')->orWhere('expires_at', '>', now());
             });
@@ -133,7 +134,8 @@ class AnalysisPilotRun extends Model
 
     public function isActive(): bool
     {
-        return $this->status === self::STATUS_ACTIVE
+        return filled($this->token_hash)
+            && $this->status !== self::STATUS_REVOKED
             && ($this->expires_at === null || $this->expires_at->isFuture());
     }
 

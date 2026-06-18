@@ -75,8 +75,10 @@ class RespondentPackagePilotTest extends TestCase
 
         $this->get($url)
             ->assertOk()
-            ->assertSeeText('PILOT TEST MODE')
+            ->assertSeeText('PILOT/REVIEWER MODE')
             ->assertSeeText('excluded from analysis');
+
+        $this->assertTrue($run->fresh()->isActive());
     }
 
     public function test_valid_pilot_link_opens_full_flow_when_public_survey_is_closed(): void
@@ -92,7 +94,7 @@ class RespondentPackagePilotTest extends TestCase
 
         $this->get($url)
             ->assertOk()
-            ->assertSeeText('PILOT TEST MODE')
+            ->assertSeeText('PILOT/REVIEWER MODE')
             ->assertSeeText('Pengantar Kuesioner Analisis Kebutuhan PharmVR')
             ->assertSeeText('Data yang dikumpulkan')
             ->assertSeeText('Saya telah membaca penjelasan di atas dan bersedia melanjutkan.')
@@ -100,6 +102,8 @@ class RespondentPackagePilotTest extends TestCase
             ->assertSee('name="pilot"', false)
             ->assertSee('name="intro_consent"', false)
             ->assertSee('name="answers[student_need]"', false);
+
+        $this->assertTrue(AnalysisPilotRun::firstOrFail()->fresh()->isActive());
     }
 
     public function test_invalid_and_revoked_pilot_links_do_not_bypass_closed_public_access(): void
@@ -142,7 +146,8 @@ class RespondentPackagePilotTest extends TestCase
         $this->assertTrue($response->is_test_response);
         $this->assertTrue($response->excluded_from_analysis);
         $this->assertNotNull($response->pilot_run_id);
-        $this->assertSame(AnalysisPilotRun::STATUS_SUBMITTED, AnalysisPilotRun::firstOrFail()->status);
+        $this->assertSame(AnalysisPilotRun::STATUS_ACTIVE, AnalysisPilotRun::firstOrFail()->status);
+        $this->assertTrue(AnalysisPilotRun::firstOrFail()->isActive());
     }
 
     public function test_pilot_submission_is_stored_as_excluded_test_data_and_updates_run(): void
@@ -165,8 +170,34 @@ class RespondentPackagePilotTest extends TestCase
         $this->assertTrue($response->is_test_response);
         $this->assertTrue($response->excluded_from_analysis);
         $this->assertSame($run->id, $response->pilot_run_id);
-        $this->assertSame(AnalysisPilotRun::STATUS_SUBMITTED, $run->status);
-        $this->assertNotNull($run->submitted_at);
+        $this->assertSame(AnalysisPilotRun::STATUS_ACTIVE, $run->fresh()->status);
+        $this->assertTrue($run->fresh()->isActive());
+        $this->assertNotNull($run->fresh()->submitted_at);
+    }
+
+    public function test_same_pilot_link_can_submit_multiple_excluded_responses(): void
+    {
+        [$admin, $survey] = $this->publishedAnalysisFixture();
+        $token = $this->tokenFromUrl($this->generatePilotUrl($admin, $survey));
+        $this->closePublicAccess($survey);
+
+        foreach (['5', '4', '3'] as $answer) {
+            $this->post(route('survey.responses.store', ['survey' => $survey->fresh()->slug]), [
+                'pilot' => $token,
+                'intro_consent' => '1',
+                'answers' => ['student_need' => $answer],
+            ])
+                ->assertOk()
+                ->assertSeeText('Pilot test response stored as test data');
+        }
+
+        $run = AnalysisPilotRun::firstOrFail();
+
+        $this->assertSame(3, SurveyResponse::count());
+        $this->assertSame(3, SurveyResponse::testData()->count());
+        $this->assertSame(AnalysisPilotRun::STATUS_ACTIVE, $run->fresh()->status);
+        $this->assertTrue($run->fresh()->isActive());
+        $this->assertSame(3, $run->responses()->count());
     }
 
     public function test_analysis_services_exclude_test_responses_from_normal_counts(): void

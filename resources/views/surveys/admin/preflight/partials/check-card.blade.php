@@ -1,7 +1,7 @@
 @php
     $status = $check['status'] ?? 'info';
     $severity = $check['severity'] ?? 'info';
-    $isPostFix = filled($check['fix_url'] ?? null) && str_contains((string) ($check['fix_url'] ?? ''), '/preflight/fix-student-open-questions');
+    $isPostFix = filled($check['fix_url'] ?? null) && str_contains((string) ($check['fix_url'] ?? ''), '/preflight/');
 @endphp
 
 <article class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
@@ -24,7 +24,7 @@
                 @if ($isPostFix)
                     <form method="POST" action="{{ $check['fix_url'] }}">
                         @csrf
-                        <button type="submit" onclick="return confirm('Add only the missing Section G open-response questions? Existing questions will not be duplicated.')" class="rounded-md bg-emerald-700 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-600">
+                        <button type="submit" onclick="return confirm('Run this QA repair action? Existing responses will be preserved.')" class="rounded-md bg-emerald-700 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-600">
                             {{ $check['fix_action_label'] ?? 'Fix' }}
                         </button>
                     </form>

@@ -15,10 +15,11 @@ class AdminSurveyPreflightQaController extends Controller
     public function index(Survey $survey, Request $request, AnalysisPreflightQaService $preflight): View
     {
         Gate::authorize('runAnalysis', $survey);
+        $scope = $this->scope($request);
 
         return view('surveys.admin.preflight.index', [
             'survey' => $survey,
-            'qa' => $preflight->build($survey, $request->user()),
+            'qa' => $preflight->build($survey, $request->user(), $scope),
         ]);
     }
 
@@ -32,8 +33,28 @@ class AdminSurveyPreflightQaController extends Controller
         $result = $preflight->fixStudentSectionG($survey);
 
         return redirect()
-            ->route('admin.surveys.preflight.index', ['survey' => $survey])
-            ->with('status', 'student-section-g-fixed-'.$result['added'].'-added-'.$result['skipped'].'-skipped');
+            ->route('admin.surveys.preflight.index', [
+                'survey' => $survey,
+                'scope' => AnalysisPreflightQaService::SCOPE_STUDENT_QUESTIONNAIRE,
+            ])
+            ->with('status', 'student-questionnaire-structure-checked-'.$result['added'].'-added-'.$result['skipped'].'-approved-present');
+    }
+
+    public function removeObsoleteStudentKeys(
+        Survey $survey,
+        Request $request,
+        AnalysisPreflightQaService $preflight,
+    ): RedirectResponse {
+        Gate::authorize('runAnalysis', $survey);
+
+        $result = $preflight->removeObsoleteStudentKeys($survey);
+
+        return redirect()
+            ->route('admin.surveys.preflight.index', [
+                'survey' => $survey,
+                'scope' => AnalysisPreflightQaService::SCOPE_STUDENT_QUESTIONNAIRE,
+            ])
+            ->with('status', 'obsolete-student-keys-removed-'.$result['removed'].'-blocked-'.$result['blocked']);
     }
 
     public function markReady(
@@ -45,22 +66,26 @@ class AdminSurveyPreflightQaController extends Controller
 
         $data = $request->validate([
             'notes' => ['nullable', 'string', 'max:10000'],
+            'scope' => ['nullable', 'string'],
         ]);
 
-        $preflight->markReady($survey, $request->user(), $data['notes'] ?? null);
+        $scope = $this->scope($request);
+
+        $preflight->markReady($survey, $request->user(), $data['notes'] ?? null, $scope);
 
         return redirect()
-            ->route('admin.surveys.preflight.index', ['survey' => $survey])
+            ->route('admin.surveys.preflight.index', ['survey' => $survey, 'scope' => $scope])
             ->with('status', 'preflight-marked-ready-to-send');
     }
 
     public function report(Survey $survey, Request $request, AnalysisPreflightQaService $preflight): View
     {
         Gate::authorize('runAnalysis', $survey);
+        $scope = $this->scope($request);
 
         return view('surveys.admin.preflight.report', [
             'survey' => $survey,
-            'qa' => $preflight->build($survey, $request->user()),
+            'qa' => $preflight->build($survey, $request->user(), $scope),
             'generatedAt' => now(),
         ]);
     }
@@ -69,7 +94,7 @@ class AdminSurveyPreflightQaController extends Controller
     {
         Gate::authorize('runAnalysis', $survey);
 
-        $qa = $preflight->build($survey, $request->user());
+        $qa = $preflight->build($survey, $request->user(), $this->scope($request));
         $filename = 'preflight-qa-'.$survey->slug.'.csv';
 
         return response()->streamDownload(function () use ($qa): void {
@@ -100,5 +125,10 @@ class AdminSurveyPreflightQaController extends Controller
         }, $filename, [
             'Content-Type' => 'text/csv; charset=UTF-8',
         ]);
+    }
+
+    private function scope(Request $request): string
+    {
+        return (string) $request->input('scope', AnalysisPreflightQaService::SCOPE_STUDENT_QUESTIONNAIRE);
     }
 }

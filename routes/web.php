@@ -153,6 +153,8 @@ Route::middleware('auth')->group(function (): void {
         ->name('admin.surveys.preflight.index');
     Route::post('/admin/surveys/{survey}/preflight/fix-student-open-questions', [AdminSurveyPreflightQaController::class, 'fixStudentOpenQuestions'])
         ->name('admin.surveys.preflight.fix-student-open-questions');
+    Route::post('/admin/surveys/{survey}/preflight/remove-obsolete-student-keys', [AdminSurveyPreflightQaController::class, 'removeObsoleteStudentKeys'])
+        ->name('admin.surveys.preflight.remove-obsolete-student-keys');
     Route::post('/admin/surveys/{survey}/preflight/mark-ready', [AdminSurveyPreflightQaController::class, 'markReady'])
         ->name('admin.surveys.preflight.mark-ready');
     Route::get('/admin/surveys/{survey}/preflight/report', [AdminSurveyPreflightQaController::class, 'report'])

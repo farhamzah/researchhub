@@ -23,6 +23,7 @@ use App\Modules\Surveys\Actions\CreateLecturerNeedsAnalysisQuestionnaireAction;
 use App\Modules\Surveys\Actions\CreatePractitionerInterviewFormAction;
 use App\Modules\Surveys\Actions\CreateSurveyAction;
 use App\Modules\Surveys\Actions\PublishSurveyAction;
+use App\Modules\Surveys\Services\PharmVrStudentNeedsSurveyTemplateService;
 use App\Modules\Surveys\Support\SurveyIntroTemplates;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -41,10 +42,13 @@ class AnalysisPreflightQaTest extends TestCase
             ->assertOk()
             ->assertSeeText('Pre-Distribution QA Checklist')
             ->assertSeeText('Not Ready')
-            ->assertSeeText('Official Section G open-response items')
+            ->assertSeeText('Student Questionnaire Readiness')
+            ->assertSeeText('Approved 43 student questionnaire keys')
+            ->assertSeeText('Official Section H open-ended feedback')
             ->assertSeeText('Lecturer Questionnaire is missing.')
             ->assertSeeText('Practitioner Interview Form is missing.')
-            ->assertSeeText('Add Missing Section G Questions')
+            ->assertDontSeeText('Add Missing Section G Questions')
+            ->assertDontSeeText('Official Section G open-response items')
             ->assertDontSee('token_hash')
             ->assertDontSee('response_token_hash');
     }
@@ -63,29 +67,160 @@ class AnalysisPreflightQaTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_section_g_fix_adds_only_missing_student_open_questions(): void
+    public function test_student_questionnaire_scope_uses_final_43_keys_and_does_not_add_obsolete_section_g(): void
     {
         [$admin, $survey] = $this->surveyFixture();
 
         $this->actingAs($admin)
             ->post(route('admin.surveys.preflight.fix-student-open-questions', ['survey' => $survey]))
-            ->assertRedirect(route('admin.surveys.preflight.index', ['survey' => $survey]));
+            ->assertRedirect(route('admin.surveys.preflight.index', [
+                'survey' => $survey,
+                'scope' => AnalysisPreflightQaService::SCOPE_STUDENT_QUESTIONNAIRE,
+            ]));
 
-        foreach (AnalysisPreflightQaService::SECTION_G_OPEN_QUESTIONS as $label) {
-            $this->assertDatabaseHas('survey_questions', [
+        foreach (AnalysisPreflightQaService::OBSOLETE_STUDENT_KEYS as $key) {
+            $this->assertDatabaseMissing('survey_questions', [
                 'survey_id' => $survey->id,
-                'label' => $label,
-                'type' => SurveyQuestion::TYPE_LONG_TEXT,
+                'question_key' => $key,
             ]);
         }
 
-        $this->assertSame(4, $survey->fresh()->questions()->whereIn('label', AnalysisPreflightQaService::SECTION_G_OPEN_QUESTIONS)->count());
+        $survey->questions()->delete();
+        app(PharmVrStudentNeedsSurveyTemplateService::class)->fillMissing($admin, $survey->fresh());
+        $survey = $survey->fresh(['questions.scoring']);
+
+        foreach (AnalysisPreflightQaService::APPROVED_STUDENT_KEYS as $key) {
+            $this->assertDatabaseHas('survey_questions', [
+                'survey_id' => $survey->id,
+                'question_key' => $key,
+            ]);
+        }
+
+        $this->assertSame(43, $survey->questions()->whereIn('question_key', AnalysisPreflightQaService::APPROVED_STUDENT_KEYS)->count());
+        $this->assertSame(5, $survey->questions()->whereIn('question_key', AnalysisPreflightQaService::OFFICIAL_STUDENT_OPEN_KEYS)->where('type', SurveyQuestion::TYPE_LONG_TEXT)->count());
+        $this->assertSame(0, $survey->questions()->whereIn('question_key', AnalysisPreflightQaService::OBSOLETE_STUDENT_KEYS)->count());
+
+        $qa = app(AnalysisPreflightQaService::class)->build(
+            $survey,
+            $admin,
+            AnalysisPreflightQaService::SCOPE_STUDENT_QUESTIONNAIRE,
+        );
+
+        $this->assertSame(43, $qa['student_readiness']['approved_present']);
+        $this->assertSame(43, $qa['student_readiness']['approved_total']);
+        $this->assertSame([], $qa['student_readiness']['obsolete_keys']);
+        $this->assertSame(0, $qa['student_readiness']['missing_scoring']);
+        $this->assertTrue($qa['student_readiness']['consent_valid']);
+        $this->assertTrue($qa['student_readiness']['g_priority_valid']);
+        $this->assertTrue($qa['student_readiness']['f6_risk_descriptive']);
+    }
+
+    public function test_preflight_scope_demotes_later_workflow_items_for_student_questionnaire(): void
+    {
+        [$admin, $survey] = $this->approvedStudentFixture();
+
+        $qa = app(AnalysisPreflightQaService::class)->build(
+            $survey,
+            $admin,
+            AnalysisPreflightQaService::SCOPE_STUDENT_QUESTIONNAIRE,
+        );
+
+        $this->assertSame(0, $qa['summary']['critical_failed']);
+        $this->assertSame('Needs Attention', $qa['summary']['overall_status']);
+        $this->assertSame('enabled', $qa['student_readiness']['public_access']);
+        $this->assertSame('pending', $qa['student_readiness']['readability']);
+        $this->assertSame('pending', $qa['student_readiness']['expert_validation']);
+
+        $checks = collect($qa['checks'])->keyBy('check_key');
+        $this->assertSame('info', $checks->get('lecturer_questionnaire.exists')['severity']);
+        $this->assertSame('warning', $checks->get('validation.round')['severity']);
+        $this->assertSame('warning', $checks->get('readability.round')['severity']);
+    }
+
+    public function test_public_access_is_warning_for_student_scope_and_critical_for_distribution_scope(): void
+    {
+        [$admin, $survey] = $this->approvedStudentFixture();
+        $survey->forceFill([
+            'status' => Survey::STATUS_DRAFT,
+            'is_public' => false,
+            'published_at' => null,
+        ])->save();
+
+        $studentQa = app(AnalysisPreflightQaService::class)->build(
+            $survey->fresh(),
+            $admin,
+            AnalysisPreflightQaService::SCOPE_STUDENT_QUESTIONNAIRE,
+        );
+        $distributionQa = app(AnalysisPreflightQaService::class)->build(
+            $survey->fresh(),
+            $admin,
+            AnalysisPreflightQaService::SCOPE_DISTRIBUTION,
+        );
+
+        $studentPublicAccess = collect($studentQa['checks'])->firstWhere('check_key', 'student_questionnaire.public_access');
+        $distributionPublicAccess = collect($distributionQa['checks'])->firstWhere('check_key', 'student_questionnaire.public_access');
+
+        $this->assertSame('warning', $studentPublicAccess['severity']);
+        $this->assertSame('warning', $studentPublicAccess['status']);
+        $this->assertSame('critical', $distributionPublicAccess['severity']);
+        $this->assertSame('failed', $distributionPublicAccess['status']);
+    }
+
+    public function test_obsolete_g3_to_g5_keys_are_reported_as_extra_keys(): void
+    {
+        [$admin, $survey] = $this->approvedStudentFixture();
+        $page = $survey->pages()->firstOrFail();
+
+        foreach (AnalysisPreflightQaService::OBSOLETE_STUDENT_KEYS as $index => $key) {
+            $survey->questions()->create([
+                'page_id' => $page->id,
+                'question_key' => $key,
+                'type' => SurveyQuestion::TYPE_LONG_TEXT,
+                'label' => 'Obsolete open response '.$key,
+                'is_required' => false,
+                'sort_order' => 100 + $index,
+            ]);
+        }
+
+        $qa = app(AnalysisPreflightQaService::class)->build(
+            $survey->fresh(['questions']),
+            $admin,
+            AnalysisPreflightQaService::SCOPE_STUDENT_QUESTIONNAIRE,
+        );
+
+        $this->assertSame(AnalysisPreflightQaService::OBSOLETE_STUDENT_KEYS, $qa['student_readiness']['obsolete_keys']);
+        $check = collect($qa['checks'])->firstWhere('check_key', 'student.no_obsolete_g_open_questions');
+        $this->assertSame('warning', $check['severity']);
+        $this->assertSame('warning', $check['status']);
+        $this->assertSame('Remove Obsolete Keys', $check['fix_action_label']);
+        $this->assertStringContainsString('Obsolete extra keys found: G3, G4, G5', $check['message']);
 
         $this->actingAs($admin)
-            ->post(route('admin.surveys.preflight.fix-student-open-questions', ['survey' => $survey]))
-            ->assertRedirect(route('admin.surveys.preflight.index', ['survey' => $survey]));
+            ->post(route('admin.surveys.preflight.remove-obsolete-student-keys', ['survey' => $survey]))
+            ->assertRedirect(route('admin.surveys.preflight.index', [
+                'survey' => $survey,
+                'scope' => AnalysisPreflightQaService::SCOPE_STUDENT_QUESTIONNAIRE,
+            ]));
 
-        $this->assertSame(4, $survey->fresh()->questions()->whereIn('label', AnalysisPreflightQaService::SECTION_G_OPEN_QUESTIONS)->count());
+        $this->assertSame(0, $survey->fresh()->questions()->whereIn('question_key', AnalysisPreflightQaService::OBSOLETE_STUDENT_KEYS)->count());
+    }
+
+    public function test_full_analysis_package_scope_still_reports_global_readiness(): void
+    {
+        [$admin, $survey] = $this->approvedStudentFixture();
+
+        $qa = app(AnalysisPreflightQaService::class)->build(
+            $survey,
+            $admin,
+            AnalysisPreflightQaService::SCOPE_FULL_ANALYSIS_PACKAGE,
+        );
+
+        $checks = collect($qa['checks'])->keyBy('check_key');
+
+        $this->assertGreaterThan(0, $qa['summary']['critical_failed']);
+        $this->assertSame('critical', $checks->get('lecturer_questionnaire.exists')['severity']);
+        $this->assertSame('failed', $checks->get('lecturer_questionnaire.exists')['status']);
+        $this->assertSame('critical', $checks->get('validation.round')['severity']);
     }
 
     public function test_preflight_report_and_csv_export_work(): void
@@ -128,7 +263,10 @@ class AnalysisPreflightQaTest extends TestCase
             ->post(route('admin.surveys.preflight.mark-ready', ['survey' => $survey]), [
                 'notes' => 'Ready for controlled distribution.',
             ])
-            ->assertRedirect(route('admin.surveys.preflight.index', ['survey' => $survey]));
+            ->assertRedirect(route('admin.surveys.preflight.index', [
+                'survey' => $survey,
+                'scope' => AnalysisPreflightQaService::SCOPE_STUDENT_QUESTIONNAIRE,
+            ]));
 
         $review = AnalysisPreflightReview::where('survey_id', $survey->id)->firstOrFail();
 
@@ -169,14 +307,15 @@ class AnalysisPreflightQaTest extends TestCase
      */
     private function readyFixture(): array
     {
-        [$admin, $survey] = $this->surveyFixture();
+        [$admin, $survey] = $this->approvedStudentFixture();
 
-        app(AnalysisPreflightQaService::class)->fixStudentSectionG($survey);
         $lecturer = app(CreateLecturerNeedsAnalysisQuestionnaireAction::class)->handle($admin, $survey);
         $practitioner = app(CreatePractitionerInterviewFormAction::class)->handle($admin, $survey->fresh());
 
         foreach ([$survey->fresh(), $lecturer->fresh(), $practitioner->fresh()] as $instrument) {
-            app(PublishSurveyAction::class)->handle($admin, $instrument);
+            if ($instrument->status !== Survey::STATUS_PUBLISHED) {
+                app(PublishSurveyAction::class)->handle($admin, $instrument);
+            }
         }
 
         $this->actingAs($admin)->get(route('admin.surveys.preflight.index', ['survey' => $survey]));
@@ -194,6 +333,20 @@ class AnalysisPreflightQaTest extends TestCase
         $this->submittedReadabilityFixture($admin, $survey);
         $this->distributionFixture($admin, $survey);
         AnalysisSynthesisItem::create($this->synthesisPayload($survey));
+
+        return [$admin, $survey->fresh()];
+    }
+
+    /**
+     * @return array{0: User, 1: Survey}
+     */
+    private function approvedStudentFixture(): array
+    {
+        [$admin, $survey] = $this->surveyFixture();
+
+        $survey->questions()->delete();
+        app(PharmVrStudentNeedsSurveyTemplateService::class)->fillMissing($admin, $survey->fresh());
+        app(PublishSurveyAction::class)->handle($admin, $survey->fresh());
 
         return [$admin, $survey->fresh()];
     }

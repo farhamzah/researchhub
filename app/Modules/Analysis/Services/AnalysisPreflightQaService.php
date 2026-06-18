@@ -21,12 +21,26 @@ use Illuminate\Support\Str;
 
 class AnalysisPreflightQaService
 {
-    public const SECTION_G_OPEN_QUESTIONS = [
-        'Materi CPOB/GMP apa yang menurut Anda paling sulit dipahami?',
-        'Scene atau area PharmVR apa yang menurut Anda paling penting untuk dikembangkan terlebih dahulu?',
-        'Apa harapan Anda terhadap penggunaan Virtual Reality dalam pembelajaran Farmasi Industri?',
-        'Apa saran Anda agar PharmVR nyaman dan mudah digunakan oleh mahasiswa?',
+    public const SCOPE_STUDENT_QUESTIONNAIRE = 'student_questionnaire';
+
+    public const SCOPE_DISTRIBUTION = 'distribution';
+
+    public const SCOPE_FULL_ANALYSIS_PACKAGE = 'full_analysis_package';
+
+    public const APPROVED_STUDENT_KEYS = [
+        'A1', 'A2', 'A3',
+        'B1', 'B2', 'B3', 'B4', 'B5',
+        'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7',
+        'D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7',
+        'E1', 'E2', 'E3', 'E4', 'E5', 'E6', 'E7',
+        'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7',
+        'G1', 'G2',
+        'H1', 'H2', 'H3', 'H4', 'H5',
     ];
+
+    public const OFFICIAL_STUDENT_OPEN_KEYS = ['H1', 'H2', 'H3', 'H4', 'H5'];
+
+    public const OBSOLETE_STUDENT_KEYS = ['G3', 'G4', 'G5'];
 
     public function __construct(
         private readonly AnalysisCollectionMonitoringService $collectionMonitoringService,
@@ -36,12 +50,13 @@ class AnalysisPreflightQaService
     /**
      * @return array<string, mixed>
      */
-    public function build(Survey $survey, User $user): array
+    public function build(Survey $survey, User $user, string $scope = self::SCOPE_STUDENT_QUESTIONNAIRE): array
     {
+        $scope = $this->normalizeScope($scope);
         $survey->load([
             'project',
             'pages.questions',
-            'questions',
+            'questions.scoring',
             'responses',
             'validationRounds.assignments.validator',
             'readabilityRounds.participants.response',
@@ -66,6 +81,7 @@ class AnalysisPreflightQaService
             ->merge($this->packageChecks($survey))
             ->merge($this->synthesisChecks($survey))
             ->values();
+        $checks = $this->applyScope($checks, $scope)->values();
 
         $summary = $this->summary($checks);
 
@@ -76,6 +92,9 @@ class AnalysisPreflightQaService
             'warnings' => $checks->where('status', 'warning')->values()->all(),
             'passed_checks' => $checks->where('status', 'passed')->values()->all(),
             'summary' => $summary,
+            'scope' => $scope,
+            'scopes' => $this->scopes(),
+            'student_readiness' => $this->studentReadiness($survey),
             'overall_status' => $summary['overall_status'],
             'can_mark_ready' => $summary['critical_failed'] === 0,
             'latest_review' => $survey->analysisPreflightReviews()->latest()->first(),
@@ -88,9 +107,13 @@ class AnalysisPreflightQaService
     /**
      * @return array{review: AnalysisPreflightReview, qa: array<string, mixed>}
      */
-    public function markReady(Survey $survey, User $user, ?string $notes = null): array
-    {
-        $qa = $this->build($survey, $user);
+    public function markReady(
+        Survey $survey,
+        User $user,
+        ?string $notes = null,
+        string $scope = self::SCOPE_STUDENT_QUESTIONNAIRE,
+    ): array {
+        $qa = $this->build($survey, $user, $scope);
 
         if (! $qa['can_mark_ready']) {
             abort(422, 'Preflight QA still has critical failures.');
@@ -111,6 +134,7 @@ class AnalysisPreflightQaService
             'notes' => $notes,
             'snapshot_json' => [
                 'overall_status' => $summary['overall_status'],
+                'scope' => $qa['scope'],
                 'checks' => $qa['checks'],
                 'generated_at' => now()->toISOString(),
             ],
@@ -124,52 +148,27 @@ class AnalysisPreflightQaService
      */
     public function fixStudentSectionG(Survey $survey): array
     {
-        $existingLabels = $survey->questions()
-            ->pluck('label')
-            ->map(fn (string $label): string => $this->normalize($label))
-            ->all();
+        $missing = $this->missingApprovedStudentKeys($survey);
 
-        $section = $survey->pages()
-            ->where('title', 'Section G - Open Response')
-            ->first();
+        return ['added' => 0, 'skipped' => count(self::APPROVED_STUDENT_KEYS) - count($missing)];
+    }
 
-        if (! $section) {
-            $section = SurveyPage::create([
-                'survey_id' => $survey->getKey(),
-                'title' => 'Section G - Open Response',
-                'description' => 'Pertanyaan terbuka untuk menangkap kebutuhan, harapan, dan saran mahasiswa terhadap PharmVR.',
-                'sort_order' => ((int) $survey->pages()->max('sort_order')) + 1,
-            ]);
+    /**
+     * @return array{removed: int, blocked: int}
+     */
+    public function removeObsoleteStudentKeys(Survey $survey): array
+    {
+        $obsolete = $survey->questions()
+            ->whereIn('question_key', self::OBSOLETE_STUDENT_KEYS);
+        $count = (clone $obsolete)->count();
+
+        if ($survey->responses()->exists()) {
+            return ['removed' => 0, 'blocked' => $count];
         }
 
-        $sortOrder = ((int) $survey->questions()->max('sort_order')) + 1;
-        $added = 0;
-        $skipped = 0;
+        $removed = $obsolete->delete();
 
-        foreach (self::SECTION_G_OPEN_QUESTIONS as $index => $label) {
-            if (in_array($this->normalize($label), $existingLabels, true)) {
-                $skipped++;
-
-                continue;
-            }
-
-            SurveyQuestion::create([
-                'survey_id' => $survey->getKey(),
-                'page_id' => $section->getKey(),
-                'question_key' => 'section_g_open_'.($index + 1),
-                'type' => SurveyQuestion::TYPE_LONG_TEXT,
-                'label' => $label,
-                'help_text' => 'Jawaban terbuka. Tulis sesuai pengalaman dan kebutuhan Anda.',
-                'options' => [],
-                'settings' => [],
-                'is_required' => false,
-                'sort_order' => $sortOrder++,
-            ]);
-            $existingLabels[] = $this->normalize($label);
-            $added++;
-        }
-
-        return ['added' => $added, 'skipped' => $skipped];
+        return ['removed' => $removed, 'blocked' => 0];
     }
 
     /**
@@ -179,7 +178,7 @@ class AnalysisPreflightQaService
     {
         $groupKey = $survey->analysis_group_key ?: Survey::ANALYSIS_GROUP_PHARMVR_ADDIE;
         $related = Survey::query()
-            ->with(['pages.questions', 'questions', 'responses'])
+            ->with(['pages.questions', 'questions.scoring', 'responses'])
             ->where('project_id', $survey->project_id)
             ->where(function ($query) use ($survey, $groupKey): void {
                 $query
@@ -207,34 +206,55 @@ class AnalysisPreflightQaService
             return $checks;
         }
 
-        $missing = $this->missingSectionGQuestions($student);
-        $questionCount = $student->questions->where('type', '!=', SurveyQuestion::TYPE_HIDDEN)->count();
+        $missingKeys = $this->missingApprovedStudentKeys($student);
+        $obsoleteKeys = $this->obsoleteStudentKeys($student);
+        $openMissing = collect(self::OFFICIAL_STUDENT_OPEN_KEYS)->diff($student->questions->pluck('question_key'))->values()->all();
+        $missingScoring = $this->missingStudentScoring($student);
+        $consentValid = $this->studentConsentValid($student);
+        $priorityValid = $this->studentPriorityQuestionsValid($student);
+        $f6Valid = $this->studentRiskItemValid($student);
+
         $checks[] = $this->check(
-            'student.section_g_open_questions',
-            'Official Section G open-response items',
+            'student.final_43_keys',
+            'Approved 43 student questionnaire keys',
             'student_questionnaire',
             'critical',
-            $missing === [],
-            $missing === []
-                ? 'All four official Section G open-response items are present.'
-                : 'Student questionnaire is missing Section G open-response items: '.implode(' | ', $missing),
-            'Add the four official open-response questions before sending the questionnaire.',
-            route('admin.surveys.preflight.fix-student-open-questions', ['survey' => $mainSurvey]),
-            'Add Missing Section G Questions',
+            $missingKeys === [],
+            'Approved 43-key student structure is present.',
+            'Student questionnaire is missing approved keys: '.implode(', ', $missingKeys),
+            route('admin.surveys.builder.index', ['survey' => $student]),
+            'Open Builder',
         );
+        $checks[] = $this->check('student.section_h_open_feedback', 'Official Section H open-ended feedback', 'student_questionnaire', 'critical', $openMissing === [], 'H1-H5 open-ended feedback items are present.', 'Missing official Section H open feedback keys: '.implode(', ', $openMissing), route('admin.surveys.builder.index', ['survey' => $student]), 'Open Builder');
 
-        if ($questionCount === 34 && $missing !== []) {
-            $checks[] = $this->issue(
-                'student.official_question_count',
-                'Official student questionnaire question count',
-                'student_questionnaire',
-                'critical',
-                'Student questionnaire appears to have 34 questions. Official version expects 38 questions after Section G open-response items.',
-                'Run the Section G fix before distribution.',
-                route('admin.surveys.preflight.fix-student-open-questions', ['survey' => $mainSurvey]),
-                'Add Missing Section G Questions',
-            );
+        $obsoleteFixUrl = null;
+        $obsoleteFixLabel = null;
+        if ($obsoleteKeys !== []) {
+            $obsoleteFixUrl = $student->responses->isEmpty()
+                ? route('admin.surveys.preflight.remove-obsolete-student-keys', ['survey' => $student])
+                : route('admin.surveys.builder.index', ['survey' => $student]);
+            $obsoleteFixLabel = $student->responses->isEmpty()
+                ? 'Remove Obsolete Keys'
+                : 'Open Builder';
         }
+
+        $checks[] = $this->check(
+            'student.no_obsolete_g_open_questions',
+            'No obsolete G3-G5 extra keys',
+            'student_questionnaire',
+            'warning',
+            $obsoleteKeys === [],
+            'No obsolete G3-G5 keys found.',
+            $student->responses->isEmpty()
+                ? 'Obsolete extra keys found: '.implode(', ', $obsoleteKeys).'. Safe removal is available because there are no responses.'
+                : 'Obsolete keys exist but cannot be removed because responses exist.',
+            $obsoleteFixUrl,
+            $obsoleteFixLabel,
+        );
+        $checks[] = $this->check('student.no_missing_scoring', 'No missing scoring for scoreable student items', 'student_questionnaire', 'critical', $missingScoring === [], 'Scoreable student questions have scoring configured.', 'Missing scoring for: '.implode(', ', $missingScoring), route('admin.surveys.scoring.index', ['survey' => $student]), 'Open Scoring');
+        $checks[] = $this->check('student.consent_valid', 'Consent items render as required consent', 'student_questionnaire', 'critical', $consentValid, 'A1 and A3 are required consent questions.', 'Set A1 and A3 to required consent questions.', route('admin.surveys.builder.index', ['survey' => $student]), 'Open Builder');
+        $checks[] = $this->check('student.g_priority_max_three', 'G1/G2 max 3 selections', 'student_questionnaire', 'critical', $priorityValid, 'G1 and G2 are required multiple choice questions with max 3 selections.', 'Set G1 and G2 to max 3 multiple-choice priority questions.', route('admin.surveys.builder.index', ['survey' => $student]), 'Open Builder');
+        $checks[] = $this->check('student.f6_risk_descriptive', 'F6 risk item is descriptive', 'student_questionnaire', 'critical', $f6Valid, 'F6 is configured as descriptive risk item, not positive readiness scoring.', 'Set F6 scoring to descriptive/risk and exclude it from positive readiness aggregation.', route('admin.surveys.scoring.index', ['survey' => $student]), 'Open Scoring');
 
         return $checks;
     }
@@ -658,19 +678,194 @@ class AnalysisPreflightQaService
         return collect($values)->contains(fn (mixed $value): bool => blank(is_array($value) ? ($value['label'] ?? $value['value'] ?? null) : $value));
     }
 
+    private function normalizeScope(string $scope): string
+    {
+        return in_array($scope, array_keys($this->scopes()), true) ? $scope : self::SCOPE_STUDENT_QUESTIONNAIRE;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function scopes(): array
+    {
+        return [
+            self::SCOPE_STUDENT_QUESTIONNAIRE => 'Student Questionnaire',
+            'lecturer_questionnaire' => 'Lecturer Questionnaire',
+            'practitioner_interview' => 'Practitioner Interview',
+            'expert_validation' => 'Expert Validation',
+            'readability_test' => 'Readability Test',
+            self::SCOPE_DISTRIBUTION => 'Distribution',
+            'analysis_package' => 'Analysis Package / Synthesis',
+            self::SCOPE_FULL_ANALYSIS_PACKAGE => 'Full Analysis Package',
+        ];
+    }
+
+    /**
+     * @param  Collection<int, array<string, mixed>>  $checks
+     * @return Collection<int, array<string, mixed>>
+     */
+    private function applyScope(Collection $checks, string $scope): Collection
+    {
+        if ($scope === self::SCOPE_FULL_ANALYSIS_PACKAGE) {
+            return $checks;
+        }
+
+        return $checks->map(function (array $check) use ($scope): array {
+            $source = $check['source_type'] ?? '';
+
+            if ($scope === self::SCOPE_STUDENT_QUESTIONNAIRE && $source !== self::SCOPE_STUDENT_QUESTIONNAIRE) {
+                if (in_array($source, ['lecturer_questionnaire', 'practitioner_interview'], true)) {
+                    return $this->demote($check, 'info', 'Pending other instruments: '.$check['message']);
+                }
+
+                if (in_array($source, ['expert_validation', 'readability_test'], true)) {
+                    return $this->demote($check, 'warning', 'Next workflow step: '.$check['message']);
+                }
+
+                return $this->demote($check, 'warning', 'Pending later scope: '.$check['message']);
+            }
+
+            if ($scope === self::SCOPE_STUDENT_QUESTIONNAIRE && ($check['check_key'] ?? '') === 'student_questionnaire.public_access') {
+                return $this->demote($check, 'warning', 'Distribution pending: '.$check['message']);
+            }
+
+            if ($scope === self::SCOPE_DISTRIBUTION) {
+                if (
+                    $source === self::SCOPE_DISTRIBUTION
+                    || in_array($check['check_key'] ?? '', [
+                        'student_questionnaire.public_access',
+                        'lecturer_questionnaire.public_access',
+                        'practitioner_interview.public_access',
+                    ], true)
+                ) {
+                    return $check;
+                }
+
+                return $this->demote($check, 'warning', 'Pending earlier scope: '.$check['message']);
+            }
+
+            if ($scope !== $source) {
+                return $this->demote($check, 'warning', 'Pending later scope: '.$check['message']);
+            }
+
+            return $check;
+        });
+    }
+
+    /**
+     * @param  array<string, mixed>  $check
+     * @return array<string, mixed>
+     */
+    private function demote(array $check, string $severity, string $message): array
+    {
+        if (($check['status'] ?? null) !== 'failed') {
+            return $check;
+        }
+
+        $check['severity'] = $severity;
+        $check['status'] = 'warning';
+        $check['message'] = $message;
+        $check['recommendation'] = $message;
+
+        return $check;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function studentReadiness(Survey $survey): array
+    {
+        $missing = $this->missingApprovedStudentKeys($survey);
+        $obsolete = $this->obsoleteStudentKeys($survey);
+
+        return [
+            'approved_present' => count(self::APPROVED_STUDENT_KEYS) - count($missing),
+            'approved_total' => count(self::APPROVED_STUDENT_KEYS),
+            'missing_keys' => $missing,
+            'obsolete_keys' => $obsolete,
+            'missing_scoring' => count($this->missingStudentScoring($survey)),
+            'consent_valid' => $this->studentConsentValid($survey),
+            'g_priority_valid' => $this->studentPriorityQuestionsValid($survey),
+            'f6_risk_descriptive' => $this->studentRiskItemValid($survey),
+            'public_access' => $survey->canReceiveResponses() ? 'enabled' : 'pending',
+            'readability' => $survey->readabilityRounds->isNotEmpty() ? 'configured' : 'pending',
+            'expert_validation' => $survey->validationRounds->isNotEmpty() ? 'configured' : 'pending',
+        ];
+    }
+
     /**
      * @return array<int, string>
      */
-    private function missingSectionGQuestions(Survey $student): array
+    private function missingApprovedStudentKeys(Survey $student): array
     {
-        $existing = $student->questions
-            ->map(fn (SurveyQuestion $question): string => $this->normalize((string) $question->label))
-            ->all();
-
-        return collect(self::SECTION_G_OPEN_QUESTIONS)
-            ->reject(fn (string $label): bool => in_array($this->normalize($label), $existing, true))
+        return collect(self::APPROVED_STUDENT_KEYS)
+            ->diff($student->questions->pluck('question_key')->filter()->values())
             ->values()
             ->all();
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function obsoleteStudentKeys(Survey $student): array
+    {
+        return $student->questions
+            ->pluck('question_key')
+            ->filter(fn (?string $key): bool => in_array((string) $key, self::OBSOLETE_STUDENT_KEYS, true))
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function missingStudentScoring(Survey $student): array
+    {
+        return $student->questions
+            ->filter(fn (SurveyQuestion $question): bool => in_array($question->type, [
+                SurveyQuestion::TYPE_SINGLE_CHOICE,
+                SurveyQuestion::TYPE_MULTIPLE_CHOICE,
+                SurveyQuestion::TYPE_LIKERT,
+                SurveyQuestion::TYPE_NUMBER,
+            ], true))
+            ->reject(fn (SurveyQuestion $question): bool => $question->scoring !== null)
+            ->pluck('question_key')
+            ->values()
+            ->all();
+    }
+
+    private function studentConsentValid(Survey $student): bool
+    {
+        return collect(['A1', 'A3'])->every(function (string $key) use ($student): bool {
+            $question = $student->questions->firstWhere('question_key', $key);
+
+            return $question instanceof SurveyQuestion
+                && $question->type === SurveyQuestion::TYPE_CONSENT
+                && (bool) $question->is_required;
+        });
+    }
+
+    private function studentPriorityQuestionsValid(Survey $student): bool
+    {
+        return collect(['G1', 'G2'])->every(function (string $key) use ($student): bool {
+            $question = $student->questions->firstWhere('question_key', $key);
+
+            return $question instanceof SurveyQuestion
+                && $question->type === SurveyQuestion::TYPE_MULTIPLE_CHOICE
+                && (bool) $question->is_required
+                && (int) data_get($question->settings, 'max_selections') === 3;
+        });
+    }
+
+    private function studentRiskItemValid(Survey $student): bool
+    {
+        $question = $student->questions->firstWhere('question_key', 'F6');
+
+        return $question instanceof SurveyQuestion
+            && $question->scoring !== null
+            && ! $question->scoring->is_scored
+            && (bool) data_get($question->scoring->settings, 'risk_item')
+            && (bool) data_get($question->scoring->settings, 'not_positive_readiness');
     }
 
     private function target(array $collection, string $sourceType): ?array

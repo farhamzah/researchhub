@@ -79,6 +79,72 @@ class RespondentPackagePilotTest extends TestCase
             ->assertSeeText('excluded from analysis');
     }
 
+    public function test_valid_pilot_link_opens_full_flow_when_public_survey_is_closed(): void
+    {
+        [$admin, $survey] = $this->publishedAnalysisFixture();
+        $url = $this->generatePilotUrl($admin, $survey);
+        $this->closePublicAccess($survey);
+
+        $this->get(route('survey.show', ['survey' => $survey->fresh()->slug]))
+            ->assertOk()
+            ->assertSeeText('This survey is unavailable')
+            ->assertDontSeeText($survey->title);
+
+        $this->get($url)
+            ->assertOk()
+            ->assertSeeText('PILOT TEST MODE')
+            ->assertSeeText('Pengantar Kuesioner Analisis Kebutuhan PharmVR')
+            ->assertSeeText('Data yang dikumpulkan')
+            ->assertSeeText('Saya telah membaca penjelasan di atas dan bersedia melanjutkan.')
+            ->assertSeeText('Mahasiswa membutuhkan PharmVR untuk memahami CPOB.')
+            ->assertSee('name="pilot"', false)
+            ->assertSee('name="intro_consent"', false)
+            ->assertSee('name="answers[student_need]"', false);
+    }
+
+    public function test_invalid_and_revoked_pilot_links_do_not_bypass_closed_public_access(): void
+    {
+        [$admin, $survey] = $this->publishedAnalysisFixture();
+        $url = $this->generatePilotUrl($admin, $survey);
+        $token = $this->tokenFromUrl($url);
+        $run = AnalysisPilotRun::firstOrFail();
+        $this->closePublicAccess($survey);
+
+        $this->get(route('survey.show', ['survey' => $survey->fresh()->slug, 'pilot' => 'invalid-token']))
+            ->assertForbidden()
+            ->assertSeeText('Pilot link is no longer active.');
+
+        $this->actingAs($admin)
+            ->post(route('admin.surveys.respondent-package.pilot.revoke', ['survey' => $survey, 'pilotRun' => $run]))
+            ->assertRedirect(route('admin.surveys.respondent-package.index', ['survey' => $survey]));
+
+        $this->get(route('survey.show', ['survey' => $survey->fresh()->slug, 'pilot' => $token]))
+            ->assertForbidden()
+            ->assertSeeText('Pilot link is no longer active.');
+    }
+
+    public function test_closed_survey_pilot_submission_is_stored_as_excluded_test_data(): void
+    {
+        [$admin, $survey] = $this->publishedAnalysisFixture();
+        $token = $this->tokenFromUrl($this->generatePilotUrl($admin, $survey));
+        $this->closePublicAccess($survey);
+
+        $this->post(route('survey.responses.store', ['survey' => $survey->fresh()->slug]), [
+            'pilot' => $token,
+            'intro_consent' => '1',
+            'answers' => ['student_need' => '5'],
+        ])
+            ->assertOk()
+            ->assertSeeText('Pilot test response stored as test data');
+
+        $response = SurveyResponse::firstOrFail();
+
+        $this->assertTrue($response->is_test_response);
+        $this->assertTrue($response->excluded_from_analysis);
+        $this->assertNotNull($response->pilot_run_id);
+        $this->assertSame(AnalysisPilotRun::STATUS_SUBMITTED, AnalysisPilotRun::firstOrFail()->status);
+    }
+
     public function test_pilot_submission_is_stored_as_excluded_test_data_and_updates_run(): void
     {
         [$admin, $survey] = $this->publishedAnalysisFixture();
@@ -292,6 +358,15 @@ class RespondentPackagePilotTest extends TestCase
             'intro_consent' => '1',
             'answers' => ['student_need' => '4'],
         ])->assertOk();
+    }
+
+    private function closePublicAccess(Survey $survey): void
+    {
+        $survey->forceFill([
+            'status' => Survey::STATUS_DRAFT,
+            'is_public' => false,
+            'published_at' => null,
+        ])->save();
     }
 
     private function tokenFromUrl(string $url): string

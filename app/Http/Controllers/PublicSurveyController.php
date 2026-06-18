@@ -17,10 +17,6 @@ class PublicSurveyController extends Controller
 {
     public function show(Survey $survey, Request $request, AnalysisRespondentPackageService $respondentPackage): View|Response
     {
-        if (! $survey->canReceiveResponses()) {
-            return view('surveys.unavailable');
-        }
-
         $pilotToken = $request->query('pilot');
         $pilotRun = $respondentPackage->resolvePilotRun($survey, is_string($pilotToken) ? $pilotToken : null);
 
@@ -30,6 +26,10 @@ class PublicSurveyController extends Controller
                     'title' => 'Pilot link is no longer active.',
                     'message' => 'This pilot test link is invalid, expired, or revoked. Request a fresh pilot link from the researcher.',
                 ], 403);
+        }
+
+        if (! $survey->canReceiveResponses() && ! $pilotRun) {
+            return view('surveys.unavailable');
         }
 
         $survey->load([
@@ -61,7 +61,7 @@ class PublicSurveyController extends Controller
                 ], 403);
         }
 
-        if ($survey->canReceiveResponses() && $survey->require_consent_before_start && $request->input('intro_consent') !== '1') {
+        if (($survey->canReceiveResponses() || $pilotRun) && $survey->require_consent_before_start && $request->input('intro_consent') !== '1') {
             throw ValidationException::withMessages([
                 'intro_consent' => 'Please confirm that you have read the survey explanation before continuing.',
             ]);

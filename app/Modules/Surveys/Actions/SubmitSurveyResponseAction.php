@@ -27,7 +27,7 @@ class SubmitSurveyResponseAction
     {
         $survey->loadMissing(['project', 'questions', 'respondents']);
 
-        if (! $survey->canReceiveResponses()) {
+        if (! $survey->canReceiveResponses() && ! $pilotRun) {
             $this->logRejected($survey, 'survey_unavailable', $request);
 
             throw ValidationException::withMessages([

@@ -25,6 +25,10 @@ class AnalysisPreflightQaService
 {
     public const SCOPE_STUDENT_QUESTIONNAIRE = 'student_questionnaire';
 
+    public const SCOPE_LECTURER_QUESTIONNAIRE = 'lecturer_questionnaire';
+
+    public const SCOPE_PRACTITIONER_INTERVIEW = 'practitioner_interview';
+
     public const SCOPE_DISTRIBUTION = 'distribution';
 
     public const SCOPE_FULL_ANALYSIS_PACKAGE = 'full_analysis_package';
@@ -44,6 +48,26 @@ class AnalysisPreflightQaService
 
     public const OBSOLETE_STUDENT_KEYS = ['G3', 'G4', 'G5'];
 
+    public const APPROVED_LECTURER_KEYS = [
+        'L_A1', 'L_A2', 'L_A3',
+        'L_B1', 'L_B2', 'L_B3', 'L_B4', 'L_B5',
+        'L_C1', 'L_C2', 'L_C3', 'L_C4', 'L_C5', 'L_C6',
+        'L_D1', 'L_D2', 'L_D3', 'L_D4', 'L_D5', 'L_D6',
+        'L_E1', 'L_E2', 'L_E3', 'L_E4', 'L_E5', 'L_E6', 'L_E7',
+        'L_F1', 'L_F2', 'L_F3', 'L_F4', 'L_F5', 'L_F6',
+        'L_G1', 'L_G2',
+        'L_H1', 'L_H2', 'L_H3', 'L_H4', 'L_H5',
+    ];
+
+    public const APPROVED_PRACTITIONER_KEYS = [
+        'P_A1', 'P_A2', 'P_A3', 'P_A4', 'P_A5', 'P_A6',
+        'P_B1', 'P_B2', 'P_B3', 'P_B4',
+        'P_C1', 'P_C2', 'P_C3', 'P_C4',
+        'P_D1', 'P_D2', 'P_D3', 'P_D4',
+        'P_E1', 'P_E2', 'P_E3', 'P_E4',
+        'P_F1', 'P_F2', 'P_F3', 'P_F4',
+    ];
+
     public function __construct(
         private readonly AnalysisCollectionMonitoringService $collectionMonitoringService,
         private readonly SurveyDistributionCenterService $distributionCenterService,
@@ -58,7 +82,8 @@ class AnalysisPreflightQaService
         $survey->load([
             'project',
             'pages.questions',
-            'questions.scoring',
+            'questions.scoring.indicator',
+            'indicators.questionScorings',
             'responses',
             'supervisorReviewRounds.reviewers',
             'supervisorReviewRounds.revisions',
@@ -183,7 +208,7 @@ class AnalysisPreflightQaService
     {
         $groupKey = $survey->analysis_group_key ?: Survey::ANALYSIS_GROUP_PHARMVR_ADDIE;
         $related = Survey::query()
-            ->with(['pages.questions', 'questions.scoring', 'responses'])
+            ->with(['pages.questions', 'questions.scoring.indicator', 'indicators.questionScorings', 'responses'])
             ->where('project_id', $survey->project_id)
             ->where(function ($query) use ($survey, $groupKey): void {
                 $query
@@ -269,11 +294,18 @@ class AnalysisPreflightQaService
      */
     private function lecturerChecks(Survey $mainSurvey, ?Survey $lecturer): array
     {
-        $checks = $this->baseInstrumentChecks($mainSurvey, $lecturer, 'lecturer_questionnaire', 'Lecturer Questionnaire', true);
+        $checks = $this->baseInstrumentChecks($mainSurvey, $lecturer, self::SCOPE_LECTURER_QUESTIONNAIRE, 'Lecturer Questionnaire', true);
 
         if (! $lecturer) {
             return $checks;
         }
+
+        $missingKeys = $this->missingKeys($lecturer, self::APPROVED_LECTURER_KEYS);
+        $consentValid = $this->consentKeysValid($lecturer, ['L_A1', 'L_A3']);
+        $priorityValid = $this->maxSelectionKeysValid($lecturer, ['L_G1', 'L_G2'], 3);
+        $missingScoring = $this->missingLecturerScoring($lecturer);
+        $riskValid = $this->descriptiveRiskValid($lecturer, 'L_F6');
+        $openEndedDescriptive = $this->openEndedNotScored($lecturer, 'L_H');
 
         $requiredSections = [
             'identity' => ['identitas', 'identity'],
@@ -286,7 +318,14 @@ class AnalysisPreflightQaService
             'open_response' => ['saran', 'open', 'terbuka'],
         ];
 
-        return array_merge($checks, $this->sectionKeywordChecks($mainSurvey, $lecturer, 'lecturer_questionnaire', $requiredSections));
+        return array_merge($checks, [
+            $this->check('lecturer.approved_keys', 'Approved lecturer questionnaire keys', self::SCOPE_LECTURER_QUESTIONNAIRE, 'critical', $missingKeys === [], 'Approved lecturer key structure is present.', 'Lecturer questionnaire is missing keys: '.implode(', ', $missingKeys), route('admin.surveys.analysis.index', ['survey' => $mainSurvey]), 'Open Analysis Dashboard'),
+            $this->check('lecturer.consent_valid', 'Lecturer consent items', self::SCOPE_LECTURER_QUESTIONNAIRE, 'critical', $consentValid, 'L_A1 and L_A3 are required consent questions.', 'Set L_A1 and L_A3 to required consent questions.', route('admin.surveys.builder.index', ['survey' => $lecturer]), 'Open Builder'),
+            $this->check('lecturer.priority_max_three', 'Lecturer G1/G2 max 3 selections', self::SCOPE_LECTURER_QUESTIONNAIRE, 'critical', $priorityValid, 'L_G1 and L_G2 are max 3 multiple-choice priority questions.', 'Set L_G1 and L_G2 to max 3 multiple-choice questions.', route('admin.surveys.builder.index', ['survey' => $lecturer]), 'Open Builder'),
+            $this->check('lecturer.scoreable_likert_scoring', 'Lecturer scoreable Likert scoring', self::SCOPE_LECTURER_QUESTIONNAIRE, 'critical', $missingScoring === [], 'Lecturer scoreable Likert items have scoring configured.', 'Missing scoring for: '.implode(', ', $missingScoring), route('admin.surveys.scoring.index', ['survey' => $lecturer]), 'Open Scoring'),
+            $this->check('lecturer.f6_risk_descriptive', 'Lecturer F6 risk item descriptive', self::SCOPE_LECTURER_QUESTIONNAIRE, 'critical', $riskValid, 'L_F6 is configured as descriptive/risk.', 'Set L_F6 scoring to descriptive/risk and exclude it from positive readiness aggregation.', route('admin.surveys.scoring.index', ['survey' => $lecturer]), 'Open Scoring'),
+            $this->check('lecturer.open_ended_not_scored', 'Lecturer open-ended items descriptive', self::SCOPE_LECTURER_QUESTIONNAIRE, 'warning', $openEndedDescriptive, 'Lecturer open-ended items are descriptive/not scoreable.', 'Remove numeric scoring from L_H open-ended items or mark them descriptive.', route('admin.surveys.scoring.index', ['survey' => $lecturer]), 'Open Scoring'),
+        ], $this->sectionKeywordChecks($mainSurvey, $lecturer, self::SCOPE_LECTURER_QUESTIONNAIRE, $requiredSections));
     }
 
     /**
@@ -294,20 +333,35 @@ class AnalysisPreflightQaService
      */
     private function practitionerChecks(Survey $mainSurvey, ?Survey $practitioner): array
     {
-        $checks = $this->baseInstrumentChecks($mainSurvey, $practitioner, 'practitioner_interview', 'Practitioner Interview Form', true);
+        $checks = $this->baseInstrumentChecks($mainSurvey, $practitioner, self::SCOPE_PRACTITIONER_INTERVIEW, 'Practitioner Interview Form', true);
 
         if (! $practitioner) {
             return $checks;
         }
 
+        $missingKeys = $this->missingKeys($practitioner, self::APPROVED_PRACTITIONER_KEYS);
+        $consentValid = $this->consentKeysValid($practitioner, ['P_A1', 'P_A6']);
+        $priorityValid = $this->maxSelectionKeysValid($practitioner, ['P_C1', 'P_E1'], 5);
+        $requiredValid = $this->requiredKeysPresent($practitioner, collect(self::APPROVED_PRACTITIONER_KEYS)->reject(fn (string $key): bool => in_array($key, ['P_F3', 'P_F4', 'P_A4'], true))->values()->all());
+        $longTextDescriptive = $this->longTextNotScored($practitioner);
+        $descriptiveIndicatorsValid = $this->descriptiveIndicatorsLinked($practitioner);
+
         $requiredSections = [
-            'identity' => ['identitas', 'identity', 'narasumber'],
-            'core_interview' => ['wawancara', 'interview', 'pertanyaan inti'],
-            'coding_theme' => ['tema', 'coding', 'kode'],
-            'design_implication' => ['design', 'development', 'implikasi'],
+            'identity' => ['profil', 'narasumber'],
+            'cpob_need' => ['kompetensi', 'cpob', 'gmp'],
+            'scene_validity' => ['scene', 'alur', 'produksi'],
+            'misconception_risk' => ['miskonsepsi', 'risiko'],
+            'recommendation' => ['rekomendasi', 'kelayakan', 'masukan'],
         ];
 
-        return array_merge($checks, $this->sectionKeywordChecks($mainSurvey, $practitioner, 'practitioner_interview', $requiredSections));
+        return array_merge($checks, [
+            $this->check('practitioner.approved_keys', 'Approved practitioner interview keys', self::SCOPE_PRACTITIONER_INTERVIEW, 'critical', $missingKeys === [], 'Approved practitioner key structure is present.', 'Practitioner interview is missing keys: '.implode(', ', $missingKeys), route('admin.surveys.analysis.index', ['survey' => $mainSurvey]), 'Open Analysis Dashboard'),
+            $this->check('practitioner.consent_valid', 'Practitioner consent items', self::SCOPE_PRACTITIONER_INTERVIEW, 'critical', $consentValid, 'P_A1 and P_A6 are required consent questions.', 'Set P_A1 and P_A6 to required consent questions.', route('admin.surveys.builder.index', ['survey' => $practitioner]), 'Open Builder'),
+            $this->check('practitioner.required_questions', 'Practitioner required questions configured', self::SCOPE_PRACTITIONER_INTERVIEW, 'critical', $requiredValid, 'Required practitioner questions are configured.', 'Set required practitioner questions according to the approved interview form.', route('admin.surveys.builder.index', ['survey' => $practitioner]), 'Open Builder'),
+            $this->check('practitioner.priority_max_five', 'Practitioner P_C1/P_E1 max 5 selections', self::SCOPE_PRACTITIONER_INTERVIEW, 'critical', $priorityValid, 'P_C1 and P_E1 are max 5 multiple-choice priority questions.', 'Set P_C1 and P_E1 to max 5 multiple-choice questions.', route('admin.surveys.builder.index', ['survey' => $practitioner]), 'Open Builder'),
+            $this->check('practitioner.descriptive_indicators', 'Practitioner descriptive indicators/themes', self::SCOPE_PRACTITIONER_INTERVIEW, 'critical', $descriptiveIndicatorsValid, 'Practitioner interview has descriptive indicators linked for thematic analysis.', 'Create descriptive indicators and link all visible questions to non-scored thematic rows.', route('admin.surveys.scoring.index', ['survey' => $practitioner]), 'Open Scoring'),
+            $this->check('practitioner.long_text_descriptive', 'Practitioner long text items descriptive', self::SCOPE_PRACTITIONER_INTERVIEW, 'warning', $longTextDescriptive, 'Practitioner long text items are descriptive/not scoreable.', 'Remove numeric scoring from long text interview items.', route('admin.surveys.scoring.index', ['survey' => $practitioner]), 'Open Scoring'),
+        ], $this->sectionKeywordChecks($mainSurvey, $practitioner, self::SCOPE_PRACTITIONER_INTERVIEW, $requiredSections));
     }
 
     /**
@@ -332,6 +386,7 @@ class AnalysisPreflightQaService
 
         $checks = [
             $this->check($sourceType.'.title', $label.' title', $sourceType, 'critical', filled($instrument->title), 'Title is configured.', 'Fill the survey title in Builder.', route('admin.surveys.builder.index', ['survey' => $instrument]), 'Open Builder'),
+            $this->check($sourceType.'.description', $label.' description', $sourceType, 'critical', filled($instrument->description), 'Description is configured.', 'Fill the survey description in Builder.', route('admin.surveys.builder.index', ['survey' => $instrument]), 'Open Builder'),
             $this->check($sourceType.'.intro', $label.' intro text', $sourceType, 'critical', filled($instrument->intro_title) || filled($instrument->intro_text), 'Intro text is configured.', 'Add intro title/text in Builder.', route('admin.surveys.builder.index', ['survey' => $instrument]).'#intro', 'Open Builder'),
             $this->check($sourceType.'.privacy', $label.' privacy statement', $sourceType, 'critical', filled($instrument->privacy_statement), 'Privacy statement is configured.', 'Add privacy statement in Builder.', route('admin.surveys.builder.index', ['survey' => $instrument]).'#intro', 'Open Builder'),
             $this->check($sourceType.'.instruction', $label.' respondent instruction', $sourceType, 'critical', filled($instrument->respondent_instruction), 'Respondent instruction is configured.', 'Add respondent instructions in Builder.', route('admin.surveys.builder.index', ['survey' => $instrument]).'#intro', 'Open Builder'),
@@ -359,10 +414,17 @@ class AnalysisPreflightQaService
             ->duplicates()
             ->unique()
             ->values();
+        $duplicateKeys = $visibleQuestions
+            ->pluck('question_key')
+            ->filter()
+            ->duplicates()
+            ->unique()
+            ->values();
 
         return [
             $this->check($sourceType.'.question_text', 'No empty question text', $sourceType, 'critical', $emptyLabels === 0, 'Question text is complete.', 'Fill every visible question label.', $builderUrl, 'Open Builder'),
             $this->check($sourceType.'.question_options', 'No empty or missing option labels', $sourceType, 'critical', $emptyOptions === 0, 'Choice/Likert options are complete.', 'Fill options for each choice, multiple choice, Likert, and matrix item.', $builderUrl, 'Open Builder'),
+            $this->check($sourceType.'.duplicate_keys', 'No duplicate question keys', $sourceType, 'critical', $duplicateKeys->isEmpty(), 'No duplicate question keys found.', 'Resolve duplicate question keys: '.$duplicateKeys->join(', '), $builderUrl, 'Open Builder'),
             $this->check($sourceType.'.duplicate_questions', 'No duplicate exact question text', $sourceType, 'warning', $duplicateLabels->isEmpty(), 'No duplicate exact question text found.', 'Review duplicate question text: '.$duplicateLabels->join(' | '), $builderUrl, 'Open Builder'),
         ];
     }
@@ -759,7 +821,8 @@ class AnalysisPreflightQaService
                 return $this->demote($check, 'warning', 'Pending later scope: '.$check['message'], 'skipped');
             }
 
-            if ($scope === self::SCOPE_STUDENT_QUESTIONNAIRE && ($check['check_key'] ?? '') === 'student_questionnaire.public_access') {
+            if (in_array($scope, [self::SCOPE_STUDENT_QUESTIONNAIRE, 'lecturer_questionnaire', 'practitioner_interview'], true)
+                && str_ends_with((string) ($check['check_key'] ?? ''), '.public_access')) {
                 return $this->demote($check, 'warning', 'Distribution pending: '.$check['message']);
             }
 
@@ -840,6 +903,18 @@ class AnalysisPreflightQaService
     }
 
     /**
+     * @param  array<int, string>  $keys
+     * @return array<int, string>
+     */
+    private function missingKeys(Survey $survey, array $keys): array
+    {
+        return collect($keys)
+            ->diff($survey->questions->pluck('question_key')->filter()->values())
+            ->values()
+            ->all();
+    }
+
+    /**
      * @return array<int, string>
      */
     private function obsoleteStudentKeys(Survey $student): array
@@ -901,6 +976,96 @@ class AnalysisPreflightQaService
             && ! $question->scoring->is_scored
             && (bool) data_get($question->scoring->settings, 'risk_item')
             && (bool) data_get($question->scoring->settings, 'not_positive_readiness');
+    }
+
+    /**
+     * @param  array<int, string>  $keys
+     */
+    private function consentKeysValid(Survey $survey, array $keys): bool
+    {
+        return collect($keys)->every(function (string $key) use ($survey): bool {
+            $question = $survey->questions->firstWhere('question_key', $key);
+
+            return $question instanceof SurveyQuestion
+                && $question->type === SurveyQuestion::TYPE_CONSENT
+                && (bool) $question->is_required;
+        });
+    }
+
+    /**
+     * @param  array<int, string>  $keys
+     */
+    private function maxSelectionKeysValid(Survey $survey, array $keys, int $max): bool
+    {
+        return collect($keys)->every(function (string $key) use ($survey, $max): bool {
+            $question = $survey->questions->firstWhere('question_key', $key);
+
+            return $question instanceof SurveyQuestion
+                && $question->type === SurveyQuestion::TYPE_MULTIPLE_CHOICE
+                && (bool) $question->is_required
+                && (int) data_get($question->settings, 'max_selections') === $max;
+        });
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function missingLecturerScoring(Survey $lecturer): array
+    {
+        return $lecturer->questions
+            ->filter(fn (SurveyQuestion $question): bool => $question->type === SurveyQuestion::TYPE_LIKERT && $question->question_key !== 'L_F6')
+            ->reject(fn (SurveyQuestion $question): bool => $question->scoring !== null && $question->scoring->is_scored)
+            ->pluck('question_key')
+            ->values()
+            ->all();
+    }
+
+    private function descriptiveRiskValid(Survey $survey, string $key): bool
+    {
+        $question = $survey->questions->firstWhere('question_key', $key);
+
+        return $question instanceof SurveyQuestion
+            && $question->scoring !== null
+            && ! $question->scoring->is_scored
+            && (bool) data_get($question->scoring->settings, 'risk_item')
+            && (bool) data_get($question->scoring->settings, 'not_positive_readiness');
+    }
+
+    private function openEndedNotScored(Survey $survey, string $prefix): bool
+    {
+        return $survey->questions
+            ->filter(fn (SurveyQuestion $question): bool => str_starts_with((string) $question->question_key, $prefix))
+            ->every(fn (SurveyQuestion $question): bool => $question->scoring === null || ! $question->scoring->is_scored);
+    }
+
+    private function longTextNotScored(Survey $survey): bool
+    {
+        return $survey->questions
+            ->filter(fn (SurveyQuestion $question): bool => $question->type === SurveyQuestion::TYPE_LONG_TEXT)
+            ->every(fn (SurveyQuestion $question): bool => $question->scoring === null || ! $question->scoring->is_scored);
+    }
+
+    private function descriptiveIndicatorsLinked(Survey $survey): bool
+    {
+        $visibleQuestions = $survey->questions->filter(fn (SurveyQuestion $question): bool => $question->type !== SurveyQuestion::TYPE_HIDDEN);
+
+        return $survey->indicators->count() >= 7
+            && $visibleQuestions->isNotEmpty()
+            && $visibleQuestions->every(fn (SurveyQuestion $question): bool => $question->scoring !== null
+                && $question->scoring->indicator !== null
+                && ! $question->scoring->is_scored);
+    }
+
+    /**
+     * @param  array<int, string>  $keys
+     */
+    private function requiredKeysPresent(Survey $survey, array $keys): bool
+    {
+        return collect($keys)->every(function (string $key) use ($survey): bool {
+            $question = $survey->questions->firstWhere('question_key', $key);
+
+            return $question instanceof SurveyQuestion && (bool) $question->is_required;
+        });
     }
 
     private function target(array $collection, string $sourceType): ?array

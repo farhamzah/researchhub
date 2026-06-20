@@ -140,6 +140,38 @@ class AdminSurveyAnalysisController extends Controller
             ->with('status', 'practitioner-interview-form-ready');
     }
 
+    public function createMissingAnalysisInstruments(
+        Survey $survey,
+        Request $request,
+        CreateLecturerNeedsAnalysisQuestionnaireAction $createLecturerQuestionnaire,
+        CreatePractitionerInterviewFormAction $createPractitionerInterview,
+    ): RedirectResponse {
+        Gate::authorize('runAnalysis', $survey);
+
+        $createLecturerQuestionnaire->handle($request->user(), $survey, $request);
+        $createPractitionerInterview->handle($request->user(), $survey, $request);
+
+        return redirect()
+            ->route('admin.surveys.analysis.index', ['survey' => $survey])
+            ->with('status', 'analysis-instruments-ready');
+    }
+
+    public function fillMissingAnalysisInstruments(
+        Survey $survey,
+        Request $request,
+        CreateLecturerNeedsAnalysisQuestionnaireAction $createLecturerQuestionnaire,
+        CreatePractitionerInterviewFormAction $createPractitionerInterview,
+    ): RedirectResponse {
+        Gate::authorize('runAnalysis', $survey);
+
+        $createLecturerQuestionnaire->handle($request->user(), $survey, $request);
+        $createPractitionerInterview->handle($request->user(), $survey, $request);
+
+        return redirect()
+            ->route('admin.surveys.analysis.index', ['survey' => $survey])
+            ->with('status', 'analysis-instruments-filled');
+    }
+
     public function report(Survey $survey, AddieAnalysisDashboardService $dashboardService): View
     {
         Gate::authorize('runAnalysis', $survey);

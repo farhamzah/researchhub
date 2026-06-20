@@ -190,6 +190,10 @@ Route::middleware('auth')->group(function (): void {
         ->name('admin.surveys.analysis.create-lecturer-questionnaire');
     Route::post('/admin/surveys/{survey}/analysis/create-practitioner-interview', [AdminSurveyAnalysisController::class, 'createPractitionerInterviewForm'])
         ->name('admin.surveys.analysis.create-practitioner-interview');
+    Route::post('/admin/surveys/{survey}/analysis/create-missing-instruments', [AdminSurveyAnalysisController::class, 'createMissingAnalysisInstruments'])
+        ->name('admin.surveys.analysis.create-missing-instruments');
+    Route::post('/admin/surveys/{survey}/analysis/fill-missing-instruments', [AdminSurveyAnalysisController::class, 'fillMissingAnalysisInstruments'])
+        ->name('admin.surveys.analysis.fill-missing-instruments');
     Route::get('/admin/analysis/results/{analysisResult}', [AdminSurveyAnalysisController::class, 'show'])
         ->name('admin.analysis.results.show');
     Route::get('/admin/analysis/{analysisResult}/export/csv', [AdminAnalysisExportController::class, 'csv'])
@@ -229,6 +233,10 @@ Route::middleware('auth')->group(function (): void {
         ->name('admin.surveys.builder.templates.pharmvr-student-needs.fill-missing');
     Route::post('/admin/surveys/{survey}/builder/templates/pharmvr-student-needs/normalize', [AdminSurveyBuilderController::class, 'normalizePharmVrStudentNeedsTemplate'])
         ->name('admin.surveys.builder.templates.pharmvr-student-needs.normalize');
+    Route::post('/admin/surveys/{survey}/builder/templates/lecturer-analysis/normalize', [AdminSurveyBuilderController::class, 'normalizeLecturerAnalysisInstrument'])
+        ->name('admin.surveys.builder.templates.lecturer-analysis.normalize');
+    Route::post('/admin/surveys/{survey}/builder/templates/practitioner-interview/normalize', [AdminSurveyBuilderController::class, 'normalizePractitionerInterviewInstrument'])
+        ->name('admin.surveys.builder.templates.practitioner-interview.normalize');
     Route::post('/admin/surveys/{survey}/builder/pages', [AdminSurveyBuilderController::class, 'storePage'])
         ->name('admin.surveys.builder.pages.store');
     Route::put('/admin/surveys/{survey}/builder/pages/{page}', [AdminSurveyBuilderController::class, 'updatePage'])

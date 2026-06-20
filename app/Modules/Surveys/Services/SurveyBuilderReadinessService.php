@@ -40,12 +40,13 @@ class SurveyBuilderReadinessService
     {
         $questions = $survey->questions;
         $scoredQuestions = $questions->filter(fn (SurveyQuestion $question): bool => (bool) $question->scoring?->is_scored);
+        $isQualitativeInterview = $survey->instrument_type === Survey::INSTRUMENT_PRACTITIONER_INTERVIEW;
 
         return [
             ['label' => 'Setup Survey', 'anchor' => 'setup-survey', 'status' => filled($survey->title) && filled($survey->description) ? 'Siap' : 'Perlu dilengkapi'],
             ['label' => 'Indikator', 'anchor' => 'indikator', 'status' => $survey->indicators->isNotEmpty() ? 'Siap' : 'Belum ada'],
             ['label' => 'Pertanyaan', 'anchor' => 'pertanyaan', 'status' => $questions->isNotEmpty() ? $questions->count().' item' : 'Belum ada'],
-            ['label' => 'Skoring', 'anchor' => 'skoring', 'status' => $scoredQuestions->isNotEmpty() && $scoredQuestions->every(fn (SurveyQuestion $question): bool => $question->scoring?->indicator !== null) ? 'Siap' : 'Perlu perhatian'],
+            ['label' => 'Skoring', 'anchor' => 'skoring', 'status' => $isQualitativeInterview ? 'Deskriptif' : ($scoredQuestions->isNotEmpty() && $scoredQuestions->every(fn (SurveyQuestion $question): bool => $question->scoring?->indicator !== null) ? 'Siap' : 'Perlu perhatian')],
             ['label' => 'Preview', 'anchor' => 'preview', 'status' => $questions->isNotEmpty() ? 'Tersedia' : 'Kosong'],
             ['label' => 'Validasi Ahli', 'anchor' => 'validasi-ahli', 'status' => $round ? 'Ada ronde' : 'Belum ada'],
             ['label' => 'Respons & Analisis', 'anchor' => 'respons-analisis', 'status' => $analysis ? 'Ada hasil' : 'Belum dianalisis'],
@@ -117,13 +118,7 @@ class SurveyBuilderReadinessService
      */
     private function scoring(Survey $survey): array
     {
-        $scoreableTypes = [
-            SurveyQuestion::TYPE_SINGLE_CHOICE,
-            SurveyQuestion::TYPE_MULTIPLE_CHOICE,
-            SurveyQuestion::TYPE_LIKERT,
-            SurveyQuestion::TYPE_NUMBER,
-        ];
-
+        $isQualitativeInterview = $survey->instrument_type === Survey::INSTRUMENT_PRACTITIONER_INTERVIEW;
         $rows = $survey->questions
             ->values()
             ->map(function (SurveyQuestion $question): array {
@@ -150,6 +145,10 @@ class SurveyBuilderReadinessService
             'missing' => $rows->whereIn('status', ['Missing indicator', 'Missing scale/range'])->count(),
             'indicators_used' => $rows->pluck('indicator')->filter()->unique()->count(),
             'rows' => $rows->all(),
+            'mode' => $isQualitativeInterview ? 'qualitative_descriptive' : 'scoring',
+            'guidance' => $isQualitativeInterview
+                ? 'This interview form is qualitative; descriptive indicators are used for thematic analysis, synthesis matrix evidence, and supervisor review. Numeric scoring is not required by default.'
+                : 'Ringkasan konfigurasi skoring untuk pertanyaan yang bisa dinilai.',
         ];
     }
 
@@ -229,8 +228,10 @@ class SurveyBuilderReadinessService
             ['label' => 'Survey has title', 'complete' => filled($survey->title)],
             ['label' => 'Survey has description', 'complete' => filled($survey->description)],
             ['label' => 'Survey has questions', 'complete' => $survey->questions->isNotEmpty()],
-            ['label' => 'Likert questions have options', 'complete' => $likertQuestions->isNotEmpty() && $likertQuestions->every(fn (SurveyQuestion $question): bool => $this->optionCount($question) > 0)],
-            ['label' => 'Scored questions have scoring', 'complete' => $scoredQuestions->isNotEmpty() && $scoredQuestions->every(fn (SurveyQuestion $question): bool => $question->scoring?->indicator !== null)],
+            ['label' => 'Likert questions have options', 'complete' => $likertQuestions->isEmpty() || $likertQuestions->every(fn (SurveyQuestion $question): bool => $this->optionCount($question) > 0)],
+            ['label' => $survey->instrument_type === Survey::INSTRUMENT_PRACTITIONER_INTERVIEW ? 'Descriptive indicators are linked' : 'Scored questions have scoring', 'complete' => $survey->instrument_type === Survey::INSTRUMENT_PRACTITIONER_INTERVIEW
+                ? $survey->questions->every(fn (SurveyQuestion $question): bool => $question->type === SurveyQuestion::TYPE_HIDDEN || $question->scoring?->indicator !== null)
+                : ($scoredQuestions->isEmpty() || $scoredQuestions->every(fn (SurveyQuestion $question): bool => $question->scoring?->indicator !== null))],
             ['label' => 'Indicators exist', 'complete' => $survey->indicators->isNotEmpty()],
             ['label' => 'Validator round exists', 'complete' => (bool) $round],
             ['label' => 'Submitted validation exists', 'complete' => $submittedAssignments instanceof Collection && $submittedAssignments->isNotEmpty()],

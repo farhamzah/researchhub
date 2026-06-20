@@ -39,11 +39,12 @@ class LecturerPractitionerAnalysisInstrumentTest extends TestCase
         $this->assertSame(8, $lecturerSurvey->pages()->count());
         $this->assertDatabaseHas('survey_questions', [
             'survey_id' => $lecturerSurvey->id,
-            'label' => 'CPOB/GMP perlu diajarkan secara kontekstual.',
+            'question_key' => 'L_C1',
+            'label' => 'Saya telah mengajarkan atau mendampingi pembelajaran yang berkaitan dengan CPOB/GMP atau farmasi industri.',
         ]);
         $this->assertDatabaseHas('survey_questions', [
             'survey_id' => $lecturerSurvey->id,
-            'label' => 'Prioritas Scene PharmVR',
+            'question_key' => 'L_G1',
             'type' => SurveyQuestion::TYPE_MULTIPLE_CHOICE,
         ]);
 
@@ -68,17 +69,18 @@ class LecturerPractitionerAnalysisInstrumentTest extends TestCase
 
         $this->assertSame($mainSurvey->id, $form->parent_survey_id);
         $this->assertSame('Pengantar Wawancara Praktisi/Ahli CPOB PharmVR', $form->intro_title);
-        $this->assertStringContainsString('inisial', $form->privacy_statement);
+        $this->assertStringContainsString('disamarkan', $form->privacy_statement);
         $this->assertTrue($form->require_consent_before_start);
-        $this->assertSame(3, $form->pages()->count());
+        $this->assertSame(6, $form->pages()->count());
         $this->assertDatabaseHas('survey_questions', [
             'survey_id' => $form->id,
-            'label' => 'Tema utama hasil wawancara',
+            'question_key' => 'P_C1',
             'type' => SurveyQuestion::TYPE_MULTIPLE_CHOICE,
         ]);
         $this->assertDatabaseHas('survey_questions', [
             'survey_id' => $form->id,
-            'label' => 'Apa risiko jika simulasi VR CPOB/GMP dibuat tidak sesuai praktik industri?',
+            'question_key' => 'P_D1',
+            'label' => 'Bagian mana dari simulasi farmasi industri yang paling berisiko menimbulkan miskonsepsi jika divisualisasikan secara tidak tepat?',
         ]);
 
         $this->actingAs($owner)
@@ -126,17 +128,17 @@ class LecturerPractitionerAnalysisInstrumentTest extends TestCase
         $this->actingAs($owner)
             ->get(route('admin.surveys.builder.index', ['survey' => $lecturerSurvey]))
             ->assertOk()
-            ->assertSeeText('Kuesioner Analisis Kebutuhan Dosen PharmVR');
+            ->assertSeeText('Kuesioner Analisis Kebutuhan Dosen terhadap Media Pembelajaran Virtual Reality');
 
         $this->get(route('survey.show', ['survey' => $lecturerSurvey->fresh()->slug]))
             ->assertOk()
-            ->assertSeeText('Kuesioner Analisis Kebutuhan Dosen PharmVR')
+            ->assertSeeText('Kuesioner Analisis Kebutuhan Dosen terhadap Media Pembelajaran Virtual Reality')
             ->assertSeeText('Pengantar Kuesioner Analisis Kebutuhan Dosen PharmVR')
             ->assertSeeText('Saya telah membaca penjelasan di atas dan bersedia melanjutkan.');
 
         $this->get(route('survey.show', ['survey' => $practitionerSurvey->fresh()->slug]))
             ->assertOk()
-            ->assertSeeText('Pedoman Wawancara Praktisi/Ahli CPOB PharmVR')
+            ->assertSeeText('Pedoman Wawancara Praktisi/Ahli CPOB untuk Analisis Kebutuhan PharmVR')
             ->assertSeeText('Pengantar Wawancara Praktisi/Ahli CPOB PharmVR');
     }
 
@@ -150,14 +152,14 @@ class LecturerPractitionerAnalysisInstrumentTest extends TestCase
         $practitionerSurvey = Survey::query()->where('instrument_type', Survey::INSTRUMENT_PRACTITIONER_INTERVIEW)->firstOrFail();
 
         $this->response($lecturerSurvey, [
-            'lecturer_content_need_2' => 5,
-            'lecturer_assessment_need_6' => 5,
-            'lecturer_priority_scenes' => ['Gowning', 'Weighing'],
+            'L_E2' => 5,
+            'L_D4' => 5,
+            'L_G1' => ['Hygiene dan gowning', 'Weighing'],
         ]);
         $this->response($practitionerSurvey, [
-            'interview_theme_codes' => ['Risiko miskonsepsi', 'Dokumentasi', 'Weighing'],
-            'interview_misconception_risk' => 'Risiko utama adalah mahasiswa salah memahami alur dokumentasi dan status label.',
-            'interview_weighing_requirements' => 'Weighing harus menampilkan status label, logbook, dan verifikasi material.',
+            'P_C1' => ['Hygiene dan gowning', 'Weighing'],
+            'P_D1' => 'Risiko utama adalah mahasiswa salah memahami alur dokumentasi dan status label.',
+            'P_C3' => 'Weighing harus menampilkan status label, logbook, dan verifikasi material.',
         ]);
 
         $this->actingAs($owner)
@@ -171,6 +173,12 @@ class LecturerPractitionerAnalysisInstrumentTest extends TestCase
         $this->assertDatabaseHas('analysis_synthesis_items', [
             'survey_id' => $mainSurvey->id,
             'source_type' => AnalysisSynthesisItem::SOURCE_PRACTITIONER_INTERVIEW,
+        ]);
+        $this->assertDatabaseHas('analysis_synthesis_items', [
+            'survey_id' => $mainSurvey->id,
+            'source_type' => AnalysisSynthesisItem::SOURCE_PRACTITIONER_INTERVIEW,
+            'theme' => AnalysisSynthesisItem::THEME_SCENE_PRIORITY,
+            'finding' => 'Praktisi memprioritaskan Hygiene dan gowning dalam rancangan PharmVR.',
         ]);
     }
 

@@ -110,6 +110,16 @@
                         <h2 class="mt-1 text-xl font-semibold">Triangulasi Instrumen Analysis PharmVR</h2>
                         <p class="mt-1 text-sm text-slate-600">Gunakan survey mahasiswa, kuesioner dosen, dan wawancara praktisi untuk memperkuat evidence sebelum tahap Design.</p>
                     </div>
+                    <div class="flex flex-wrap gap-2">
+                        <form method="POST" action="{{ route('admin.surveys.analysis.create-missing-instruments', ['survey' => $survey]) }}">
+                            @csrf
+                            <button type="submit" class="rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-600">Create Missing Analysis Instruments</button>
+                        </form>
+                        <form method="POST" action="{{ route('admin.surveys.analysis.fill-missing-instruments', ['survey' => $survey]) }}">
+                            @csrf
+                            <button type="submit" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">Fill Missing Analysis Instruments</button>
+                        </form>
+                    </div>
                 </div>
                 <div class="mt-5 grid gap-4 lg:grid-cols-3">
                     @foreach ($dashboard['analysis_instruments'] as $instrumentKey => $instrument)

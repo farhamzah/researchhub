@@ -468,24 +468,37 @@
                         <p class="mt-1 text-sm leading-6 text-blue-900">Preview before import. Imports are transactional and duplicate question keys stop the whole import.</p>
                     </div>
                     <div class="flex flex-wrap gap-2">
-                        <form method="POST" action="{{ route('admin.surveys.builder.templates.pharmvr-student-needs.fill-missing', ['survey' => $survey]) }}">
-                            @csrf
-                            <button type="submit" @disabled($hasResponses) onclick="return confirm('Fill only missing PharmVR sections? Existing question keys will not be overwritten.')" class="rounded-md border border-blue-300 bg-white px-4 py-2 text-sm font-semibold text-blue-900 shadow-sm hover:bg-blue-100 disabled:bg-slate-300">Fill Missing PharmVR Sections</button>
-                        </form>
-                        <form method="POST" action="{{ route('admin.surveys.builder.templates.pharmvr-student-needs.normalize', ['survey' => $survey]) }}">
-                            @csrf
-                            <button type="submit" @disabled($hasResponses || $pharmVrNormalizationPreview['change_count'] === 0) onclick="return confirm('Normalize existing PharmVR wording? This only runs when the survey has zero responses and will preserve question IDs.')" class="rounded-md border border-emerald-300 bg-white px-4 py-2 text-sm font-semibold text-emerald-900 shadow-sm hover:bg-emerald-50 disabled:bg-slate-300">Normalize PharmVR Student Survey Wording</button>
-                        </form>
-                        <form method="POST" action="{{ route('admin.surveys.builder.templates.pharmvr-student-needs', ['survey' => $survey]) }}">
-                            @csrf
-                            <button type="submit" @disabled($hasResponses) onclick="return confirm('{{ $survey->questions->isNotEmpty() ? 'This survey already has questions. Creating the full template will be blocked if duplicate keys are found. Continue?' : 'Create the full PharmVR Student Needs Survey template in this survey?' }}')" class="rounded-md bg-blue-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:bg-slate-300">Create PharmVR Student Needs Survey</button>
-                        </form>
+                        @if ($templateActionScope === 'student')
+                            <form method="POST" action="{{ route('admin.surveys.builder.templates.pharmvr-student-needs.fill-missing', ['survey' => $survey]) }}">
+                                @csrf
+                                <button type="submit" @disabled($hasResponses) onclick="return confirm('Fill only missing PharmVR student sections? Existing question keys will not be overwritten.')" class="rounded-md border border-blue-300 bg-white px-4 py-2 text-sm font-semibold text-blue-900 shadow-sm hover:bg-blue-100 disabled:bg-slate-300">Fill Missing Student Sections</button>
+                            </form>
+                            <form method="POST" action="{{ route('admin.surveys.builder.templates.pharmvr-student-needs.normalize', ['survey' => $survey]) }}">
+                                @csrf
+                                <button type="submit" @disabled($hasResponses || ($pharmVrNormalizationPreview['change_count'] ?? 0) === 0) onclick="return confirm('Normalize existing PharmVR student wording? This only runs when the survey has zero responses and will preserve question IDs.')" class="rounded-md border border-emerald-300 bg-white px-4 py-2 text-sm font-semibold text-emerald-900 shadow-sm hover:bg-emerald-50 disabled:bg-slate-300">Normalize Student Survey Wording</button>
+                            </form>
+                            <form method="POST" action="{{ route('admin.surveys.builder.templates.pharmvr-student-needs', ['survey' => $survey]) }}">
+                                @csrf
+                                <button type="submit" @disabled($hasResponses) onclick="return confirm('{{ $survey->questions->isNotEmpty() ? 'This survey already has questions. Creating the full template will be blocked if duplicate keys are found. Continue?' : 'Create the full PharmVR Student Needs Survey template in this survey?' }}')" class="rounded-md bg-blue-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:bg-slate-300">Create PharmVR Student Needs Survey</button>
+                            </form>
+                        @elseif ($templateActionScope === 'lecturer')
+                            <form method="POST" action="{{ route('admin.surveys.builder.templates.lecturer-analysis.normalize', ['survey' => $survey]) }}">
+                                @csrf
+                                <button type="submit" @disabled($hasRealResponses) onclick="return confirm('Fill missing and normalize Lecturer Questionnaire indicators/scoring? Existing edited text is preserved and structural changes are blocked when real responses exist.')" class="rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-600 disabled:bg-slate-300">Normalize Lecturer Instrument</button>
+                            </form>
+                        @elseif ($templateActionScope === 'practitioner')
+                            <form method="POST" action="{{ route('admin.surveys.builder.templates.practitioner-interview.normalize', ['survey' => $survey]) }}">
+                                @csrf
+                                <button type="submit" @disabled($hasRealResponses) onclick="return confirm('Fill missing and normalize Practitioner Interview descriptive indicators? Existing edited text is preserved and structural changes are blocked when real responses exist.')" class="rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-600 disabled:bg-slate-300">Normalize Practitioner Interview Form</button>
+                            </form>
+                        @endif
                     </div>
                 </div>
 
+                @if ($templateActionScope === 'student')
                 <div class="mt-4 grid gap-3 md:grid-cols-3">
                     <div class="rounded-md border border-blue-100 bg-white p-3">
-                        <p class="text-xs font-semibold uppercase tracking-wide text-blue-700">PharmVR template keys</p>
+                        <p class="text-xs font-semibold uppercase tracking-wide text-blue-700">PharmVR student template keys</p>
                         <p class="mt-1 text-sm text-blue-950">{{ $pharmVrTemplatePreview['existing_count'] }} existing / {{ $pharmVrTemplatePreview['template_count'] }} total</p>
                     </div>
                     <div class="rounded-md border border-emerald-100 bg-white p-3">
@@ -526,6 +539,15 @@
                         <p class="mt-3 truncate text-xs text-amber-800" title="{{ implode(', ', $pharmVrNormalizationPreview['missing_keys']) }}">Missing approved keys: {{ implode(', ', $pharmVrNormalizationPreview['missing_keys']) }}</p>
                     @endif
                 </div>
+                @elseif ($templateActionScope === 'lecturer')
+                    <div class="mt-4 rounded-md border border-emerald-100 bg-white p-4 text-sm leading-6 text-emerald-950">
+                        Lecturer Questionnaire uses Likert scoring for scoreable items, descriptive priority choices, and open-ended feedback. This action fills missing approved lecturer keys and repairs indicator/scoring links without importing student questionnaire keys.
+                    </div>
+                @elseif ($templateActionScope === 'practitioner')
+                    <div class="mt-4 rounded-md border border-emerald-100 bg-white p-4 text-sm leading-6 text-emerald-950">
+                        Practitioner/Ahli CPOB Interview Form is qualitative. Descriptive indicators are used for thematic analysis and synthesis matrix evidence; numeric scoring is not required by default.
+                    </div>
+                @endif
 
                 <form method="POST" action="{{ route('admin.surveys.builder.bulk-questions.preview', ['survey' => $survey]) }}" class="mt-5 space-y-4">
                     @csrf
@@ -708,7 +730,7 @@
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Skoring</p>
                     <h2 class="mt-1 text-xl font-semibold">Scoring readiness</h2>
-                    <p class="mt-1 text-sm text-slate-600">Ringkasan konfigurasi skoring untuk pertanyaan yang bisa dinilai.</p>
+                    <p class="mt-1 text-sm text-slate-600">{{ $builderWizard['scoring']['guidance'] ?? 'Ringkasan konfigurasi skoring untuk pertanyaan yang bisa dinilai.' }}</p>
                 </div>
                 <a href="{{ route('admin.surveys.scoring.index', ['survey' => $survey]) }}" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">
                     Open Scoring

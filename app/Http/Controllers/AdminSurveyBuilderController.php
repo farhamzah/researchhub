@@ -7,6 +7,8 @@ use App\Models\SurveyPage;
 use App\Models\SurveyQuestion;
 use App\Models\SurveyValidationRound;
 use App\Modules\AcademicOutputs\Services\AcademicNarrativeService;
+use App\Modules\Surveys\Actions\CreateLecturerNeedsAnalysisQuestionnaireAction;
+use App\Modules\Surveys\Actions\CreatePractitionerInterviewFormAction;
 use App\Modules\Surveys\Actions\CreateSurveyPageAction;
 use App\Modules\Surveys\Actions\CreateSurveyQuestionAction;
 use App\Modules\Surveys\Actions\DeleteSurveyPageAction;
@@ -45,7 +47,10 @@ class AdminSurveyBuilderController extends Controller
             'validationRounds.assignments.scores',
             'analysisResults',
             'responses:id,survey_id,status,submitted_at',
-        ])->loadCount('responses');
+        ])->loadCount([
+            'responses',
+            'responses as real_responses_count' => fn ($query) => $query->official(),
+        ]);
 
         $latestValidationRound = $survey->validationRounds
             ->sortByDesc('created_at')
@@ -61,10 +66,12 @@ class AdminSurveyBuilderController extends Controller
                     : 'Ringkasan validasi ahli belum tersedia karena survey ini belum memiliki putaran validasi.',
                 'surveyAnalysis' => $academicNarratives->surveyAnalysisSummary($survey),
             ],
-            'pharmVrTemplatePreview' => $pharmVrTemplate->previewMissing($survey),
-            'pharmVrNormalizationPreview' => $pharmVrTemplate->previewNormalization($survey),
+            'pharmVrTemplatePreview' => $this->showsStudentTemplateActions($survey) ? $pharmVrTemplate->previewMissing($survey) : null,
+            'pharmVrNormalizationPreview' => $this->showsStudentTemplateActions($survey) ? $pharmVrTemplate->previewNormalization($survey) : null,
+            'templateActionScope' => $this->templateActionScope($survey),
             'questionTypes' => config('researchhub_surveys.question_types', []),
             'hasResponses' => $survey->responses_count > 0,
+            'hasRealResponses' => $survey->real_responses_count > 0,
             'optionQuestionTypes' => [
                 SurveyQuestion::TYPE_SINGLE_CHOICE,
                 SurveyQuestion::TYPE_MULTIPLE_CHOICE,
@@ -210,6 +217,36 @@ class AdminSurveyBuilderController extends Controller
         return redirect()
             ->route('admin.surveys.builder.index', ['survey' => $survey])
             ->with('status', 'survey-pharmvr-template-normalized-'.$result['questions']);
+    }
+
+    public function normalizeLecturerAnalysisInstrument(
+        Survey $survey,
+        Request $request,
+        CreateLecturerNeedsAnalysisQuestionnaireAction $normalizeLecturer,
+    ): RedirectResponse {
+        Gate::authorize('update', $survey);
+        abort_unless($survey->instrument_type === Survey::INSTRUMENT_ANALYSIS_LECTURER && $survey->parentSurvey, 404);
+
+        $normalizeLecturer->handle($request->user(), $survey->parentSurvey, $request);
+
+        return redirect()
+            ->route('admin.surveys.builder.index', ['survey' => $survey])
+            ->with('status', 'lecturer-instrument-normalized');
+    }
+
+    public function normalizePractitionerInterviewInstrument(
+        Survey $survey,
+        Request $request,
+        CreatePractitionerInterviewFormAction $normalizePractitioner,
+    ): RedirectResponse {
+        Gate::authorize('update', $survey);
+        abort_unless($survey->instrument_type === Survey::INSTRUMENT_PRACTITIONER_INTERVIEW && $survey->parentSurvey, 404);
+
+        $normalizePractitioner->handle($request->user(), $survey->parentSurvey, $request);
+
+        return redirect()
+            ->route('admin.surveys.builder.index', ['survey' => $survey])
+            ->with('status', 'practitioner-interview-normalized');
     }
 
     public function updatePage(Survey $survey, SurveyPage $page, Request $request, UpdateSurveyPageAction $updatePage): RedirectResponse
@@ -435,5 +472,19 @@ class AdminSurveyBuilderController extends Controller
         }
 
         return is_array($decoded) && ! array_is_list($decoded) ? $decoded : [];
+    }
+
+    private function showsStudentTemplateActions(Survey $survey): bool
+    {
+        return in_array($survey->instrument_type, [null, Survey::INSTRUMENT_OTHER, Survey::INSTRUMENT_ANALYSIS_STUDENT], true);
+    }
+
+    private function templateActionScope(Survey $survey): string
+    {
+        return match ($survey->instrument_type) {
+            Survey::INSTRUMENT_ANALYSIS_LECTURER => 'lecturer',
+            Survey::INSTRUMENT_PRACTITIONER_INTERVIEW => 'practitioner',
+            default => $this->showsStudentTemplateActions($survey) ? 'student' : 'generic',
+        };
     }
 }

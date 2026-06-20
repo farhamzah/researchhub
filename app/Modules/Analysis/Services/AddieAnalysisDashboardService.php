@@ -607,18 +607,22 @@ class AddieAnalysisDashboardService
         foreach ($summary as $row) {
             $label = Str::lower($row['label']);
 
-            if (($row['type'] ?? null) === SurveyQuestion::TYPE_MULTIPLE_CHOICE && $this->matches($label, ['tema utama'])) {
+            if (($row['type'] ?? null) === SurveyQuestion::TYPE_MULTIPLE_CHOICE && $this->matches($label, ['scene', 'fitur', 'tema utama'])) {
+                $theme = $this->matches($label, ['fitur'])
+                    ? AnalysisSynthesisItem::THEME_FEATURE_PRIORITY
+                    : AnalysisSynthesisItem::THEME_SCENE_PRIORITY;
+
                 foreach (array_slice($this->frequencyRows($row), 0, 8) as $frequency) {
                     $drafts[] = [
                         'source_type' => AnalysisSynthesisItem::SOURCE_PRACTITIONER_INTERVIEW,
                         'source_label' => $instrument->title,
-                        'theme' => $this->matches(Str::lower((string) $frequency['label']), ['risiko', 'miskonsepsi']) ? AnalysisSynthesisItem::THEME_DEVELOPMENT_RISK : AnalysisSynthesisItem::THEME_CPOB_CONTENT_NEED,
-                        'finding' => 'Praktisi menekankan tema '.$frequency['label'].' dalam rancangan PharmVR.',
+                        'theme' => $theme,
+                        'finding' => 'Praktisi memprioritaskan '.$frequency['label'].' dalam rancangan PharmVR.',
                         'evidence_summary' => $frequency['question'],
                         'evidence_metric' => $frequency['count'].' coded / '.number_format($frequency['percentage'], 2).'%',
                         'priority_level' => AnalysisSynthesisItem::PRIORITY_HIGH,
-                        'design_implication' => 'Tema praktisi ini perlu dipakai untuk menjaga akurasi dan relevansi industri.',
-                        'development_decision' => 'Gunakan tema ini sebagai checklist validasi scene dan konten.',
+                        'design_implication' => 'Prioritas praktisi ini perlu dipakai untuk menjaga akurasi dan relevansi industri.',
+                        'development_decision' => 'Gunakan prioritas ini sebagai checklist validasi scene, fitur, dan konten.',
                         'mapped_module' => $this->mappedModule((string) $frequency['label']),
                     ];
                 }

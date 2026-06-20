@@ -54,6 +54,22 @@ class AcademicNarrativeService
             return 'Instrumen survey '.$survey->title.' belum memiliki butir pertanyaan yang cukup untuk disusun sebagai ringkasan akademik. Lengkapi indikator, skala, dan butir pertanyaan sebelum digunakan untuk validasi atau pengambilan data.';
         }
 
+        if ($survey->instrument_type === Survey::INSTRUMENT_PRACTITIONER_INTERVIEW) {
+            return sprintf(
+                'Pedoman Wawancara Praktisi/Ahli CPOB PharmVR merupakan instrumen kualitatif terstruktur untuk menggali akurasi konten CPOB/GMP, prioritas scene, risiko miskonsepsi, kebutuhan industri, dan rekomendasi desain PharmVR. Instrumen ini memuat %d butir pertanyaan dengan tema deskriptif %s. Instrumen ini tidak dirancang sebagai instrumen skor numerik, tetapi menggunakan indikator/tema deskriptif untuk memudahkan analisis tematik, supervisor review, dan penyusunan synthesis matrix.',
+                $questions->count(),
+                $this->series($indicators, 'indikator deskriptif belum tersedia'),
+            );
+        }
+
+        if ($survey->instrument_type === Survey::INSTRUMENT_ANALYSIS_LECTURER) {
+            return sprintf(
+                'Kuesioner Analisis Kebutuhan Dosen PharmVR merupakan instrumen campuran yang memuat item Likert, pilihan prioritas, dan pertanyaan terbuka untuk menggali kebutuhan pembelajaran CPOB/GMP dari perspektif dosen. Instrumen ini memiliki %d butir pertanyaan yang terhubung dengan indikator %s. Item Likert digunakan untuk ringkasan kuantitatif deskriptif, sedangkan pilihan prioritas dan masukan terbuka digunakan sebagai bukti deskriptif untuk synthesis matrix dan arahan desain PharmVR.',
+                $questions->count(),
+                $this->series($indicators, 'indikator belum tersedia'),
+            );
+        }
+
         return sprintf(
             'Instrumen survey %s disusun untuk project %s dengan %d butir pertanyaan yang dapat dibaca responden. Struktur instrumen memuat tipe pertanyaan %s dan saat ini terkait dengan %d indikator%s. Sebanyak %d butir telah memiliki konfigurasi skoring. Ringkasan ini bersifat deskriptif berdasarkan konfigurasi instrumen yang tersedia, sehingga kelayakan isi tetap perlu dikonfirmasi melalui validasi ahli dan arahan pembimbing/promotor.',
             $survey->title,

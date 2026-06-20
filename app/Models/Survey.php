@@ -187,6 +187,16 @@ class Survey extends Model
         return $this->hasMany(SurveyValidationRevision::class);
     }
 
+    public function supervisorReviewRounds(): HasMany
+    {
+        return $this->hasMany(SurveySupervisorReviewRound::class);
+    }
+
+    public function supervisorReviewRevisions(): HasMany
+    {
+        return $this->hasMany(SurveySupervisorReviewRevision::class);
+    }
+
     public function readabilityRounds(): HasMany
     {
         return $this->hasMany(SurveyReadabilityRound::class);

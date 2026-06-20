@@ -81,6 +81,9 @@
                     <a href="{{ route('admin.surveys.readability.index', ['survey' => $survey]) }}" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">
                         Readability Test
                     </a>
+                    <a href="{{ route('admin.surveys.supervisor-review.index', ['survey' => $survey]) }}" class="rounded-md border border-indigo-300 bg-white px-4 py-2 text-sm font-semibold text-indigo-800 shadow-sm hover:bg-indigo-50">
+                        Supervisor Review
+                    </a>
                     <a href="{{ route('admin.surveys.analysis.index', ['survey' => $survey]) }}" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">
                         Analysis Dashboard
                     </a>

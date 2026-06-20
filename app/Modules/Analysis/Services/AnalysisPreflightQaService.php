@@ -12,6 +12,8 @@ use App\Models\SurveyPage;
 use App\Models\SurveyQuestion;
 use App\Models\SurveyReadabilityParticipant;
 use App\Models\SurveyReadabilityRound;
+use App\Models\SurveySupervisorReviewer;
+use App\Models\SurveySupervisorReviewRevision;
 use App\Models\SurveyValidationAssignment;
 use App\Models\User;
 use App\Modules\Surveys\Services\SurveyDistributionCenterService;
@@ -58,6 +60,8 @@ class AnalysisPreflightQaService
             'pages.questions',
             'questions.scoring',
             'responses',
+            'supervisorReviewRounds.reviewers',
+            'supervisorReviewRounds.revisions',
             'validationRounds.assignments.validator',
             'readabilityRounds.participants.response',
             'distributionBatches.recipients',
@@ -74,6 +78,7 @@ class AnalysisPreflightQaService
             ->merge($this->lecturerChecks($survey, $instruments['lecturer']))
             ->merge($this->practitionerChecks($survey, $instruments['practitioner']))
             ->merge($this->publicLinkChecks($survey, $instruments))
+            ->merge($this->supervisorReviewChecks($survey))
             ->merge($this->validationChecks($survey, $collection))
             ->merge($this->readabilityChecks($survey, $collection))
             ->merge($this->distributionChecks($survey, $distribution))
@@ -437,6 +442,34 @@ class AnalysisPreflightQaService
     /**
      * @return array<int, array<string, mixed>>
      */
+    private function supervisorReviewChecks(Survey $survey): array
+    {
+        $rounds = $survey->supervisorReviewRounds;
+        $reviewers = $rounds->flatMap->reviewers;
+        $submitted = $reviewers->filter(fn (SurveySupervisorReviewer $reviewer): bool => $reviewer->isSubmitted());
+        $requiredReviewers = $reviewers->reject(fn (SurveySupervisorReviewer $reviewer): bool => $reviewer->isRevoked());
+        $revisions = $rounds->flatMap->revisions;
+        $responded = $revisions->filter(fn (SurveySupervisorReviewRevision $revision): bool => filled($revision->researcher_response) && filled($revision->action_taken));
+        $latestRound = $rounds->sortByDesc('created_at')->first();
+
+        $responsesComplete = $revisions->isNotEmpty()
+            && $responded->count() === $revisions->count()
+            && $revisions->every(fn (SurveySupervisorReviewRevision $revision): bool => $revision->status !== SurveySupervisorReviewRevision::STATUS_PENDING);
+
+        return [
+            $this->check('supervisor_review.workflow', 'Supervisor Review workflow exists', 'supervisor_review', 'critical', Route::has('admin.surveys.supervisor-review.index'), 'Supervisor Review route exists.', 'Restore Supervisor Review route.', null),
+            $this->check('supervisor_review.round', 'Supervisor review round exists', 'supervisor_review', 'critical', $rounds->isNotEmpty(), 'Supervisor review round exists.', 'Create a supervisor review round before expert validation.', route('admin.surveys.supervisor-review.index', ['survey' => $survey]), 'Open Supervisor Review'),
+            $this->check('supervisor_review.submitted', 'At least one supervisor submitted review', 'supervisor_review', 'critical', $submitted->isNotEmpty(), $submitted->count().' supervisor review(s) submitted.', 'Collect at least one submitted supervisor review.', route('admin.surveys.supervisor-review.index', ['survey' => $survey]), 'Open Supervisor Review'),
+            $this->check('supervisor_review.required_submitted', 'Required supervisor reviews submitted or documented', 'supervisor_review', 'warning', $requiredReviewers->isEmpty() || $requiredReviewers->every(fn (SurveySupervisorReviewer $reviewer): bool => $reviewer->isSubmitted() || $reviewer->status === SurveySupervisorReviewer::STATUS_NEEDS_FOLLOW_UP), 'Required supervisor review status is documented.', 'Submit pending supervisor reviews or mark follow-up status.', route('admin.surveys.supervisor-review.index', ['survey' => $survey]), 'Open Supervisor Review'),
+            $this->check('supervisor_review.revision_matrix', 'Revision matrix exists', 'supervisor_review', 'critical', $revisions->isNotEmpty(), 'Supervisor revision matrix exists.', 'Submit supervisor comments to generate revision matrix rows.', route('admin.surveys.supervisor-review.index', ['survey' => $survey]), 'Open Supervisor Review'),
+            $this->check('supervisor_review.researcher_response', 'Researcher response completed', 'supervisor_review', 'critical', $responsesComplete, 'Researcher responses and action taken are completed.', 'Fill researcher response, action taken, and status for every supervisor revision matrix row.', route('admin.surveys.supervisor-review.index', ['survey' => $survey]), 'Open Supervisor Review'),
+            $this->check('supervisor_review.ready_for_validation', 'Instrument ready for expert validation after supervisor review', 'supervisor_review', 'warning', $latestRound && in_array($latestRound->status, ['completed', 'closed'], true) && $responsesComplete, 'Supervisor review evidence is ready for expert validation.', 'Complete or close the supervisor review round after responses are addressed.', route('admin.surveys.supervisor-review.index', ['survey' => $survey]), 'Open Supervisor Review'),
+        ];
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     private function readabilityChecks(Survey $survey, array $collection): array
     {
         $rounds = $survey->readabilityRounds;
@@ -692,6 +725,7 @@ class AnalysisPreflightQaService
             self::SCOPE_STUDENT_QUESTIONNAIRE => 'Student Questionnaire',
             'lecturer_questionnaire' => 'Lecturer Questionnaire',
             'practitioner_interview' => 'Practitioner Interview',
+            'supervisor_review' => 'Supervisor Review',
             'expert_validation' => 'Expert Validation',
             'readability_test' => 'Readability Test',
             self::SCOPE_DISTRIBUTION => 'Distribution',
@@ -789,6 +823,7 @@ class AnalysisPreflightQaService
             'f6_risk_descriptive' => $this->studentRiskItemValid($survey),
             'public_access' => $survey->canReceiveResponses() ? 'enabled' : 'pending',
             'readability' => $survey->readabilityRounds->isNotEmpty() ? 'configured' : 'pending',
+            'supervisor_review' => $survey->supervisorReviewRounds->isNotEmpty() ? 'configured' : 'pending',
             'expert_validation' => $survey->validationRounds->isNotEmpty() ? 'configured' : 'pending',
         ];
     }
@@ -909,6 +944,7 @@ class AnalysisPreflightQaService
     {
         return [
             'Builder' => route('admin.surveys.builder.index', ['survey' => $survey]),
+            'Supervisor Review' => route('admin.surveys.supervisor-review.index', ['survey' => $survey]),
             'Validation' => route('admin.surveys.validation.index', ['survey' => $survey]),
             'Readability' => route('admin.surveys.readability.index', ['survey' => $survey]),
             'Analysis' => route('admin.surveys.analysis.index', ['survey' => $survey]),

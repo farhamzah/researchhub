@@ -73,6 +73,11 @@ class SurveyPolicy
         return $user->can('surveys.manage_validation') && $this->canManageSurvey($user, $survey);
     }
 
+    public function manageSupervisorReview(User $user, Survey $survey): bool
+    {
+        return $this->canManageSurvey($user, $survey);
+    }
+
     private function canManageSurvey(User $user, Survey $survey): bool
     {
         return $this->ownsSurveyProject($user, $survey)

@@ -19,10 +19,13 @@ use App\Http\Controllers\AdminSurveyRespondentPackageController;
 use App\Http\Controllers\AdminSurveyResponseController;
 use App\Http\Controllers\AdminSurveyResponseExportController;
 use App\Http\Controllers\AdminSurveyScoringController;
+use App\Http\Controllers\AdminSurveySupervisorReviewController;
+use App\Http\Controllers\AdminSurveySupervisorReviewReportController;
 use App\Http\Controllers\AdminSurveyValidationController;
 use App\Http\Controllers\AdminSurveyValidationReportController;
 use App\Http\Controllers\AdminSurveyValidationResultController;
 use App\Http\Controllers\PublicSupervisionReviewController;
+use App\Http\Controllers\PublicSupervisorInstrumentReviewController;
 use App\Http\Controllers\PublicSurveyController;
 use App\Http\Controllers\PublicSurveyReadabilityController;
 use App\Http\Controllers\PublicSurveyValidationController;
@@ -241,6 +244,23 @@ Route::middleware('auth')->group(function (): void {
     Route::post('/admin/surveys/{survey}/builder/questions/{question}/duplicate', [AdminSurveyBuilderController::class, 'duplicateQuestion'])
         ->name('admin.surveys.builder.questions.duplicate');
 
+    Route::get('/admin/surveys/{survey}/supervisor-review', [AdminSurveySupervisorReviewController::class, 'index'])
+        ->name('admin.surveys.supervisor-review.index');
+    Route::post('/admin/surveys/{survey}/supervisor-review/rounds', [AdminSurveySupervisorReviewController::class, 'storeRound'])
+        ->name('admin.surveys.supervisor-review.rounds.store');
+    Route::put('/admin/surveys/{survey}/supervisor-review/rounds/{round}', [AdminSurveySupervisorReviewController::class, 'updateRound'])
+        ->name('admin.surveys.supervisor-review.rounds.update');
+    Route::get('/admin/surveys/{survey}/supervisor-review/rounds/{round}/report', AdminSurveySupervisorReviewReportController::class)
+        ->name('admin.surveys.supervisor-review.report');
+    Route::post('/admin/surveys/{survey}/supervisor-review/rounds/{round}/reviewers', [AdminSurveySupervisorReviewController::class, 'storeReviewer'])
+        ->name('admin.surveys.supervisor-review.reviewers.store');
+    Route::post('/admin/surveys/{survey}/supervisor-review/reviewers/{reviewer}/generate-link', [AdminSurveySupervisorReviewController::class, 'generateLink'])
+        ->name('admin.surveys.supervisor-review.reviewers.generate-link');
+    Route::post('/admin/surveys/{survey}/supervisor-review/reviewers/{reviewer}/revoke-link', [AdminSurveySupervisorReviewController::class, 'revokeLink'])
+        ->name('admin.surveys.supervisor-review.reviewers.revoke-link');
+    Route::put('/admin/surveys/{survey}/supervisor-review/revisions/{revision}', [AdminSurveySupervisorReviewController::class, 'updateRevision'])
+        ->name('admin.surveys.supervisor-review.revisions.update');
+
     Route::get('/admin/surveys/{survey}/scoring', [AdminSurveyScoringController::class, 'index'])
         ->name('admin.surveys.scoring.index');
     Route::post('/admin/surveys/{survey}/scoring/scales', [AdminSurveyScoringController::class, 'storeScale'])
@@ -340,4 +360,8 @@ Route::middleware('throttle:review-links')->group(function (): void {
         ->name('supervision.review.show');
     Route::post('/supervision/review/{token}', [PublicSupervisionReviewController::class, 'store'])
         ->name('supervision.review.store');
+    Route::get('/supervisor-review/survey/{token}', [PublicSupervisorInstrumentReviewController::class, 'show'])
+        ->name('supervisor-review.survey.show');
+    Route::post('/supervisor-review/survey/{token}', [PublicSupervisorInstrumentReviewController::class, 'store'])
+        ->name('supervisor-review.survey.store');
 });

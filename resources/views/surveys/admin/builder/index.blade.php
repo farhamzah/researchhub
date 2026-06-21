@@ -475,7 +475,7 @@
                             </form>
                             <form method="POST" action="{{ route('admin.surveys.builder.templates.pharmvr-student-needs.normalize', ['survey' => $survey]) }}">
                                 @csrf
-                                <button type="submit" @disabled($hasResponses || ($pharmVrNormalizationPreview['change_count'] ?? 0) === 0) onclick="return confirm('Normalize existing PharmVR student wording? This only runs when the survey has zero responses and will preserve question IDs.')" class="rounded-md border border-emerald-300 bg-white px-4 py-2 text-sm font-semibold text-emerald-900 shadow-sm hover:bg-emerald-50 disabled:bg-slate-300">Normalize Student Survey Wording</button>
+                                <button type="submit" @disabled($hasRealResponses || ($pharmVrNormalizationPreview['change_count'] ?? 0) === 0) onclick="return confirm('Normalize Student Questionnaire order and settings? This is blocked when real responses exist, but pilot/test responses are preserved.')" class="rounded-md border border-emerald-300 bg-white px-4 py-2 text-sm font-semibold text-emerald-900 shadow-sm hover:bg-emerald-50 disabled:bg-slate-300">Normalize Student Questionnaire Order</button>
                             </form>
                             <form method="POST" action="{{ route('admin.surveys.builder.templates.pharmvr-student-needs', ['survey' => $survey]) }}">
                                 @csrf
@@ -484,12 +484,12 @@
                         @elseif ($templateActionScope === 'lecturer')
                             <form method="POST" action="{{ route('admin.surveys.builder.templates.lecturer-analysis.normalize', ['survey' => $survey]) }}">
                                 @csrf
-                                <button type="submit" @disabled($hasRealResponses) onclick="return confirm('Fill missing and normalize Lecturer Questionnaire indicators/scoring? Existing edited text is preserved and structural changes are blocked when real responses exist.')" class="rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-600 disabled:bg-slate-300">Normalize Lecturer Instrument</button>
+                                <button type="submit" @disabled($hasRealResponses) onclick="return confirm('Normalize Lecturer Questionnaire order, indicators, and scoring? Structural changes are blocked when real responses exist.')" class="rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-600 disabled:bg-slate-300">Normalize Lecturer Questionnaire Order</button>
                             </form>
                         @elseif ($templateActionScope === 'practitioner')
                             <form method="POST" action="{{ route('admin.surveys.builder.templates.practitioner-interview.normalize', ['survey' => $survey]) }}">
                                 @csrf
-                                <button type="submit" @disabled($hasRealResponses) onclick="return confirm('Fill missing and normalize Practitioner Interview descriptive indicators? Existing edited text is preserved and structural changes are blocked when real responses exist.')" class="rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-600 disabled:bg-slate-300">Normalize Practitioner Interview Form</button>
+                                <button type="submit" @disabled($hasRealResponses) onclick="return confirm('Normalize Practitioner Interview order and descriptive indicators? Structural changes are blocked when real responses exist.')" class="rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-600 disabled:bg-slate-300">Normalize Practitioner Interview Order</button>
                             </form>
                         @endif
                     </div>

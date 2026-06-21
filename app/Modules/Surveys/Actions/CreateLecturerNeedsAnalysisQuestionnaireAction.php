@@ -10,6 +10,7 @@ use App\Modules\Surveys\Support\SurveyIntroTemplates;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 
 class CreateLecturerNeedsAnalysisQuestionnaireAction
 {
@@ -76,16 +77,25 @@ class CreateLecturerNeedsAnalysisQuestionnaireAction
         $indicators = $this->ensureIndicators($survey);
 
         if ($this->hasRealResponses($survey)) {
-            return;
+            throw ValidationException::withMessages([
+                'template' => 'Normalization is blocked because this survey already has real responses.',
+            ]);
         }
+
+        $sortOrder = 0;
 
         foreach ($this->sections() as $pageIndex => $section) {
             $page = $survey->pages()->firstOrCreate(
                 ['title' => $section['title']],
                 ['description' => $section['description'] ?? null, 'sort_order' => $pageIndex + 1],
             );
+            $page->forceFill([
+                'description' => $section['description'] ?? $page->description,
+                'sort_order' => $pageIndex + 1,
+            ])->save();
 
-            foreach ($section['questions'] as $questionIndex => $definition) {
+            foreach ($section['questions'] as $definition) {
+                $sortOrder++;
                 $question = $survey->questions()->firstOrCreate(
                     ['question_key' => $definition['key']],
                     [
@@ -96,9 +106,19 @@ class CreateLecturerNeedsAnalysisQuestionnaireAction
                         'options' => $this->optionsFor($definition),
                         'settings' => $this->settingsFor($definition),
                         'is_required' => $definition['required'],
-                        'sort_order' => $questionIndex + 1,
+                        'sort_order' => $sortOrder,
                     ],
                 );
+                $question->forceFill([
+                    'page_id' => $page->getKey(),
+                    'type' => $definition['type'],
+                    'label' => $definition['label'],
+                    'help_text' => $definition['help_text'] ?? null,
+                    'options' => $this->optionsFor($definition),
+                    'settings' => $this->settingsFor($definition),
+                    'is_required' => $definition['required'],
+                    'sort_order' => $sortOrder,
+                ])->save();
 
                 $this->ensureScoring($question, $definition, $indicators);
             }
@@ -224,29 +244,29 @@ class CreateLecturerNeedsAnalysisQuestionnaireAction
     private function sections(): array
     {
         return [
-            ['title' => 'Persetujuan dan Kriteria Responden', 'questions' => [
+            ['title' => 'Persetujuan dan Profil Dosen', 'questions' => [
                 $this->q('L_A1', SurveyQuestion::TYPE_CONSENT, 'Saya telah membaca penjelasan mengenai tujuan kuesioner ini dan bersedia mengisi kuesioner secara sukarela.', true, indicator: 'profil_pengalaman_mengajar'),
-                $this->q('L_A2', SurveyQuestion::TYPE_SINGLE_CHOICE, 'Apakah Bapak/Ibu merupakan dosen atau pengajar yang terlibat dalam mata kuliah farmasi industri, teknologi farmasi, CPOB/GMP, atau bidang terkait?', true, ['Ya', 'Tidak'], 'profil_pengalaman_mengajar'),
                 $this->q('L_A3', SurveyQuestion::TYPE_CONSENT, 'Saya memahami bahwa data yang dikumpulkan akan digunakan untuk kebutuhan analisis pengembangan media pembelajaran PharmVR dan dilaporkan secara agregat tanpa menampilkan identitas pribadi.', true, indicator: 'profil_pengalaman_mengajar'),
-            ]],
-            ['title' => 'Profil Dosen', 'questions' => [
-                $this->q('L_B1', SurveyQuestion::TYPE_SHORT_TEXT, 'Nama dosen/responden', true, indicator: 'profil_pengalaman_mengajar'),
+                $this->q('L_A2', SurveyQuestion::TYPE_SINGLE_CHOICE, 'Apakah Bapak/Ibu merupakan dosen atau pengajar yang terlibat dalam mata kuliah farmasi industri, teknologi farmasi, CPOB/GMP, atau bidang terkait?', true, ['Ya', 'Tidak'], 'profil_pengalaman_mengajar'),
                 $this->q('L_B2', SurveyQuestion::TYPE_SHORT_TEXT, 'Perguruan tinggi/institusi asal', false, indicator: 'profil_pengalaman_mengajar'),
                 $this->q('L_B3', SurveyQuestion::TYPE_SINGLE_CHOICE, 'Bidang keahlian utama Bapak/Ibu', true, ['Farmasi Industri', 'Teknologi Farmasi', 'CPOB/GMP', 'Manajemen Mutu Farmasi', 'Farmasetika', 'Pendidikan Farmasi', 'Lainnya'], 'profil_pengalaman_mengajar'),
                 $this->q('L_B4', SurveyQuestion::TYPE_SINGLE_CHOICE, 'Lama pengalaman mengajar bidang terkait farmasi industri/CPOB/GMP', true, ['< 1 tahun', '1-3 tahun', '4-6 tahun', '7-10 tahun', '> 10 tahun'], 'profil_pengalaman_mengajar'),
-                $this->q('L_B5', SurveyQuestion::TYPE_MULTIPLE_CHOICE, 'Materi yang pernah Bapak/Ibu ajarkan atau dampingi', false, ['CPOB/GMP', 'Alur produksi obat', 'Teknologi sediaan padat/tablet', 'QA/QC', 'Dokumentasi batch record', 'Validasi/kualifikasi', 'Manajemen risiko mutu', 'Praktikum farmasi industri', 'Kunjungan industri', 'Lainnya'], 'profil_pengalaman_mengajar'),
+                $this->q('L_B1', SurveyQuestion::TYPE_SHORT_TEXT, 'Nama dosen/responden', true, indicator: 'profil_pengalaman_mengajar'),
             ]],
             ['title' => 'Pengalaman Pembelajaran CPOB/GMP', 'questions' => [
                 $this->q('L_C1', SurveyQuestion::TYPE_LIKERT, 'Saya telah mengajarkan atau mendampingi pembelajaran yang berkaitan dengan CPOB/GMP atau farmasi industri.', true, indicator: 'pengalaman_mengajar_cpob_gmp', scoring: 'score'),
+                $this->q('L_B5', SurveyQuestion::TYPE_MULTIPLE_CHOICE, 'Materi yang pernah Bapak/Ibu ajarkan atau dampingi', false, ['CPOB/GMP', 'Alur produksi obat', 'Teknologi sediaan padat/tablet', 'QA/QC', 'Dokumentasi batch record', 'Validasi/kualifikasi', 'Manajemen risiko mutu', 'Praktikum farmasi industri', 'Kunjungan industri', 'Lainnya'], 'profil_pengalaman_mengajar'),
+                $this->q('L_C6', SurveyQuestion::TYPE_LIKERT, 'Pembelajaran CPOB/GMP membutuhkan media yang dapat menggambarkan prosedur dan alur kerja secara lebih kontekstual.', true, indicator: 'kebutuhan_media_vr_pharmvr', scoring: 'score'),
+            ]],
+            ['title' => 'Kesulitan Pembelajaran Mahasiswa', 'questions' => [
                 ...$this->likert('kesulitan_pembelajaran_mahasiswa', [
                     'L_C2' => 'Mahasiswa sering membutuhkan contoh visual untuk memahami layout dan ruang produksi farmasi.',
                     'L_C3' => 'Mahasiswa sering mengalami kesulitan memahami alur personel dan alur material dalam industri farmasi.',
                     'L_C4' => 'Mahasiswa sering mengalami kesulitan memahami hubungan antara Produksi, QA, QC, Warehouse, PPIC, Purchasing, dan Engineering.',
                     'L_C5' => 'Mahasiswa membutuhkan contoh nyata untuk memahami dokumentasi seperti batch record, deviation, CAPA, dan release produk.',
                 ]),
-                $this->q('L_C6', SurveyQuestion::TYPE_LIKERT, 'Pembelajaran CPOB/GMP membutuhkan media yang dapat menggambarkan prosedur dan alur kerja secara lebih kontekstual.', true, indicator: 'kebutuhan_media_vr_pharmvr', scoring: 'score'),
             ]],
-            ['title' => 'Kesesuaian Pembelajaran dengan CPL/CPMK/OBE', 'questions' => $this->likert('kesesuaian_cpl_cpmk_obe_tpack', [
+            ['title' => 'Kesesuaian CPL/CPMK/OBE/TPACK', 'questions' => $this->likert('kesesuaian_cpl_cpmk_obe_tpack', [
                 'L_D1' => 'Media pembelajaran CPOB/GMP perlu mendukung pencapaian CPL/CPMK mata kuliah farmasi industri.',
                 'L_D2' => 'Media pembelajaran perlu membantu mahasiswa memahami keterkaitan teori, prosedur, dan penerapan industri.',
                 'L_D3' => 'Media pembelajaran perlu menyediakan aktivitas yang dapat diamati dan dinilai sesuai capaian pembelajaran.',

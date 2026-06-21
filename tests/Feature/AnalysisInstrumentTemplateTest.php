@@ -124,10 +124,12 @@ class AnalysisInstrumentTemplateTest extends TestCase
 
         $lecturerQa = app(AnalysisPreflightQaService::class)->build($student->fresh(), $owner, 'lecturer_questionnaire');
         $this->assertSame('passed', collect($lecturerQa['checks'])->firstWhere('check_key', 'lecturer.approved_keys')['status']);
+        $this->assertSame('passed', collect($lecturerQa['checks'])->firstWhere('check_key', 'lecturer.question_order')['status']);
         $this->assertSame('passed', collect($lecturerQa['checks'])->firstWhere('check_key', 'lecturer.priority_max_three')['status']);
 
         $practitionerQa = app(AnalysisPreflightQaService::class)->build($student->fresh(), $owner, 'practitioner_interview');
         $this->assertSame('passed', collect($practitionerQa['checks'])->firstWhere('check_key', 'practitioner.approved_keys')['status']);
+        $this->assertSame('passed', collect($practitionerQa['checks'])->firstWhere('check_key', 'practitioner.question_order')['status']);
         $this->assertSame('passed', collect($practitionerQa['checks'])->firstWhere('check_key', 'practitioner.priority_max_five')['status']);
 
         $this->actingAs($owner)
@@ -165,9 +167,9 @@ class AnalysisInstrumentTemplateTest extends TestCase
             ->assertOk()
             ->assertDontSeeText('Create PharmVR Student Needs Survey')
             ->assertDontSeeText('Fill Missing Student Sections')
-            ->assertDontSeeText('Normalize Student Survey Wording')
+            ->assertDontSeeText('Normalize Student Questionnaire Order')
             ->assertDontSeeText('PharmVR student template keys')
-            ->assertSeeText('Normalize Practitioner Interview Form')
+            ->assertSeeText('Normalize Practitioner Interview Order')
             ->assertSeeText('This interview form is qualitative; descriptive indicators are used for thematic analysis')
             ->assertSeeText('Pedoman Wawancara Praktisi/Ahli CPOB PharmVR merupakan instrumen kualitatif terstruktur');
 

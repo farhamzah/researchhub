@@ -163,11 +163,11 @@ class SurveyBuilderReadinessService
             SurveyQuestion::TYPE_CONSENT,
             SurveyQuestion::TYPE_HIDDEN,
         ], true)) {
-            return 'Not scoreable';
+            return 'No numeric score required';
         }
 
         if ($question->type === SurveyQuestion::TYPE_LIKERT_MATRIX) {
-            return 'Not scoreable';
+            return 'No numeric score required';
         }
 
         if (! $scoring || ! $scoring->is_scored) {

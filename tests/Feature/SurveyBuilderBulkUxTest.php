@@ -283,7 +283,7 @@ class SurveyBuilderBulkUxTest extends TestCase
             ->get(route('admin.surveys.scoring.index', ['survey' => $survey]))
             ->assertOk()
             ->assertSeeText('Likert Matrix is collected for analysis/export but not included in scoring.')
-            ->assertSeeText('Not scoreable')
+            ->assertSeeText('No numeric score required')
             ->assertSeeText('Convert Matrix');
 
         app(PublishSurveyAction::class)->handle($owner, $survey);
@@ -354,8 +354,8 @@ class SurveyBuilderBulkUxTest extends TestCase
             'responses',
         ]);
         $rows = collect(app(SurveyBuilderReadinessService::class)->build($templateSurvey)['scoring']['rows']);
-        $this->assertSame('Not scoreable', $rows->firstWhere('question', 'Saya telah membaca penjelasan mengenai tujuan kuesioner ini dan bersedia mengisi kuesioner secara sukarela.')['status']);
-        $this->assertSame('Not scoreable', $rows->firstWhere('question', 'Saya memahami bahwa data yang dikumpulkan akan digunakan untuk kebutuhan analisis pengembangan media pembelajaran PharmVR. Identitas responden tidak akan ditampilkan dalam laporan dan hasil penelitian akan disajikan secara agregat atau disamarkan.')['status']);
+        $this->assertSame('No numeric score required', $rows->firstWhere('question', 'Saya telah membaca penjelasan mengenai tujuan kuesioner ini dan bersedia mengisi kuesioner secara sukarela.')['status']);
+        $this->assertSame('No numeric score required', $rows->firstWhere('question', 'Saya memahami bahwa data yang dikumpulkan akan digunakan untuk kebutuhan analisis pengembangan media pembelajaran PharmVR. Identitas responden tidak akan ditampilkan dalam laporan dan hasil penelitian akan disajikan secara agregat atau disamarkan.')['status']);
     }
 
     public function test_pharmvr_template_blocks_duplicate_keys_and_fill_missing_adds_only_missing_questions(): void
@@ -439,6 +439,14 @@ class SurveyBuilderBulkUxTest extends TestCase
             'score_min' => 1,
             'score_max' => 5,
             'settings' => null,
+        ]);
+        SurveyResponse::create([
+            'survey_id' => $survey->id,
+            'status' => SurveyResponse::STATUS_SUBMITTED,
+            'submitted_at' => now(),
+            'is_test_response' => true,
+            'excluded_from_analysis' => true,
+            'test_label' => 'pilot',
         ]);
 
         $this->actingAs($owner)

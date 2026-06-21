@@ -10,6 +10,7 @@ use App\Modules\Surveys\Support\SurveyIntroTemplates;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 
 class CreatePractitionerInterviewFormAction
 {
@@ -76,16 +77,25 @@ class CreatePractitionerInterviewFormAction
         $indicators = $this->ensureIndicators($survey);
 
         if ($this->hasRealResponses($survey)) {
-            return;
+            throw ValidationException::withMessages([
+                'template' => 'Normalization is blocked because this survey already has real responses.',
+            ]);
         }
+
+        $sortOrder = 0;
 
         foreach ($this->sections() as $pageIndex => $section) {
             $page = $survey->pages()->firstOrCreate(
                 ['title' => $section['title']],
                 ['description' => $section['description'] ?? null, 'sort_order' => $pageIndex + 1],
             );
+            $page->forceFill([
+                'description' => $section['description'] ?? $page->description,
+                'sort_order' => $pageIndex + 1,
+            ])->save();
 
-            foreach ($section['questions'] as $questionIndex => $definition) {
+            foreach ($section['questions'] as $definition) {
+                $sortOrder++;
                 $question = $survey->questions()->firstOrCreate(
                     ['question_key' => $definition['key']],
                     [
@@ -96,9 +106,19 @@ class CreatePractitionerInterviewFormAction
                         'options' => $this->optionsFor($definition),
                         'settings' => $this->settingsFor($definition),
                         'is_required' => $definition['required'],
-                        'sort_order' => $questionIndex + 1,
+                        'sort_order' => $sortOrder,
                     ],
                 );
+                $question->forceFill([
+                    'page_id' => $page->getKey(),
+                    'type' => $definition['type'],
+                    'label' => $definition['label'],
+                    'help_text' => $definition['help_text'] ?? null,
+                    'options' => $this->optionsFor($definition),
+                    'settings' => $this->settingsFor($definition),
+                    'is_required' => $definition['required'],
+                    'sort_order' => $sortOrder,
+                ])->save();
 
                 $this->ensureScoring($question, $definition, $indicators);
             }
@@ -208,41 +228,41 @@ class CreatePractitionerInterviewFormAction
         return [
             ['title' => 'Persetujuan dan Profil Narasumber', 'questions' => [
                 $this->q('P_A1', SurveyQuestion::TYPE_CONSENT, 'Narasumber telah memperoleh penjelasan mengenai tujuan wawancara dan bersedia memberikan masukan secara sukarela.', true, indicator: 'profil_narasumber_keahlian'),
-                $this->q('P_A2', SurveyQuestion::TYPE_SINGLE_CHOICE, 'Kategori narasumber', true, ['Praktisi industri farmasi', 'Ahli CPOB/GMP', 'QA/QC', 'Produksi', 'Regulatory/Compliance', 'Akademisi dengan keahlian CPOB/GMP', 'Lainnya'], 'profil_narasumber_keahlian', 'descriptive'),
+                $this->q('P_A6', SurveyQuestion::TYPE_CONSENT, 'Narasumber memahami bahwa data wawancara digunakan untuk analisis kebutuhan pengembangan PharmVR dan dapat disamarkan dalam laporan penelitian.', true, indicator: 'profil_narasumber_keahlian'),
                 $this->q('P_A3', SurveyQuestion::TYPE_SHORT_TEXT, 'Nama atau inisial narasumber', true, indicator: 'profil_narasumber_keahlian'),
                 $this->q('P_A4', SurveyQuestion::TYPE_SHORT_TEXT, 'Institusi/perusahaan/afiliasi', false, indicator: 'profil_narasumber_keahlian'),
+                $this->q('P_A2', SurveyQuestion::TYPE_SINGLE_CHOICE, 'Kategori narasumber', true, ['Praktisi industri farmasi', 'Ahli CPOB/GMP', 'QA/QC', 'Produksi', 'Regulatory/Compliance', 'Akademisi dengan keahlian CPOB/GMP', 'Lainnya'], 'profil_narasumber_keahlian', 'descriptive'),
+                $this->q('P_F4', SurveyQuestion::TYPE_SHORT_TEXT, 'Jabatan/bidang', true, indicator: 'profil_narasumber_keahlian'),
                 $this->q('P_A5', SurveyQuestion::TYPE_SINGLE_CHOICE, 'Lama pengalaman terkait industri farmasi atau CPOB/GMP', true, ['< 1 tahun', '1-3 tahun', '4-6 tahun', '7-10 tahun', '> 10 tahun'], 'profil_narasumber_keahlian', 'descriptive'),
-                $this->q('P_A6', SurveyQuestion::TYPE_CONSENT, 'Narasumber memahami bahwa data wawancara digunakan untuk analisis kebutuhan pengembangan PharmVR dan dapat disamarkan dalam laporan penelitian.', true, indicator: 'profil_narasumber_keahlian'),
             ]],
-            ['title' => 'Kebutuhan Kompetensi CPOB/GMP', 'questions' => [
+            ['title' => 'Pandangan Umum terhadap PharmVR', 'questions' => [
+                $this->q('P_F1', SurveyQuestion::TYPE_SINGLE_CHOICE, 'Secara umum, apakah media VR seperti PharmVR layak dikembangkan sebagai media pembelajaran farmasi industri?', true, ['Layak', 'Layak dengan revisi/penyesuaian', 'Belum layak', 'Tidak dapat menilai'], 'implementasi_kelayakan_rekomendasi_industri', 'descriptive'),
+                $this->q('P_F2', SurveyQuestion::TYPE_LONG_TEXT, 'Apa alasan dari penilaian tersebut?', true, indicator: 'implementasi_kelayakan_rekomendasi_industri'),
+                $this->q('P_E4', SurveyQuestion::TYPE_LONG_TEXT, 'Apakah simulasi VR relevan untuk membantu mahasiswa memahami CPOB/GMP? Mohon jelaskan.', true, indicator: 'implementasi_kelayakan_rekomendasi_industri'),
+            ]],
+            ['title' => 'Kebutuhan Konten CPOB/GMP', 'questions' => [
                 $this->q('P_B1', SurveyQuestion::TYPE_LONG_TEXT, 'Menurut Bapak/Ibu, kompetensi CPOB/GMP apa yang paling penting dipahami mahasiswa farmasi sebelum masuk ke dunia industri?', true, indicator: 'kebutuhan_konten_cpob_gmp'),
                 $this->q('P_B2', SurveyQuestion::TYPE_LONG_TEXT, 'Bagian mana dari CPOB/GMP yang paling sering sulit dipahami oleh mahasiswa atau pemula?', true, indicator: 'kebutuhan_konten_cpob_gmp'),
-                $this->q('P_B3', SurveyQuestion::TYPE_LONG_TEXT, 'Kesalahan atau miskonsepsi apa yang sering terjadi dalam memahami alur produksi obat atau prinsip CPOB/GMP?', true, indicator: 'risiko_miskonsepsi_ketidakakuratan'),
-                $this->q('P_B4', SurveyQuestion::TYPE_LONG_TEXT, 'Bagaimana sebaiknya mahasiswa diperkenalkan pada hubungan antara Produksi, QA, QC, Warehouse, PPIC, Purchasing, dan Engineering?', true, indicator: 'validasi_alur_produksi_scene'),
+                $this->q('P_D2', SurveyQuestion::TYPE_LONG_TEXT, 'Istilah atau konsep CPOB/GMP apa yang harus dijelaskan dengan hati-hati dalam PharmVR?', true, indicator: 'risiko_miskonsepsi_ketidakakuratan'),
             ]],
-            ['title' => 'Kesesuaian Scene PharmVR', 'questions' => [
+            ['title' => 'Validasi Alur Produksi dan Scene', 'questions' => [
                 $this->q('P_C1', SurveyQuestion::TYPE_MULTIPLE_CHOICE, 'Pilih maksimal 5 scene yang paling penting untuk divisualisasikan dalam PharmVR.', true, ['Hygiene dan gowning', 'Airlock', 'Production corridor', 'Weighing', 'Granulation', 'Final mixing', 'Tabletting', 'Coating', 'Blistering/primary packaging', 'Secondary packing', 'QC Lab', 'QA Office', 'Warehouse', 'PPIC', 'Purchasing', 'Engineering'], 'prioritas_scene_fitur', 'descriptive', 5),
                 $this->q('P_C2', SurveyQuestion::TYPE_LONG_TEXT, 'Mengapa scene tersebut dianggap penting untuk pembelajaran mahasiswa?', true, indicator: 'validasi_alur_produksi_scene'),
                 $this->q('P_C3', SurveyQuestion::TYPE_LONG_TEXT, 'Alur proses apa yang wajib ditampilkan agar simulasi terasa sesuai dengan praktik industri?', true, indicator: 'validasi_alur_produksi_scene'),
-                $this->q('P_C4', SurveyQuestion::TYPE_LONG_TEXT, 'Batasan apa yang perlu diperhatikan agar simulasi tidak keliru atau terlalu menyederhanakan praktik CPOB/GMP?', true, indicator: 'risiko_miskonsepsi_ketidakakuratan'),
-            ]],
-            ['title' => 'Validitas Industri dan Risiko Miskonsepsi', 'questions' => [
-                $this->q('P_D1', SurveyQuestion::TYPE_LONG_TEXT, 'Bagian mana dari simulasi farmasi industri yang paling berisiko menimbulkan miskonsepsi jika divisualisasikan secara tidak tepat?', true, indicator: 'risiko_miskonsepsi_ketidakakuratan'),
-                $this->q('P_D2', SurveyQuestion::TYPE_LONG_TEXT, 'Istilah atau konsep CPOB/GMP apa yang harus dijelaskan dengan hati-hati dalam PharmVR?', true, indicator: 'risiko_miskonsepsi_ketidakakuratan'),
+                $this->q('P_B4', SurveyQuestion::TYPE_LONG_TEXT, 'Bagaimana sebaiknya mahasiswa diperkenalkan pada hubungan antara Produksi, QA, QC, Warehouse, PPIC, Purchasing, dan Engineering?', true, indicator: 'validasi_alur_produksi_scene'),
                 $this->q('P_D3', SurveyQuestion::TYPE_LONG_TEXT, 'Bagaimana sebaiknya PharmVR menjelaskan dokumentasi seperti batch record, deviation, CAPA, IPC, dan release produk?', true, indicator: 'validasi_alur_produksi_scene'),
+            ]],
+            ['title' => 'Risiko Miskonsepsi dan Batasan Simulasi', 'questions' => [
+                $this->q('P_B3', SurveyQuestion::TYPE_LONG_TEXT, 'Kesalahan atau miskonsepsi apa yang sering terjadi dalam memahami alur produksi obat atau prinsip CPOB/GMP?', true, indicator: 'risiko_miskonsepsi_ketidakakuratan'),
+                $this->q('P_D1', SurveyQuestion::TYPE_LONG_TEXT, 'Bagian mana dari simulasi farmasi industri yang paling berisiko menimbulkan miskonsepsi jika divisualisasikan secara tidak tepat?', true, indicator: 'risiko_miskonsepsi_ketidakakuratan'),
+                $this->q('P_C4', SurveyQuestion::TYPE_LONG_TEXT, 'Batasan apa yang perlu diperhatikan agar simulasi tidak keliru atau terlalu menyederhanakan praktik CPOB/GMP?', true, indicator: 'risiko_miskonsepsi_ketidakakuratan'),
                 $this->q('P_D4', SurveyQuestion::TYPE_LONG_TEXT, 'Apa indikator bahwa suatu aktivitas dalam simulasi sudah sesuai atau belum sesuai dengan prinsip CPOB/GMP?', true, indicator: 'validasi_alur_produksi_scene'),
             ]],
-            ['title' => 'Kebutuhan Fitur dan Evaluasi', 'questions' => [
+            ['title' => 'Fitur, Evaluasi, dan Rekomendasi', 'questions' => [
                 $this->q('P_E1', SurveyQuestion::TYPE_MULTIPLE_CHOICE, 'Pilih maksimal 5 fitur yang paling penting menurut Bapak/Ibu.', true, ['Avatar/instruktur virtual', 'Panel SOP/CPOB', 'Checklist aktivitas', 'Simulasi kesalahan dan feedback', 'Pretest dan posttest', 'Dashboard progress', 'Denah pabrik interaktif', 'Knowledge hotspot pada alat dan ruangan', 'Catatan dokumentasi', 'Mode akses laptop/mobile/headset VR', 'Sertifikat/hasil belajar'], 'prioritas_scene_fitur', 'descriptive', 5),
                 $this->q('P_E2', SurveyQuestion::TYPE_LONG_TEXT, 'Jenis feedback apa yang sebaiknya diberikan ketika pengguna melakukan kesalahan prosedur?', true, indicator: 'prioritas_scene_fitur'),
                 $this->q('P_E3', SurveyQuestion::TYPE_LONG_TEXT, 'Jenis evaluasi atau pertanyaan apa yang relevan untuk menilai pemahaman mahasiswa terhadap CPOB/GMP?', true, indicator: 'fokus_wawancara_tema_utama'),
-                $this->q('P_E4', SurveyQuestion::TYPE_LONG_TEXT, 'Apa saran Bapak/Ibu agar PharmVR tetap realistis namun tetap sesuai untuk pembelajaran mahasiswa?', true, indicator: 'implementasi_kelayakan_rekomendasi_industri'),
-            ]],
-            ['title' => 'Masukan Akhir', 'questions' => [
-                $this->q('P_F1', SurveyQuestion::TYPE_SINGLE_CHOICE, 'Secara umum, apakah media VR seperti PharmVR layak dikembangkan sebagai media pembelajaran farmasi industri?', true, ['Layak', 'Layak dengan revisi/penyesuaian', 'Belum layak', 'Tidak dapat menilai'], 'implementasi_kelayakan_rekomendasi_industri', 'descriptive'),
-                $this->q('P_F2', SurveyQuestion::TYPE_LONG_TEXT, 'Apa alasan dari penilaian tersebut?', true, indicator: 'implementasi_kelayakan_rekomendasi_industri'),
                 $this->q('P_F3', SurveyQuestion::TYPE_LONG_TEXT, 'Apa rekomendasi utama Bapak/Ibu untuk pengembangan PharmVR?', false, indicator: 'implementasi_kelayakan_rekomendasi_industri'),
-                $this->q('P_F4', SurveyQuestion::TYPE_LONG_TEXT, 'Catatan tambahan untuk peneliti.', false, indicator: 'implementasi_kelayakan_rekomendasi_industri'),
             ]],
         ];
     }

@@ -119,6 +119,10 @@
                             @csrf
                             <button type="submit" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">Fill Missing Analysis Instruments</button>
                         </form>
+                        <form method="POST" action="{{ route('admin.surveys.analysis.normalize-all-instruments', ['survey' => $survey]) }}">
+                            @csrf
+                            <button type="submit" onclick="return confirm('Normalize Student, Lecturer, and Practitioner Analysis instruments? This is blocked when real responses exist, but pilot/test responses are preserved.')" class="rounded-md border border-emerald-300 bg-white px-4 py-2 text-sm font-semibold text-emerald-800 shadow-sm hover:bg-emerald-50">Normalize All Analysis Instruments</button>
+                        </form>
                     </div>
                 </div>
                 <div class="mt-5 grid gap-4 lg:grid-cols-3">

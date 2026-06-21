@@ -194,6 +194,8 @@ Route::middleware('auth')->group(function (): void {
         ->name('admin.surveys.analysis.create-missing-instruments');
     Route::post('/admin/surveys/{survey}/analysis/fill-missing-instruments', [AdminSurveyAnalysisController::class, 'fillMissingAnalysisInstruments'])
         ->name('admin.surveys.analysis.fill-missing-instruments');
+    Route::post('/admin/surveys/{survey}/analysis/normalize-all-instruments', [AdminSurveyAnalysisController::class, 'normalizeAllAnalysisInstruments'])
+        ->name('admin.surveys.analysis.normalize-all-instruments');
     Route::get('/admin/analysis/results/{analysisResult}', [AdminSurveyAnalysisController::class, 'show'])
         ->name('admin.analysis.results.show');
     Route::get('/admin/analysis/{analysisResult}/export/csv', [AdminAnalysisExportController::class, 'csv'])

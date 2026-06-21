@@ -49,9 +49,10 @@ class AnalysisPreflightQaService
     public const OBSOLETE_STUDENT_KEYS = ['G3', 'G4', 'G5'];
 
     public const APPROVED_LECTURER_KEYS = [
-        'L_A1', 'L_A2', 'L_A3',
-        'L_B1', 'L_B2', 'L_B3', 'L_B4', 'L_B5',
-        'L_C1', 'L_C2', 'L_C3', 'L_C4', 'L_C5', 'L_C6',
+        'L_A1', 'L_A3', 'L_A2',
+        'L_B2', 'L_B3', 'L_B4', 'L_B1',
+        'L_C1', 'L_B5', 'L_C6',
+        'L_C2', 'L_C3', 'L_C4', 'L_C5',
         'L_D1', 'L_D2', 'L_D3', 'L_D4', 'L_D5', 'L_D6',
         'L_E1', 'L_E2', 'L_E3', 'L_E4', 'L_E5', 'L_E6', 'L_E7',
         'L_F1', 'L_F2', 'L_F3', 'L_F4', 'L_F5', 'L_F6',
@@ -60,12 +61,12 @@ class AnalysisPreflightQaService
     ];
 
     public const APPROVED_PRACTITIONER_KEYS = [
-        'P_A1', 'P_A2', 'P_A3', 'P_A4', 'P_A5', 'P_A6',
-        'P_B1', 'P_B2', 'P_B3', 'P_B4',
-        'P_C1', 'P_C2', 'P_C3', 'P_C4',
-        'P_D1', 'P_D2', 'P_D3', 'P_D4',
-        'P_E1', 'P_E2', 'P_E3', 'P_E4',
-        'P_F1', 'P_F2', 'P_F3', 'P_F4',
+        'P_A1', 'P_A6', 'P_A3', 'P_A4', 'P_A2', 'P_F4', 'P_A5',
+        'P_F1', 'P_F2', 'P_E4',
+        'P_B1', 'P_B2', 'P_D2',
+        'P_C1', 'P_C2', 'P_C3', 'P_B4', 'P_D3',
+        'P_B3', 'P_D1', 'P_C4', 'P_D4',
+        'P_E1', 'P_E2', 'P_E3', 'P_F3',
     ];
 
     public function __construct(
@@ -243,6 +244,7 @@ class AnalysisPreflightQaService
         $consentValid = $this->studentConsentValid($student);
         $priorityValid = $this->studentPriorityQuestionsValid($student);
         $f6Valid = $this->studentRiskItemValid($student);
+        $orderValid = $this->officialOrderValid($student, self::APPROVED_STUDENT_KEYS);
 
         $checks[] = $this->check(
             'student.final_43_keys',
@@ -283,6 +285,7 @@ class AnalysisPreflightQaService
         );
         $checks[] = $this->check('student.no_missing_scoring', 'No missing scoring for scoreable student items', 'student_questionnaire', 'critical', $missingScoring === [], 'Scoreable student questions have scoring configured.', 'Missing scoring for: '.implode(', ', $missingScoring), route('admin.surveys.scoring.index', ['survey' => $student]), 'Open Scoring');
         $checks[] = $this->check('student.consent_valid', 'Consent items render as required consent', 'student_questionnaire', 'critical', $consentValid, 'A1 and A3 are required consent questions.', 'Set A1 and A3 to required consent questions.', route('admin.surveys.builder.index', ['survey' => $student]), 'Open Builder');
+        $checks[] = $this->check('student.question_order', 'Student question order valid', 'student_questionnaire', 'critical', $orderValid, 'Student questionnaire follows the approved A-H order.', 'Normalize Student Questionnaire Order in Builder.', route('admin.surveys.builder.index', ['survey' => $student]), 'Open Builder');
         $checks[] = $this->check('student.g_priority_max_three', 'G1/G2 max 3 selections', 'student_questionnaire', 'critical', $priorityValid, 'G1 and G2 are required multiple choice questions with max 3 selections.', 'Set G1 and G2 to max 3 multiple-choice priority questions.', route('admin.surveys.builder.index', ['survey' => $student]), 'Open Builder');
         $checks[] = $this->check('student.f6_risk_descriptive', 'F6 risk item is descriptive', 'student_questionnaire', 'critical', $f6Valid, 'F6 is configured as descriptive risk item, not positive readiness scoring.', 'Set F6 scoring to descriptive/risk and exclude it from positive readiness aggregation.', route('admin.surveys.scoring.index', ['survey' => $student]), 'Open Scoring');
 
@@ -306,6 +309,7 @@ class AnalysisPreflightQaService
         $missingScoring = $this->missingLecturerScoring($lecturer);
         $riskValid = $this->descriptiveRiskValid($lecturer, 'L_F6');
         $openEndedDescriptive = $this->openEndedNotScored($lecturer, 'L_H');
+        $orderValid = $this->officialOrderValid($lecturer, self::APPROVED_LECTURER_KEYS);
 
         $requiredSections = [
             'identity' => ['identitas', 'identity'],
@@ -321,6 +325,7 @@ class AnalysisPreflightQaService
         return array_merge($checks, [
             $this->check('lecturer.approved_keys', 'Approved lecturer questionnaire keys', self::SCOPE_LECTURER_QUESTIONNAIRE, 'critical', $missingKeys === [], 'Approved lecturer key structure is present.', 'Lecturer questionnaire is missing keys: '.implode(', ', $missingKeys), route('admin.surveys.analysis.index', ['survey' => $mainSurvey]), 'Open Analysis Dashboard'),
             $this->check('lecturer.consent_valid', 'Lecturer consent items', self::SCOPE_LECTURER_QUESTIONNAIRE, 'critical', $consentValid, 'L_A1 and L_A3 are required consent questions.', 'Set L_A1 and L_A3 to required consent questions.', route('admin.surveys.builder.index', ['survey' => $lecturer]), 'Open Builder'),
+            $this->check('lecturer.question_order', 'Lecturer question order valid', self::SCOPE_LECTURER_QUESTIONNAIRE, 'critical', $orderValid, 'Lecturer questionnaire follows the approved consent/profile/content order.', 'Normalize Lecturer Questionnaire Order in Builder.', route('admin.surveys.builder.index', ['survey' => $lecturer]), 'Open Builder'),
             $this->check('lecturer.priority_max_three', 'Lecturer G1/G2 max 3 selections', self::SCOPE_LECTURER_QUESTIONNAIRE, 'critical', $priorityValid, 'L_G1 and L_G2 are max 3 multiple-choice priority questions.', 'Set L_G1 and L_G2 to max 3 multiple-choice questions.', route('admin.surveys.builder.index', ['survey' => $lecturer]), 'Open Builder'),
             $this->check('lecturer.scoreable_likert_scoring', 'Lecturer scoreable Likert scoring', self::SCOPE_LECTURER_QUESTIONNAIRE, 'critical', $missingScoring === [], 'Lecturer scoreable Likert items have scoring configured.', 'Missing scoring for: '.implode(', ', $missingScoring), route('admin.surveys.scoring.index', ['survey' => $lecturer]), 'Open Scoring'),
             $this->check('lecturer.f6_risk_descriptive', 'Lecturer F6 risk item descriptive', self::SCOPE_LECTURER_QUESTIONNAIRE, 'critical', $riskValid, 'L_F6 is configured as descriptive/risk.', 'Set L_F6 scoring to descriptive/risk and exclude it from positive readiness aggregation.', route('admin.surveys.scoring.index', ['survey' => $lecturer]), 'Open Scoring'),
@@ -345,6 +350,7 @@ class AnalysisPreflightQaService
         $requiredValid = $this->requiredKeysPresent($practitioner, collect(self::APPROVED_PRACTITIONER_KEYS)->reject(fn (string $key): bool => in_array($key, ['P_F3', 'P_F4', 'P_A4'], true))->values()->all());
         $longTextDescriptive = $this->longTextNotScored($practitioner);
         $descriptiveIndicatorsValid = $this->descriptiveIndicatorsLinked($practitioner);
+        $orderValid = $this->officialOrderValid($practitioner, self::APPROVED_PRACTITIONER_KEYS);
 
         $requiredSections = [
             'identity' => ['profil', 'narasumber'],
@@ -357,6 +363,7 @@ class AnalysisPreflightQaService
         return array_merge($checks, [
             $this->check('practitioner.approved_keys', 'Approved practitioner interview keys', self::SCOPE_PRACTITIONER_INTERVIEW, 'critical', $missingKeys === [], 'Approved practitioner key structure is present.', 'Practitioner interview is missing keys: '.implode(', ', $missingKeys), route('admin.surveys.analysis.index', ['survey' => $mainSurvey]), 'Open Analysis Dashboard'),
             $this->check('practitioner.consent_valid', 'Practitioner consent items', self::SCOPE_PRACTITIONER_INTERVIEW, 'critical', $consentValid, 'P_A1 and P_A6 are required consent questions.', 'Set P_A1 and P_A6 to required consent questions.', route('admin.surveys.builder.index', ['survey' => $practitioner]), 'Open Builder'),
+            $this->check('practitioner.question_order', 'Practitioner question order valid', self::SCOPE_PRACTITIONER_INTERVIEW, 'critical', $orderValid, 'Practitioner interview follows the approved consent/profile/content order.', 'Normalize Practitioner Interview Order in Builder.', route('admin.surveys.builder.index', ['survey' => $practitioner]), 'Open Builder'),
             $this->check('practitioner.required_questions', 'Practitioner required questions configured', self::SCOPE_PRACTITIONER_INTERVIEW, 'critical', $requiredValid, 'Required practitioner questions are configured.', 'Set required practitioner questions according to the approved interview form.', route('admin.surveys.builder.index', ['survey' => $practitioner]), 'Open Builder'),
             $this->check('practitioner.priority_max_five', 'Practitioner P_C1/P_E1 max 5 selections', self::SCOPE_PRACTITIONER_INTERVIEW, 'critical', $priorityValid, 'P_C1 and P_E1 are max 5 multiple-choice priority questions.', 'Set P_C1 and P_E1 to max 5 multiple-choice questions.', route('admin.surveys.builder.index', ['survey' => $practitioner]), 'Open Builder'),
             $this->check('practitioner.descriptive_indicators', 'Practitioner descriptive indicators/themes', self::SCOPE_PRACTITIONER_INTERVIEW, 'critical', $descriptiveIndicatorsValid, 'Practitioner interview has descriptive indicators linked for thematic analysis.', 'Create descriptive indicators and link all visible questions to non-scored thematic rows.', route('admin.surveys.scoring.index', ['survey' => $practitioner]), 'Open Scoring'),
@@ -912,6 +919,22 @@ class AnalysisPreflightQaService
             ->diff($survey->questions->pluck('question_key')->filter()->values())
             ->values()
             ->all();
+    }
+
+    /**
+     * @param  array<int, string>  $keys
+     */
+    private function officialOrderValid(Survey $survey, array $keys): bool
+    {
+        $expected = array_values($keys);
+        $actual = $survey->questions
+            ->sortBy('sort_order')
+            ->pluck('question_key')
+            ->filter(fn (?string $key): bool => in_array((string) $key, $expected, true))
+            ->values()
+            ->all();
+
+        return $actual === $expected;
     }
 
     /**

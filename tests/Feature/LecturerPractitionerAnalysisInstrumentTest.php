@@ -9,6 +9,7 @@ use App\Models\SurveyAnswer;
 use App\Models\SurveyQuestion;
 use App\Models\SurveyResponse;
 use App\Models\User;
+use App\Modules\Analysis\Services\AnalysisPreflightQaService;
 use App\Modules\Surveys\Actions\CreateSurveyAction;
 use App\Modules\Surveys\Actions\PublishSurveyAction;
 use Database\Seeders\RolePermissionSeeder;
@@ -47,6 +48,7 @@ class LecturerPractitionerAnalysisInstrumentTest extends TestCase
             'question_key' => 'L_G1',
             'type' => SurveyQuestion::TYPE_MULTIPLE_CHOICE,
         ]);
+        $this->assertSame(AnalysisPreflightQaService::APPROVED_LECTURER_KEYS, $lecturerSurvey->fresh()->questions()->orderBy('sort_order')->pluck('question_key')->all());
 
         $this->actingAs($owner)
             ->post(route('admin.surveys.analysis.create-lecturer-questionnaire', ['survey' => $mainSurvey]))
@@ -82,6 +84,7 @@ class LecturerPractitionerAnalysisInstrumentTest extends TestCase
             'question_key' => 'P_D1',
             'label' => 'Bagian mana dari simulasi farmasi industri yang paling berisiko menimbulkan miskonsepsi jika divisualisasikan secara tidak tepat?',
         ]);
+        $this->assertSame(AnalysisPreflightQaService::APPROVED_PRACTITIONER_KEYS, $form->fresh()->questions()->orderBy('sort_order')->pluck('question_key')->all());
 
         $this->actingAs($owner)
             ->post(route('admin.surveys.analysis.create-practitioner-interview', ['survey' => $mainSurvey]))
@@ -110,8 +113,64 @@ class LecturerPractitionerAnalysisInstrumentTest extends TestCase
             ->assertOk()
             ->assertSeeText('Lecturer Questionnaire')
             ->assertSeeText('Practitioner Interview Form')
+            ->assertSeeText('Normalize All Analysis Instruments')
             ->assertSeeText('Open Builder')
             ->assertSeeText('Response Summary');
+    }
+
+    public function test_normalize_all_analysis_instruments_route_requires_existing_related_instruments(): void
+    {
+        [$owner, $mainSurvey] = $this->mainSurveyFixture();
+
+        $this->actingAs($owner)
+            ->from(route('admin.surveys.analysis.index', ['survey' => $mainSurvey]))
+            ->post(route('admin.surveys.analysis.normalize-all-instruments', ['survey' => $mainSurvey]))
+            ->assertRedirect(route('admin.surveys.analysis.index', ['survey' => $mainSurvey]))
+            ->assertSessionHasErrors('analysis_instruments');
+    }
+
+    public function test_scope_normalize_reorders_questions_allows_test_responses_and_blocks_real_responses(): void
+    {
+        [$owner, $mainSurvey] = $this->mainSurveyFixture();
+        $this->actingAs($owner)->post(route('admin.surveys.analysis.create-lecturer-questionnaire', ['survey' => $mainSurvey]));
+
+        $lecturerSurvey = Survey::query()->where('instrument_type', Survey::INSTRUMENT_ANALYSIS_LECTURER)->firstOrFail();
+        SurveyResponse::create([
+            'survey_id' => $lecturerSurvey->id,
+            'status' => SurveyResponse::STATUS_SUBMITTED,
+            'submitted_at' => now(),
+            'is_test_response' => true,
+            'excluded_from_analysis' => true,
+            'test_label' => 'pilot',
+        ]);
+        $lecturerSurvey->questions()->where('question_key', 'L_G1')->firstOrFail()->forceFill([
+            'sort_order' => 1,
+            'settings' => ['max_selections' => 9],
+        ])->save();
+
+        $this->actingAs($owner)
+            ->post(route('admin.surveys.builder.templates.lecturer-analysis.normalize', ['survey' => $lecturerSurvey]))
+            ->assertRedirect(route('admin.surveys.builder.index', ['survey' => $lecturerSurvey]));
+
+        $this->assertSame(AnalysisPreflightQaService::APPROVED_LECTURER_KEYS, $lecturerSurvey->fresh()->questions()->orderBy('sort_order')->pluck('question_key')->all());
+        $this->assertSame(3, data_get($lecturerSurvey->questions()->where('question_key', 'L_G1')->firstOrFail()->settings, 'max_selections'));
+
+        SurveyResponse::create([
+            'survey_id' => $lecturerSurvey->id,
+            'status' => SurveyResponse::STATUS_SUBMITTED,
+            'submitted_at' => now(),
+        ]);
+        $lecturerSurvey->questions()->where('question_key', 'L_G1')->firstOrFail()->forceFill([
+            'settings' => ['max_selections' => 9],
+        ])->save();
+
+        $this->actingAs($owner)
+            ->from(route('admin.surveys.builder.index', ['survey' => $lecturerSurvey]))
+            ->post(route('admin.surveys.builder.templates.lecturer-analysis.normalize', ['survey' => $lecturerSurvey]))
+            ->assertRedirect(route('admin.surveys.builder.index', ['survey' => $lecturerSurvey]))
+            ->assertSessionHasErrors('template');
+
+        $this->assertSame(9, data_get($lecturerSurvey->questions()->where('question_key', 'L_G1')->firstOrFail()->settings, 'max_selections'));
     }
 
     public function test_generated_instruments_can_be_opened_in_builder_and_public_form(): void

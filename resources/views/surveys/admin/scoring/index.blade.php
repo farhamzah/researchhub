@@ -11,11 +11,11 @@
             \App\Models\SurveyQuestion::TYPE_HIDDEN,
             \App\Models\SurveyQuestion::TYPE_LIKERT_MATRIX,
         ], true)) {
-            return 'Not scoreable';
+        return 'No numeric score required';
         }
 
         if (! in_array($question->type, $supportedTypes, true)) {
-            return 'Not scoreable';
+        return 'No numeric score required';
         }
 
         if (! $scoring || ! $scoring->is_scored) {
@@ -228,7 +228,7 @@
                                 <h3 class="font-semibold">{{ $question->label }}</h3>
                                 <p class="text-xs text-gray-500">{{ $question->question_key }} - {{ str_replace('_', ' ', $question->type) }}</p>
                             </div>
-                            <span class="rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide {{ $status === 'Configured' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : ($status === 'Descriptive' || $status === 'Not scoreable' ? 'border-slate-200 bg-slate-50 text-slate-600' : 'border-amber-200 bg-amber-50 text-amber-800') }}">{{ $status }}</span>
+                            <span class="rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide {{ $status === 'Configured' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : (in_array($status, ['Descriptive', 'No numeric score required'], true) ? 'border-slate-200 bg-slate-50 text-slate-600' : 'border-amber-200 bg-amber-50 text-amber-800') }}">{{ $status }}</span>
                         </div>
                         @if ($question->type === \App\Models\SurveyQuestion::TYPE_LIKERT_MATRIX)
                             <div class="mb-3 flex flex-col gap-3 rounded-md border border-blue-200 bg-blue-50 p-3 text-sm leading-6 text-blue-900 sm:flex-row sm:items-center sm:justify-between">

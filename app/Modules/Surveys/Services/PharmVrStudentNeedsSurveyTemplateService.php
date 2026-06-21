@@ -229,7 +229,10 @@ class PharmVrStudentNeedsSurveyTemplateService
         $existing = $survey->questions()->whereIn('question_key', $questions->keys()->all())->get()->keyBy('question_key');
         $changes = [];
 
-        foreach ($questions as $key => $expected) {
+        $pages = $survey->pages()->get()->keyBy('title');
+
+        foreach ($questions->values() as $index => $expected) {
+            $key = $expected['key'];
             $question = $existing->get($key);
 
             if (! $question instanceof SurveyQuestion) {
@@ -242,6 +245,12 @@ class PharmVrStudentNeedsSurveyTemplateService
                     $fieldChanges[] = $field;
                 }
             }
+            if ($question->sort_order !== $index + 1) {
+                $fieldChanges[] = 'sort_order';
+            }
+            if ($question->page_id !== $pages->get($expected['page'])?->getKey()) {
+                $fieldChanges[] = 'page';
+            }
 
             if ($fieldChanges !== []) {
                 $changes[] = [
@@ -253,7 +262,7 @@ class PharmVrStudentNeedsSurveyTemplateService
         }
 
         return [
-            'response_count' => $survey->responses()->count(),
+            'response_count' => $survey->responses()->official()->count(),
             'existing_count' => $existing->count(),
             'missing_keys' => $questions->keys()->diff($existing->keys())->values()->all(),
             'change_count' => count($changes),
@@ -267,9 +276,9 @@ class PharmVrStudentNeedsSurveyTemplateService
      */
     public function normalizeExisting(User $user, Survey $survey): array
     {
-        if ($survey->responses()->exists()) {
+        if ($survey->responses()->official()->exists()) {
             throw ValidationException::withMessages([
-                'template' => 'Normalization is blocked because this survey already has responses.',
+                'template' => 'Normalization is blocked because this survey already has real responses.',
             ]);
         }
 
@@ -296,7 +305,7 @@ class PharmVrStudentNeedsSurveyTemplateService
             $updated = 0;
             $missing = [];
 
-            foreach ($this->questions() as $questionData) {
+            foreach ($this->questions() as $index => $questionData) {
                 $question = $survey->questions()->where('question_key', $questionData['key'])->first();
 
                 if (! $question instanceof SurveyQuestion) {
@@ -307,6 +316,7 @@ class PharmVrStudentNeedsSurveyTemplateService
 
                 $question->forceFill($this->questionUpdatePayload($questionData) + [
                     'page_id' => $pages->get($questionData['page'])?->id,
+                    'sort_order' => $index + 1,
                 ])->save();
 
                 $indicator = $indicators->get($questionData['indicator'] ?? '');

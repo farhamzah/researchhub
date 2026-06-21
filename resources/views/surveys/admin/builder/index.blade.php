@@ -796,10 +796,17 @@
         </section>
 
         <section id="preview" class="mt-6 scroll-mt-6 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+            @php
+                $previewIntroImageUrl = $survey->intro_image_url;
+                $previewIntroConsentText = $survey->consent_text ?: 'Saya telah membaca penjelasan di atas dan bersedia melanjutkan.';
+            @endphp
             <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Preview</p>
-                    <h2 class="mt-1 text-xl font-semibold">Admin-only respondent preview</h2>
+                    <div class="mt-1 flex flex-wrap items-center gap-2">
+                        <h2 class="text-xl font-semibold">Admin-only respondent preview</h2>
+                        <span class="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800">admin preview no-save - no response will be saved.</span>
+                    </div>
                     <p class="mt-1 text-sm text-slate-600">Preview ini tidak membuat SurveyResponse dan tidak menampilkan data responden.</p>
                 </div>
                 @if ($survey->canReceiveResponses())
@@ -813,6 +820,114 @@
                 <div class="mx-auto max-w-3xl rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
                     <h3 class="text-2xl font-semibold">{{ $survey->title }}</h3>
                     <p class="mt-2 text-sm leading-6 text-slate-600">{{ $survey->description ?: 'No description.' }}</p>
+
+                    <section class="mt-6 rounded-lg border border-emerald-200 bg-emerald-50/60 p-5">
+                        <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div>
+                                <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Survey Introduction</p>
+                                <h4 class="mt-2 text-xl font-semibold text-slate-950">{{ $survey->intro_title ?: $survey->title }}</h4>
+                            </div>
+                            <span class="inline-flex rounded-full border border-emerald-200 bg-white px-3 py-1 text-xs font-semibold text-emerald-800">
+                                {{ $survey->require_consent_before_start ? 'Consent required before questions' : 'Consent not required before questions' }}
+                            </span>
+                        </div>
+
+                        @if ($survey->estimated_duration)
+                            <div class="mt-4 rounded-md border border-slate-200 bg-white p-4">
+                                <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Estimated completion time</p>
+                                <p class="mt-1 text-sm font-semibold text-slate-900">{{ $survey->estimated_duration }}</p>
+                            </div>
+                        @endif
+
+                        @if ($previewIntroImageUrl)
+                            <figure class="mt-5 overflow-hidden rounded-lg border border-slate-200 bg-white">
+                                <span class="sr-only">intro image</span>
+                                <img src="{{ $previewIntroImageUrl }}" alt="{{ $survey->intro_image_alt_text ?: 'Survey intro illustration' }}" loading="lazy" decoding="async" class="aspect-video w-full object-cover">
+                                @if ($survey->intro_image_caption || $survey->intro_image_source_note)
+                                    <figcaption class="border-t border-slate-200 px-4 py-3 text-xs leading-5 text-slate-600">
+                                        @if ($survey->intro_image_caption)
+                                            <span>{{ $survey->intro_image_caption }}</span>
+                                        @endif
+                                        @if ($survey->intro_image_source_note)
+                                            <span class="block text-slate-500">{{ $survey->intro_image_source_note }}</span>
+                                        @endif
+                                    </figcaption>
+                                @endif
+                            </figure>
+                        @else
+                            <div class="mt-5 rounded-lg border border-dashed border-slate-300 bg-white p-5 text-sm text-slate-600">
+                                <p class="font-semibold text-slate-800">No intro image uploaded.</p>
+                                @if ($survey->intro_image_alt_text || $survey->intro_image_caption || $survey->intro_image_source_note)
+                                    <dl class="mt-3 grid gap-2">
+                                        @if ($survey->intro_image_alt_text)
+                                            <div>
+                                                <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Image alt text</dt>
+                                                <dd class="mt-1">{{ $survey->intro_image_alt_text }}</dd>
+                                            </div>
+                                        @endif
+                                        @if ($survey->intro_image_caption)
+                                            <div>
+                                                <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Image caption</dt>
+                                                <dd class="mt-1">{{ $survey->intro_image_caption }}</dd>
+                                            </div>
+                                        @endif
+                                        @if ($survey->intro_image_source_note)
+                                            <div>
+                                                <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Credit/source note</dt>
+                                                <dd class="mt-1">{{ $survey->intro_image_source_note }}</dd>
+                                            </div>
+                                        @endif
+                                    </dl>
+                                @endif
+                            </div>
+                        @endif
+
+                        @if ($survey->intro_text)
+                            <p class="mt-5 text-xs font-semibold uppercase tracking-wide text-slate-500">intro narrative</p>
+                            <p class="mt-2 whitespace-pre-line text-sm leading-7 text-slate-700">{{ $survey->intro_text }}</p>
+                        @else
+                            <p class="mt-5 rounded-md border border-slate-200 bg-white p-4 text-sm text-slate-500">No intro narrative configured.</p>
+                        @endif
+
+                        <dl class="mt-5 grid gap-3">
+                            @if ($survey->privacy_statement)
+                                <div class="rounded-md border border-slate-200 bg-white p-4">
+                                    <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Privacy</dt>
+                                    <dd class="mt-1 text-sm leading-6 text-slate-700">{{ $survey->privacy_statement }}</dd>
+                                </div>
+                            @else
+                                <div class="rounded-md border border-slate-200 bg-white p-4">
+                                    <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Privacy</dt>
+                                    <dd class="mt-1 text-sm text-slate-500">No privacy statement configured.</dd>
+                                </div>
+                            @endif
+                        </dl>
+
+                        @if ($survey->respondent_instruction)
+                            <div class="mt-5 rounded-md border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-950">
+                                <p class="font-semibold">Instructions</p>
+                                <p class="mt-1">{{ $survey->respondent_instruction }}</p>
+                            </div>
+                        @else
+                            <div class="mt-5 rounded-md border border-slate-200 bg-white p-4 text-sm text-slate-500">
+                                No respondent instruction configured.
+                            </div>
+                        @endif
+
+                        @if ($survey->require_consent_before_start)
+                            <label class="mt-5 flex items-start gap-3 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950">
+                                <input type="checkbox" disabled class="mt-1 rounded border-amber-300 text-emerald-700">
+                                <span><span class="block font-semibold">disabled consent gate</span>{{ $previewIntroConsentText }}</span>
+                            </label>
+                        @else
+                            <p class="mt-5 rounded-md border border-slate-200 bg-white p-4 text-sm text-slate-600">Questions are visible without a required consent gate.</p>
+                        @endif
+                    </section>
+
+                    <div class="mt-6 border-t border-slate-200 pt-6">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">First questions</p>
+                    </div>
+
                     <div class="mt-6 space-y-5">
                         @forelse ($builderWizard['preview'] as $previewQuestion)
                             <article class="rounded-md border border-slate-200 p-4">

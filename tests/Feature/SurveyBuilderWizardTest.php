@@ -59,6 +59,18 @@ class SurveyBuilderWizardTest extends TestCase
     public function test_admin_preview_does_not_create_survey_responses(): void
     {
         [$owner, $survey] = $this->surveyFixture();
+        $survey->update([
+            'intro_title' => 'Pengantar Preview Admin',
+            'intro_text' => 'Narasi pengantar yang akan dibaca responden sebelum menjawab.',
+            'estimated_duration' => '12 menit',
+            'privacy_statement' => 'Data responden disimpan rahasia untuk kebutuhan penelitian.',
+            'respondent_instruction' => 'Baca setiap butir dan jawab sesuai pengalaman.',
+            'consent_text' => 'Saya setuju mengikuti survei ini.',
+            'require_consent_before_start' => true,
+            'intro_image_alt_text' => 'Ilustrasi responden membaca pengantar',
+            'intro_image_caption' => 'Gambar pembuka instrumen',
+            'intro_image_source_note' => 'Sumber: Dokumentasi penelitian',
+        ]);
         $survey->questions()->create([
             'question_key' => 'preview_question',
             'type' => SurveyQuestion::TYPE_SHORT_TEXT,
@@ -72,6 +84,19 @@ class SurveyBuilderWizardTest extends TestCase
             ->get(route('admin.surveys.builder.index', ['survey' => $survey]))
             ->assertOk()
             ->assertSeeText('Admin-only respondent preview')
+            ->assertSeeText('admin preview no-save - no response will be saved.')
+            ->assertSeeText('Preview ini tidak membuat SurveyResponse dan tidak menampilkan data responden.')
+            ->assertSeeText('Pengantar Preview Admin')
+            ->assertSeeText('12 menit')
+            ->assertSeeText('No intro image uploaded.')
+            ->assertSeeText('Ilustrasi responden membaca pengantar')
+            ->assertSeeText('Gambar pembuka instrumen')
+            ->assertSeeText('Sumber: Dokumentasi penelitian')
+            ->assertSeeText('Narasi pengantar yang akan dibaca responden sebelum menjawab.')
+            ->assertSeeText('Data responden disimpan rahasia untuk kebutuhan penelitian.')
+            ->assertSeeText('Baca setiap butir dan jawab sesuai pengalaman.')
+            ->assertSeeText('Consent required before questions')
+            ->assertSeeText('Saya setuju mengikuti survei ini.')
             ->assertSeeText('Preview question');
 
         $this->assertSame($before, $survey->responses()->count());

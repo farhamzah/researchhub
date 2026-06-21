@@ -128,13 +128,32 @@ class LecturerPractitionerAnalysisInstrumentTest extends TestCase
         $this->actingAs($owner)
             ->get(route('admin.surveys.builder.index', ['survey' => $lecturerSurvey]))
             ->assertOk()
-            ->assertSeeText('Kuesioner Analisis Kebutuhan Dosen terhadap Media Pembelajaran Virtual Reality');
+            ->assertSeeText('Kuesioner Analisis Kebutuhan Dosen terhadap Media Pembelajaran Virtual Reality')
+            ->assertSeeText('admin preview no-save - no response will be saved.')
+            ->assertSeeText('Pengantar Kuesioner Analisis Kebutuhan Dosen PharmVR')
+            ->assertSeeText('10-15 menit')
+            ->assertSeeText('No intro image uploaded.')
+            ->assertSeeText('Consent required before questions')
+            ->assertSeeText('Saya telah membaca penjelasan di atas dan bersedia melanjutkan.')
+            ->assertSeeText('Saya telah mengajarkan atau mendampingi pembelajaran yang berkaitan dengan CPOB/GMP atau farmasi industri.');
 
         $this->get(route('survey.show', ['survey' => $lecturerSurvey->fresh()->slug]))
             ->assertOk()
             ->assertSeeText('Kuesioner Analisis Kebutuhan Dosen terhadap Media Pembelajaran Virtual Reality')
             ->assertSeeText('Pengantar Kuesioner Analisis Kebutuhan Dosen PharmVR')
             ->assertSeeText('Saya telah membaca penjelasan di atas dan bersedia melanjutkan.');
+
+        $this->actingAs($owner)
+            ->get(route('admin.surveys.builder.index', ['survey' => $practitionerSurvey]))
+            ->assertOk()
+            ->assertSeeText('Pedoman Wawancara Praktisi/Ahli CPOB untuk Analisis Kebutuhan PharmVR')
+            ->assertSeeText('admin preview no-save - no response will be saved.')
+            ->assertSeeText('Pengantar Wawancara Praktisi/Ahli CPOB PharmVR')
+            ->assertSeeText('20-30 menit')
+            ->assertSeeText('No intro image uploaded.')
+            ->assertSeeText('Consent required before questions')
+            ->assertSeeText('Saya telah membaca penjelasan di atas dan bersedia melanjutkan.')
+            ->assertSeeText('Bagian mana dari simulasi farmasi industri yang paling berisiko menimbulkan miskonsepsi jika divisualisasikan secara tidak tepat?');
 
         $this->get(route('survey.show', ['survey' => $practitionerSurvey->fresh()->slug]))
             ->assertOk()

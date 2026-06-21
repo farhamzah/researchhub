@@ -167,9 +167,9 @@ class AnalysisInstrumentTemplateTest extends TestCase
             ->assertOk()
             ->assertDontSeeText('Create PharmVR Student Needs Survey')
             ->assertDontSeeText('Fill Missing Student Sections')
-            ->assertDontSeeText('Normalize Student Questionnaire Order')
+            ->assertDontSeeText('Normalize Student Order')
             ->assertDontSeeText('PharmVR student template keys')
-            ->assertSeeText('Normalize Practitioner Interview Order')
+            ->assertSeeText('Normalize Practitioner/Ahli CPOB Order')
             ->assertSeeText('This interview form is qualitative; descriptive indicators are used for thematic analysis')
             ->assertSeeText('Pedoman Wawancara Praktisi/Ahli CPOB PharmVR merupakan instrumen kualitatif terstruktur');
 

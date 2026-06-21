@@ -113,7 +113,7 @@ class LecturerPractitionerAnalysisInstrumentTest extends TestCase
             ->assertOk()
             ->assertSeeText('Lecturer Questionnaire')
             ->assertSeeText('Practitioner Interview Form')
-            ->assertSeeText('Normalize All Analysis Instruments')
+            ->assertSeeText('Normalize All Analysis Instrument Orders')
             ->assertSeeText('Open Builder')
             ->assertSeeText('Response Summary');
     }

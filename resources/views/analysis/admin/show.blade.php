@@ -121,7 +121,7 @@
                         </form>
                         <form method="POST" action="{{ route('admin.surveys.analysis.normalize-all-instruments', ['survey' => $survey]) }}">
                             @csrf
-                            <button type="submit" onclick="return confirm('Normalize Student, Lecturer, and Practitioner Analysis instruments? This is blocked when real responses exist, but pilot/test responses are preserved.')" class="rounded-md border border-emerald-300 bg-white px-4 py-2 text-sm font-semibold text-emerald-800 shadow-sm hover:bg-emerald-50">Normalize All Analysis Instruments</button>
+                            <button type="submit" onclick="return confirm('Normalize Student, Lecturer, and Practitioner Analysis instrument orders? This is blocked when real responses exist, but pilot/test responses are preserved.')" class="rounded-md border border-emerald-300 bg-white px-4 py-2 text-sm font-semibold text-emerald-800 shadow-sm hover:bg-emerald-50">Normalize All Analysis Instrument Orders</button>
                         </form>
                     </div>
                 </div>

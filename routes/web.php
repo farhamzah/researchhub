@@ -241,12 +241,20 @@ Route::middleware('auth')->group(function (): void {
         ->name('admin.surveys.builder.templates.practitioner-interview.normalize');
     Route::post('/admin/surveys/{survey}/builder/pages', [AdminSurveyBuilderController::class, 'storePage'])
         ->name('admin.surveys.builder.pages.store');
+    Route::post('/admin/surveys/{survey}/builder/pages/reorder', [AdminSurveyBuilderController::class, 'reorderPages'])
+        ->name('admin.surveys.builder.pages.reorder');
+    Route::post('/admin/surveys/{survey}/builder/pages/{page}/move', [AdminSurveyBuilderController::class, 'movePage'])
+        ->name('admin.surveys.builder.pages.move');
     Route::put('/admin/surveys/{survey}/builder/pages/{page}', [AdminSurveyBuilderController::class, 'updatePage'])
         ->name('admin.surveys.builder.pages.update');
     Route::delete('/admin/surveys/{survey}/builder/pages/{page}', [AdminSurveyBuilderController::class, 'deletePage'])
         ->name('admin.surveys.builder.pages.delete');
     Route::post('/admin/surveys/{survey}/builder/questions', [AdminSurveyBuilderController::class, 'storeQuestion'])
         ->name('admin.surveys.builder.questions.store');
+    Route::post('/admin/surveys/{survey}/builder/questions/reorder', [AdminSurveyBuilderController::class, 'reorderQuestions'])
+        ->name('admin.surveys.builder.questions.reorder');
+    Route::post('/admin/surveys/{survey}/builder/questions/{question}/move', [AdminSurveyBuilderController::class, 'moveQuestion'])
+        ->name('admin.surveys.builder.questions.move');
     Route::put('/admin/surveys/{survey}/builder/questions/{question}', [AdminSurveyBuilderController::class, 'updateQuestion'])
         ->name('admin.surveys.builder.questions.update');
     Route::delete('/admin/surveys/{survey}/builder/questions/{question}', [AdminSurveyBuilderController::class, 'deleteQuestion'])

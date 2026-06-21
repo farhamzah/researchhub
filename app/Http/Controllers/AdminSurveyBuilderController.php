@@ -14,6 +14,7 @@ use App\Modules\Surveys\Actions\CreateSurveyQuestionAction;
 use App\Modules\Surveys\Actions\DeleteSurveyPageAction;
 use App\Modules\Surveys\Actions\DeleteSurveyQuestionAction;
 use App\Modules\Surveys\Actions\DuplicateSurveyQuestionAction;
+use App\Modules\Surveys\Actions\ReorderSurveyStructureAction;
 use App\Modules\Surveys\Actions\UpdateSurveyIntroAction;
 use App\Modules\Surveys\Actions\UpdateSurveyPageAction;
 use App\Modules\Surveys\Actions\UpdateSurveyQuestionAction;
@@ -279,6 +280,43 @@ class AdminSurveyBuilderController extends Controller
             ->with('status', 'survey-page-deleted');
     }
 
+    public function reorderPages(Survey $survey, Request $request, ReorderSurveyStructureAction $reorderStructure): RedirectResponse
+    {
+        Gate::authorize('update', $survey);
+
+        $data = $request->validate([
+            'page_order' => ['required', 'array', 'min:1'],
+            'page_order.*' => [
+                'required',
+                'string',
+                'distinct',
+                Rule::exists('survey_pages', 'id')->where('survey_id', $survey->getKey()),
+            ],
+        ]);
+
+        $reorderStructure->reorderPages($request->user(), $survey, $data['page_order'], $request);
+
+        return redirect()
+            ->route('admin.surveys.builder.index', ['survey' => $survey])
+            ->with('status', 'survey-page-order-saved');
+    }
+
+    public function movePage(Survey $survey, SurveyPage $page, Request $request, ReorderSurveyStructureAction $reorderStructure): RedirectResponse
+    {
+        Gate::authorize('update', $survey);
+        abort_unless($page->survey_id === $survey->getKey(), 404);
+
+        $data = $request->validate([
+            'direction' => ['required', Rule::in(['up', 'down'])],
+        ]);
+
+        $reorderStructure->movePage($request->user(), $page, $data['direction'], $request);
+
+        return redirect()
+            ->route('admin.surveys.builder.index', ['survey' => $survey])
+            ->with('status', 'survey-page-order-saved');
+    }
+
     public function storeQuestion(Survey $survey, Request $request, CreateSurveyQuestionAction $createQuestion): RedirectResponse
     {
         Gate::authorize('update', $survey);
@@ -304,6 +342,48 @@ class AdminSurveyBuilderController extends Controller
         return redirect()
             ->route('admin.surveys.builder.index', ['survey' => $survey])
             ->with('status', 'survey-question-updated');
+    }
+
+    public function reorderQuestions(Survey $survey, Request $request, ReorderSurveyStructureAction $reorderStructure): RedirectResponse
+    {
+        Gate::authorize('update', $survey);
+
+        $data = $request->validate([
+            'page_id' => [
+                'nullable',
+                'string',
+                Rule::exists('survey_pages', 'id')->where('survey_id', $survey->getKey()),
+            ],
+            'question_order' => ['required', 'array', 'min:1'],
+            'question_order.*' => [
+                'required',
+                'string',
+                'distinct',
+                Rule::exists('survey_questions', 'id')->where('survey_id', $survey->getKey()),
+            ],
+        ]);
+
+        $reorderStructure->reorderQuestions($request->user(), $survey, $data['question_order'], $data['page_id'] ?? null, $request);
+
+        return redirect()
+            ->route('admin.surveys.builder.index', ['survey' => $survey])
+            ->with('status', 'survey-question-order-saved');
+    }
+
+    public function moveQuestion(Survey $survey, SurveyQuestion $question, Request $request, ReorderSurveyStructureAction $reorderStructure): RedirectResponse
+    {
+        Gate::authorize('update', $survey);
+        abort_unless($question->survey_id === $survey->getKey(), 404);
+
+        $data = $request->validate([
+            'direction' => ['required', Rule::in(['up', 'down'])],
+        ]);
+
+        $reorderStructure->moveQuestion($request->user(), $question, $data['direction'], $request);
+
+        return redirect()
+            ->route('admin.surveys.builder.index', ['survey' => $survey])
+            ->with('status', 'survey-question-order-saved');
     }
 
     public function deleteQuestion(Survey $survey, SurveyQuestion $question, Request $request, DeleteSurveyQuestionAction $deleteQuestion): RedirectResponse

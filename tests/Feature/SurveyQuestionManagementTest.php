@@ -318,6 +318,180 @@ class SurveyQuestionManagementTest extends TestCase
         $this->assertDatabaseHas('activity_logs', ['action' => 'survey.page_deleted']);
     }
 
+    public function test_question_drag_order_persists_and_public_preview_uses_order(): void
+    {
+        [$owner, $project, $survey] = $this->surveyFixture();
+        $first = $survey->questions()->create([
+            'question_key' => 'first_question',
+            'type' => SurveyQuestion::TYPE_SHORT_TEXT,
+            'label' => 'First question',
+            'sort_order' => 1,
+        ]);
+        $second = $survey->questions()->create([
+            'question_key' => 'second_question',
+            'type' => SurveyQuestion::TYPE_SHORT_TEXT,
+            'label' => 'Second question',
+            'sort_order' => 2,
+        ]);
+        $third = $survey->questions()->create([
+            'question_key' => 'third_question',
+            'type' => SurveyQuestion::TYPE_SHORT_TEXT,
+            'label' => 'Third question',
+            'sort_order' => 3,
+        ]);
+
+        $this->actingAs($owner)
+            ->post(route('admin.surveys.builder.questions.reorder', ['survey' => $survey]), [
+                'question_order' => [$third->id, $first->id, $second->id],
+            ])
+            ->assertRedirect(route('admin.surveys.builder.index', ['survey' => $survey]));
+
+        $this->assertSame(
+            ['third_question', 'first_question', 'second_question'],
+            $survey->fresh()->questions()->pluck('question_key')->all(),
+        );
+
+        app(PublishSurveyAction::class)->handle($owner, $survey->fresh());
+
+        $this->get(route('survey.show', ['survey' => $survey->fresh()->slug]))
+            ->assertOk()
+            ->assertSeeInOrder(['Third question', 'First question', 'Second question']);
+    }
+
+    public function test_question_move_buttons_persist_order(): void
+    {
+        [$owner, $project, $survey] = $this->surveyFixture();
+        $first = $survey->questions()->create([
+            'question_key' => 'move_first',
+            'type' => SurveyQuestion::TYPE_SHORT_TEXT,
+            'label' => 'Move first',
+            'sort_order' => 1,
+        ]);
+        $second = $survey->questions()->create([
+            'question_key' => 'move_second',
+            'type' => SurveyQuestion::TYPE_SHORT_TEXT,
+            'label' => 'Move second',
+            'sort_order' => 2,
+        ]);
+
+        $this->actingAs($owner)
+            ->post(route('admin.surveys.builder.questions.move', ['survey' => $survey, 'question' => $second]), [
+                'direction' => 'up',
+            ])
+            ->assertRedirect(route('admin.surveys.builder.index', ['survey' => $survey]));
+
+        $this->assertSame(
+            ['move_second', 'move_first'],
+            $survey->fresh()->questions()->pluck('question_key')->all(),
+        );
+
+        $this->actingAs($owner)
+            ->get(route('admin.surveys.builder.index', ['survey' => $survey]))
+            ->assertOk()
+            ->assertSeeText('Save Drag Order')
+            ->assertSee('Drag to reorder')
+            ->assertSeeText('Move Up')
+            ->assertSeeText('Move Down');
+    }
+
+    public function test_page_move_persists_page_and_question_order(): void
+    {
+        [$owner, $project, $survey] = $this->surveyFixture();
+        $pageOne = $survey->pages()->create([
+            'title' => 'Page one',
+            'sort_order' => 1,
+        ]);
+        $pageTwo = $survey->pages()->create([
+            'title' => 'Page two',
+            'sort_order' => 2,
+        ]);
+        $survey->questions()->create([
+            'page_id' => $pageOne->id,
+            'question_key' => 'page_one_question',
+            'type' => SurveyQuestion::TYPE_SHORT_TEXT,
+            'label' => 'Page one question',
+            'sort_order' => 1,
+        ]);
+        $survey->questions()->create([
+            'page_id' => $pageTwo->id,
+            'question_key' => 'page_two_question',
+            'type' => SurveyQuestion::TYPE_SHORT_TEXT,
+            'label' => 'Page two question',
+            'sort_order' => 2,
+        ]);
+
+        $this->actingAs($owner)
+            ->post(route('admin.surveys.builder.pages.move', ['survey' => $survey, 'page' => $pageTwo]), [
+                'direction' => 'up',
+            ])
+            ->assertRedirect(route('admin.surveys.builder.index', ['survey' => $survey]));
+
+        $this->assertSame(
+            ['Page two', 'Page one'],
+            $survey->fresh()->pages()->pluck('title')->all(),
+        );
+        $this->assertSame(
+            ['page_two_question', 'page_one_question'],
+            $survey->fresh()->questions()->pluck('question_key')->all(),
+        );
+    }
+
+    public function test_reorder_blocks_real_responses_and_allows_test_responses(): void
+    {
+        [$owner, $project, $survey] = $this->surveyFixture();
+        $first = $survey->questions()->create([
+            'question_key' => 'safe_first',
+            'type' => SurveyQuestion::TYPE_SHORT_TEXT,
+            'label' => 'Safe first',
+            'sort_order' => 1,
+        ]);
+        $second = $survey->questions()->create([
+            'question_key' => 'safe_second',
+            'type' => SurveyQuestion::TYPE_SHORT_TEXT,
+            'label' => 'Safe second',
+            'sort_order' => 2,
+        ]);
+
+        SurveyResponse::create([
+            'survey_id' => $survey->id,
+            'status' => SurveyResponse::STATUS_SUBMITTED,
+            'submitted_at' => now(),
+            'is_test_response' => true,
+            'excluded_from_analysis' => true,
+            'test_label' => 'pilot',
+        ]);
+
+        $this->actingAs($owner)
+            ->post(route('admin.surveys.builder.questions.reorder', ['survey' => $survey]), [
+                'question_order' => [$second->id, $first->id],
+            ])
+            ->assertRedirect(route('admin.surveys.builder.index', ['survey' => $survey]));
+
+        $this->assertSame(
+            ['safe_second', 'safe_first'],
+            $survey->fresh()->questions()->pluck('question_key')->all(),
+        );
+
+        SurveyResponse::create([
+            'survey_id' => $survey->id,
+            'status' => SurveyResponse::STATUS_SUBMITTED,
+            'submitted_at' => now(),
+        ]);
+
+        $this->actingAs($owner)
+            ->from(route('admin.surveys.builder.index', ['survey' => $survey]))
+            ->post(route('admin.surveys.builder.questions.reorder', ['survey' => $survey]), [
+                'question_order' => [$first->id, $second->id],
+            ])
+            ->assertRedirect(route('admin.surveys.builder.index', ['survey' => $survey]))
+            ->assertSessionHasErrors('order');
+
+        $this->assertSame(
+            ['safe_second', 'safe_first'],
+            $survey->fresh()->questions()->pluck('question_key')->all(),
+        );
+    }
+
     /**
      * @return array{0: User, 1: ResearchProject, 2: Survey}
      */

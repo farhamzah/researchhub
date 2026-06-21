@@ -384,6 +384,9 @@
                 <section class="rounded-lg border border-slate-200 bg-slate-50 p-5">
                     <h3 class="text-lg font-semibold">Pages</h3>
                     <p class="mt-1 text-sm text-slate-600">Optional sections help group long instruments.</p>
+                    @if ($hasRealResponses)
+                        <p class="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-950">Page reordering is locked because this survey already has real responses. Pilot/test responses do not block reorder.</p>
+                    @endif
 
                     <form method="POST" action="{{ route('admin.surveys.builder.pages.store', ['survey' => $survey]) }}" class="mt-5 space-y-4">
                         @csrf
@@ -419,6 +422,12 @@
                                 </div>
                                 <div class="mt-3 flex flex-wrap gap-2">
                                     <button type="submit" class="rounded-md bg-slate-900 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800">Save Page</button>
+                                    @if (! $hasRealResponses)
+                                        <button form="move-up-page-{{ $page->id }}" type="submit" class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">Move Up</button>
+                                        <button form="move-down-page-{{ $page->id }}" type="submit" class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">Move Down</button>
+                                    @else
+                                        <span class="self-center text-xs font-semibold text-slate-500">Order locked</span>
+                                    @endif
                                     @if (! $hasResponses)
                                         <button form="delete-page-{{ $page->id }}" type="submit" onclick="return confirm('Delete this survey page? Questions remain in the survey unless moved separately.')" class="rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500">Delete</button>
                                     @else
@@ -426,6 +435,12 @@
                                     @endif
                                 </div>
                             </form>
+                            @foreach (['up', 'down'] as $direction)
+                                <form id="move-{{ $direction }}-page-{{ $page->id }}" method="POST" action="{{ route('admin.surveys.builder.pages.move', ['survey' => $survey, 'page' => $page]) }}">
+                                    @csrf
+                                    <input type="hidden" name="direction" value="{{ $direction }}">
+                                </form>
+                            @endforeach
                             <form id="delete-page-{{ $page->id }}" method="POST" action="{{ route('admin.surveys.builder.pages.delete', ['survey' => $survey, 'page' => $page]) }}">
                                 @csrf
                                 @method('DELETE')
@@ -475,7 +490,7 @@
                             </form>
                             <form method="POST" action="{{ route('admin.surveys.builder.templates.pharmvr-student-needs.normalize', ['survey' => $survey]) }}">
                                 @csrf
-                                <button type="submit" @disabled($hasRealResponses || ($pharmVrNormalizationPreview['change_count'] ?? 0) === 0) onclick="return confirm('Normalize Student Questionnaire order and settings? This is blocked when real responses exist, but pilot/test responses are preserved.')" class="rounded-md border border-emerald-300 bg-white px-4 py-2 text-sm font-semibold text-emerald-900 shadow-sm hover:bg-emerald-50 disabled:bg-slate-300">Normalize Student Questionnaire Order</button>
+                                <button type="submit" @disabled($hasRealResponses || ($pharmVrNormalizationPreview['change_count'] ?? 0) === 0) onclick="return confirm('Normalize Student Questionnaire order and settings? This is blocked when real responses exist, but pilot/test responses are preserved.')" class="rounded-md border border-emerald-300 bg-white px-4 py-2 text-sm font-semibold text-emerald-900 shadow-sm hover:bg-emerald-50 disabled:bg-slate-300">Normalize Student Order</button>
                             </form>
                             <form method="POST" action="{{ route('admin.surveys.builder.templates.pharmvr-student-needs', ['survey' => $survey]) }}">
                                 @csrf
@@ -484,12 +499,12 @@
                         @elseif ($templateActionScope === 'lecturer')
                             <form method="POST" action="{{ route('admin.surveys.builder.templates.lecturer-analysis.normalize', ['survey' => $survey]) }}">
                                 @csrf
-                                <button type="submit" @disabled($hasRealResponses) onclick="return confirm('Normalize Lecturer Questionnaire order, indicators, and scoring? Structural changes are blocked when real responses exist.')" class="rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-600 disabled:bg-slate-300">Normalize Lecturer Questionnaire Order</button>
+                                <button type="submit" @disabled($hasRealResponses) onclick="return confirm('Normalize Lecturer Questionnaire order, indicators, and scoring? Structural changes are blocked when real responses exist.')" class="rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-600 disabled:bg-slate-300">Normalize Lecturer Order</button>
                             </form>
                         @elseif ($templateActionScope === 'practitioner')
                             <form method="POST" action="{{ route('admin.surveys.builder.templates.practitioner-interview.normalize', ['survey' => $survey]) }}">
                                 @csrf
-                                <button type="submit" @disabled($hasRealResponses) onclick="return confirm('Normalize Practitioner Interview order and descriptive indicators? Structural changes are blocked when real responses exist.')" class="rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-600 disabled:bg-slate-300">Normalize Practitioner Interview Order</button>
+                                <button type="submit" @disabled($hasRealResponses) onclick="return confirm('Normalize Practitioner/Ahli CPOB order and descriptive indicators? Structural changes are blocked when real responses exist.')" class="rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-600 disabled:bg-slate-300">Normalize Practitioner/Ahli CPOB Order</button>
                             </form>
                         @endif
                     </div>
@@ -626,20 +641,43 @@
                 @endif
             </section>
 
-            <div class="mt-6 space-y-5">
+            <div class="mt-6 rounded-lg border border-slate-200 bg-slate-50 p-4">
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <p class="text-sm font-semibold text-slate-950">Manual question order</p>
+                        <p class="mt-1 text-sm leading-6 text-slate-600">Drag to reorder questions or use Move Up/Move Down. Save Drag Order persists the respondent-facing order immediately.</p>
+                    </div>
+                    @if (! $hasRealResponses && $survey->questions->isNotEmpty())
+                        <form id="question-order-form" method="POST" action="{{ route('admin.surveys.builder.questions.reorder', ['survey' => $survey]) }}" class="flex shrink-0 flex-wrap items-center gap-2">
+                            @csrf
+                            @foreach ($survey->questions as $question)
+                                <input type="hidden" name="question_order[]" value="{{ $question->id }}" data-question-order-input>
+                            @endforeach
+                            <button type="submit" class="rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-600">Save Drag Order</button>
+                        </form>
+                    @elseif ($hasRealResponses)
+                        <p class="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-950">Question reordering is locked because this survey already has real responses. Pilot/test responses do not block reorder.</p>
+                    @endif
+                </div>
+            </div>
+
+            <div class="mt-6 space-y-5" data-question-list>
                 @forelse ($survey->questions as $question)
                     @php
                         $card = collect($builderWizard['questions'])->firstWhere('id', $question->id);
                     @endphp
-                    <article class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+                    <article class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition" data-question-row data-question-id="{{ $question->id }}" draggable="{{ $hasRealResponses ? 'false' : 'true' }}">
                         <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                            <div>
-                                <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">{{ $card['order_label'] }}</p>
-                                <h3 class="mt-1 text-lg font-semibold text-slate-950">{{ $question->label }}</h3>
-                                @if ($question->help_text)
-                                    <p class="mt-1 text-sm text-slate-600">{{ $question->help_text }}</p>
-                                @endif
-                                <p class="mt-2 text-xs text-slate-500">Option count: {{ $card['option_count'] }} | Scoring: {{ $card['scoring_status'] }}</p>
+                            <div class="flex min-w-0 gap-3">
+                                <span class="mt-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-slate-300 bg-slate-50 text-lg font-semibold text-slate-500" title="{{ $hasRealResponses ? 'Order locked' : 'Drag to reorder' }}" aria-label="{{ $hasRealResponses ? 'Order locked' : 'Drag to reorder' }}">&#8942;&#8942;</span>
+                                <div class="min-w-0">
+                                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">{{ $card['order_label'] }}</p>
+                                    <h3 class="mt-1 text-lg font-semibold text-slate-950">{{ $question->label }}</h3>
+                                    @if ($question->help_text)
+                                        <p class="mt-1 text-sm text-slate-600">{{ $question->help_text }}</p>
+                                    @endif
+                                    <p class="mt-2 text-xs text-slate-500">Option count: {{ $card['option_count'] }} | Scoring: {{ $card['scoring_status'] }}</p>
+                                </div>
                             </div>
                             <div class="flex flex-wrap gap-2">
                                 <span class="rounded-full border px-3 py-1 text-xs font-semibold {{ $typeClass($question->type) }}">{{ $label($question->type) }}</span>
@@ -648,6 +686,12 @@
                                     <span class="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">Indicator: {{ $question->scoring->indicator->name }}</span>
                                 @else
                                     <span class="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">No indicator</span>
+                                @endif
+                                @if (! $hasRealResponses)
+                                    <button form="move-up-question-{{ $question->id }}" type="submit" class="rounded-md border border-slate-300 bg-white px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50">Move Up</button>
+                                    <button form="move-down-question-{{ $question->id }}" type="submit" class="rounded-md border border-slate-300 bg-white px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50">Move Down</button>
+                                @else
+                                    <span class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-500">Order locked</span>
                                 @endif
                             </div>
                         </div>
@@ -678,8 +722,10 @@
                                 ])
                                 <div class="md:col-span-2 flex flex-wrap gap-2">
                                     <button type="submit" class="rounded-md bg-slate-900 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800">Save Question</button>
-                                    <button form="move-up-question-{{ $question->id }}" type="submit" class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">Move Up</button>
-                                    <button form="move-down-question-{{ $question->id }}" type="submit" class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">Move Down</button>
+                                    @if (! $hasRealResponses)
+                                        <button form="move-up-question-{{ $question->id }}" type="submit" class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">Move Up</button>
+                                        <button form="move-down-question-{{ $question->id }}" type="submit" class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">Move Down</button>
+                                    @endif
                                     <button form="duplicate-question-{{ $question->id }}" type="submit" class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">Duplicate</button>
                                     @if (! $hasResponses)
                                         <button form="delete-question-{{ $question->id }}" type="submit" onclick="return confirm('Delete this question? This cannot be undone.')" class="rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500">Delete</button>
@@ -690,19 +736,10 @@
                             </form>
                         </details>
 
-                        @foreach (['up' => max(0, $question->sort_order - 1), 'down' => $question->sort_order + 1] as $direction => $sortOrder)
-                            <form id="move-{{ $direction }}-question-{{ $question->id }}" method="POST" action="{{ route('admin.surveys.builder.questions.update', ['survey' => $survey, 'question' => $question]) }}">
+                        @foreach (['up', 'down'] as $direction)
+                            <form id="move-{{ $direction }}-question-{{ $question->id }}" method="POST" action="{{ route('admin.surveys.builder.questions.move', ['survey' => $survey, 'question' => $question]) }}">
                                 @csrf
-                                @method('PUT')
-                                <input type="hidden" name="page_id" value="{{ $question->page_id }}">
-                                <input type="hidden" name="question_key" value="{{ $question->question_key }}">
-                                <input type="hidden" name="type" value="{{ $question->type }}">
-                                <input type="hidden" name="label" value="{{ $question->label }}">
-                                <input type="hidden" name="help_text" value="{{ $question->help_text }}">
-                                <input type="hidden" name="options_json" value="{{ $json($question->options) }}">
-                                <input type="hidden" name="settings_json" value="{{ $json($question->settings) }}">
-                                <input type="hidden" name="is_required" value="{{ $question->is_required ? 1 : 0 }}">
-                                <input type="hidden" name="sort_order" value="{{ $sortOrder }}">
+                                <input type="hidden" name="direction" value="{{ $direction }}">
                             </form>
                         @endforeach
 
@@ -1086,5 +1123,72 @@
             @endif
         </section>
     </main>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const list = document.querySelector('[data-question-list]');
+            const form = document.getElementById('question-order-form');
+
+            if (!list || !form) {
+                return;
+            }
+
+            let dragged = null;
+
+            const syncQuestionOrder = () => {
+                const ids = Array.from(list.querySelectorAll('[data-question-row]'))
+                    .map((row) => row.dataset.questionId)
+                    .filter(Boolean);
+                const inputs = Array.from(form.querySelectorAll('[data-question-order-input]'));
+
+                ids.forEach((id, index) => {
+                    if (inputs[index]) {
+                        inputs[index].value = id;
+                    }
+                });
+            };
+
+            const insertBeforePointer = (target, clientY) => {
+                const box = target.getBoundingClientRect();
+                const before = clientY < box.top + (box.height / 2);
+
+                list.insertBefore(dragged, before ? target : target.nextSibling);
+            };
+
+            list.querySelectorAll('[data-question-row]').forEach((row) => {
+                row.addEventListener('dragstart', (event) => {
+                    if (row.getAttribute('draggable') !== 'true') {
+                        event.preventDefault();
+                        return;
+                    }
+
+                    dragged = row;
+                    row.classList.add('opacity-60', 'ring-2', 'ring-emerald-200');
+                    event.dataTransfer.effectAllowed = 'move';
+                    event.dataTransfer.setData('text/plain', row.dataset.questionId || '');
+                });
+
+                row.addEventListener('dragover', (event) => {
+                    if (!dragged || dragged === row) {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    insertBeforePointer(row, event.clientY);
+                    syncQuestionOrder();
+                });
+
+                row.addEventListener('drop', (event) => {
+                    event.preventDefault();
+                    syncQuestionOrder();
+                });
+
+                row.addEventListener('dragend', () => {
+                    row.classList.remove('opacity-60', 'ring-2', 'ring-emerald-200');
+                    dragged = null;
+                    syncQuestionOrder();
+                });
+            });
+        });
+    </script>
 </body>
 </html>

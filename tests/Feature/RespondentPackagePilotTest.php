@@ -75,8 +75,8 @@ class RespondentPackagePilotTest extends TestCase
 
         $this->get($url)
             ->assertOk()
-            ->assertSeeText('PILOT/REVIEWER MODE')
-            ->assertSeeText('excluded from analysis');
+            ->assertSeeText('MODE UJI COBA / REVIEWER')
+            ->assertSeeText('tidak masuk hasil analisis');
 
         $this->assertTrue($run->fresh()->isActive());
     }
@@ -89,12 +89,12 @@ class RespondentPackagePilotTest extends TestCase
 
         $this->get(route('survey.show', ['survey' => $survey->fresh()->slug]))
             ->assertOk()
-            ->assertSeeText('This survey is unavailable')
+            ->assertSeeText('Survey tidak tersedia')
             ->assertDontSeeText($survey->title);
 
         $this->get($url)
             ->assertOk()
-            ->assertSeeText('PILOT/REVIEWER MODE')
+            ->assertSeeText('MODE UJI COBA / REVIEWER')
             ->assertSeeText('Pengantar Kuesioner Analisis Kebutuhan PharmVR')
             ->assertSeeText('Data yang dikumpulkan')
             ->assertSeeText('Saya telah membaca penjelasan di atas dan bersedia melanjutkan.')
@@ -116,7 +116,7 @@ class RespondentPackagePilotTest extends TestCase
 
         $this->get(route('survey.show', ['survey' => $survey->fresh()->slug, 'pilot' => 'invalid-token']))
             ->assertForbidden()
-            ->assertSeeText('Pilot link is no longer active.');
+            ->assertSeeText('Link uji coba tidak aktif.');
 
         $this->actingAs($admin)
             ->post(route('admin.surveys.respondent-package.pilot.revoke', ['survey' => $survey, 'pilotRun' => $run]))
@@ -124,7 +124,7 @@ class RespondentPackagePilotTest extends TestCase
 
         $this->get(route('survey.show', ['survey' => $survey->fresh()->slug, 'pilot' => $token]))
             ->assertForbidden()
-            ->assertSeeText('Pilot link is no longer active.');
+            ->assertSeeText('Link uji coba tidak aktif.');
     }
 
     public function test_closed_survey_pilot_submission_is_stored_as_excluded_test_data(): void
@@ -139,7 +139,7 @@ class RespondentPackagePilotTest extends TestCase
             'answers' => ['student_need' => '5'],
         ])
             ->assertOk()
-            ->assertSeeText('Pilot test response stored as test data');
+            ->assertSeeText('Respons uji coba disimpan sebagai data tes');
 
         $response = SurveyResponse::firstOrFail();
 
@@ -162,7 +162,7 @@ class RespondentPackagePilotTest extends TestCase
             'answers' => ['student_need' => '5'],
         ])
             ->assertOk()
-            ->assertSeeText('Pilot test response stored as test data');
+            ->assertSeeText('Respons uji coba disimpan sebagai data tes');
 
         $response = SurveyResponse::firstOrFail();
         $run = AnalysisPilotRun::firstOrFail();
@@ -188,7 +188,7 @@ class RespondentPackagePilotTest extends TestCase
                 'answers' => ['student_need' => $answer],
             ])
                 ->assertOk()
-                ->assertSeeText('Pilot test response stored as test data');
+                ->assertSeeText('Respons uji coba disimpan sebagai data tes');
         }
 
         $run = AnalysisPilotRun::firstOrFail();
@@ -292,7 +292,7 @@ class RespondentPackagePilotTest extends TestCase
             'answers' => ['student_need' => '5'],
         ])
             ->assertForbidden()
-            ->assertSeeText('Pilot link is no longer active.');
+            ->assertSeeText('Link uji coba tidak aktif.');
 
         $this->assertSame(0, SurveyResponse::count());
 

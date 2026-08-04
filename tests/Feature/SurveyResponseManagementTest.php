@@ -99,7 +99,7 @@ class SurveyResponseManagementTest extends TestCase
             ],
         ])
             ->assertOk()
-            ->assertSee('Response submitted')
+            ->assertSee('Respons berhasil dikirim')
             ->assertDontSee('Public Respondent')
             ->assertDontSee('public@example.test')
             ->assertDontSee('/admin');

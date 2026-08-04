@@ -30,7 +30,9 @@ class ResearchProjectResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedFolder;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Projects';
+    protected static string|UnitEnum|null $navigationGroup = 'Project';
+
+    protected static ?string $navigationLabel = 'Project Riset';
 
     protected static ?string $recordTitleAttribute = 'title';
 

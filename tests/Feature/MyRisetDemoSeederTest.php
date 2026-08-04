@@ -127,7 +127,7 @@ class MyRisetDemoSeederTest extends TestCase
         $this->actingAs($admin)
             ->get('/admin')
             ->assertOk()
-            ->assertSeeText('Action Center')
+            ->assertSeeText('Pusat Tindakan')
             ->assertSeeText('Disertasi PharmVR')
             ->assertSeeText('BAB III Metodologi Penelitian')
             ->assertSeeText('Batas revisi')

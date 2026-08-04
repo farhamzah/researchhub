@@ -42,10 +42,10 @@ class DashboardDataService
             'stats' => $this->stats($user, $visibleProjectIds),
             'driveStatus' => [
                 'connected' => $driveConnected,
-                'label' => $driveConnected ? 'Connected' : 'Not connected',
+                'label' => $driveConnected ? 'Terhubung' : 'Belum terhubung',
                 'description' => $driveConnected
-                    ? 'Google Drive is ready for MyRiset document storage.'
-                    : 'Connect Google Drive before storing research files.',
+                    ? 'Google Drive siap dipakai untuk penyimpanan dokumen riset.'
+                    : 'Hubungkan Google Drive sebelum menyimpan file riset.',
             ],
             'activeProjects' => $this->activeProjects($user),
             'journeyProjects' => $this->journeyProjects($user),
@@ -150,52 +150,52 @@ class DashboardDataService
 
         return [
             [
-                'label' => 'Research Projects',
+                'label' => 'Project Riset',
                 'value' => $visibleProjectIds->count(),
-                'description' => 'Visible project workspaces',
+                'description' => 'Workspace riset yang bisa diakses',
                 'accent' => '#2563eb',
             ],
             [
-                'label' => 'Documents',
+                'label' => 'Dokumen',
                 'value' => Document::query()->visibleTo($user)->count(),
-                'description' => 'Visible research files',
+                'description' => 'Dokumen riset yang bisa diakses',
                 'accent' => '#059669',
             ],
             [
-                'label' => 'Surveys',
+                'label' => 'Survey',
                 'value' => Survey::query()->visibleTo($user)->count(),
-                'description' => 'Visible instruments',
+                'description' => 'Instrumen pengumpulan data',
                 'accent' => '#0891b2',
             ],
             [
-                'label' => 'Analysis Results',
+                'label' => 'Hasil Analisis',
                 'value' => $this->analysisResultQuery($user)->count(),
-                'description' => 'Academic draft outputs',
+                'description' => 'Output analisis siap dikembangkan',
                 'accent' => '#7c3aed',
             ],
             [
-                'label' => 'Research Links',
+                'label' => 'Link Riset',
                 'value' => ResearchLink::query()->visibleTo($user)->where('is_active', true)->count(),
-                'description' => 'Active saved resources',
+                'description' => 'Referensi aktif yang disimpan',
                 'accent' => '#0f766e',
             ],
             [
-                'label' => 'Timeline Tasks',
+                'label' => 'Tugas Timeline',
                 'value' => $projectIds === []
                     ? 0
                     : ProjectTimelineTask::query()->whereIn('research_project_id', $projectIds)->count(),
-                'description' => 'Scoped timeline items',
+                'description' => 'Tugas riset dalam project',
                 'accent' => '#d97706',
             ],
             [
-                'label' => 'Pending Reviews',
+                'label' => 'Review Aktif',
                 'value' => $projectIds === []
                     ? 0
                     : ReviewLink::query()
                         ->whereIn('project_id', $projectIds)
                         ->where('status', ReviewLink::STATUS_ACTIVE)
                         ->count(),
-                'description' => 'Active review links',
+                'description' => 'Link review yang masih aktif',
                 'accent' => '#dc2626',
             ],
         ];
@@ -290,7 +290,7 @@ class DashboardDataService
             ->get()
             ->map(fn (Document $document): array => [
                 'title' => $document->title,
-                'project' => $document->project?->title ?? 'No project',
+                'project' => $document->project?->title ?? 'Tanpa project',
                 'status' => $this->label($document->status),
                 'updated_at' => $document->updated_at?->diffForHumans(),
                 'url' => route('filament.admin.resources.documents.index'),
@@ -311,7 +311,7 @@ class DashboardDataService
             ->get()
             ->map(fn (Survey $survey): array => [
                 'title' => $survey->title,
-                'project' => $survey->project?->title ?? 'No project',
+                'project' => $survey->project?->title ?? 'Tanpa project',
                 'status' => $this->label($survey->status),
                 'responses_count' => $survey->responses_count,
                 'url' => route('admin.surveys.builder.index', ['survey' => $survey]),
@@ -330,7 +330,7 @@ class DashboardDataService
             ->get()
             ->map(fn (AnalysisResult $result): array => [
                 'title' => $result->title,
-                'project' => $result->project?->title ?? 'No project',
+                'project' => $result->project?->title ?? 'Tanpa project',
                 'survey' => $result->survey?->title,
                 'updated_at' => $result->updated_at?->diffForHumans(),
                 'url' => route('admin.analysis.results.show', ['analysisResult' => $result]),
@@ -372,16 +372,16 @@ class DashboardDataService
                 'date_label' => $item['due_date'] ? 'Batas revisi: '.$item['due_date'] : null,
                 'is_risk' => $item['is_overdue'] || $item['needs_revision'],
                 'url' => $item['url'],
-                'action_label' => 'Open Documents',
+                'action_label' => 'Buka Dokumen',
             ]))
             ->merge($this->pendingFollowUps($visibleProjectIds)->take(2)->map(fn (array $item): array => [
                 'title' => $item['title'],
                 'context' => $item['project'].' | '.$item['session'],
                 'badge' => $item['status'],
-                'date_label' => $item['due_date'] ? 'Due '.$item['due_date'] : null,
+                'date_label' => $item['due_date'] ? 'Batas waktu: '.$item['due_date'] : null,
                 'is_risk' => $item['is_overdue'],
                 'url' => $item['url'],
-                'action_label' => 'Open Supervision',
+                'action_label' => 'Buka Bimbingan',
             ]))
             ->merge($this->validationPending($visibleProjectIds)->take(2)->map(fn (array $item): array => [
                 'title' => $item['survey'],
@@ -390,43 +390,43 @@ class DashboardDataService
                 'date_label' => $item['round_status'],
                 'is_risk' => false,
                 'url' => $item['url'],
-                'action_label' => 'Open Validation',
+                'action_label' => 'Buka Validasi',
             ]))
             ->merge($this->recentSupervisionFeedback($visibleProjectIds)->take(2)->map(fn (array $item): array => [
                 'title' => $item['title'],
                 'context' => $item['project'],
                 'badge' => $item['decision'],
-                'date_label' => $item['submitted_at'] ? 'Submitted '.$item['submitted_at'] : null,
+                'date_label' => $item['submitted_at'] ? 'Dikirim: '.$item['submitted_at'] : null,
                 'is_risk' => in_array($item['status_key'], [SupervisionSession::STATUS_REVISION_NEEDED, SupervisionSession::STATUS_FEEDBACK_SUBMITTED], true),
                 'url' => $item['url'],
-                'action_label' => 'Open Supervision',
+                'action_label' => 'Buka Bimbingan',
             ]))
             ->merge($this->timelineRisks($visibleProjectIds)->take(2)->map(fn (array $item): array => [
                 'title' => $item['title'],
                 'context' => $item['project'],
                 'badge' => $item['status'],
-                'date_label' => $item['planned_end_date'] ? 'Due '.$item['planned_end_date'] : null,
+                'date_label' => $item['planned_end_date'] ? 'Batas waktu: '.$item['planned_end_date'] : null,
                 'is_risk' => true,
                 'url' => $item['url'],
-                'action_label' => 'Open Timeline',
+                'action_label' => 'Buka Timeline',
             ]))
             ->merge($this->surveysWithoutQuestions($visibleProjectIds)->take(1)->map(fn (array $item): array => [
                 'title' => $item['title'],
                 'context' => $item['project'],
-                'badge' => 'No Questions',
+                'badge' => 'Belum Ada Pertanyaan',
                 'date_label' => null,
                 'is_risk' => false,
                 'url' => $item['url'],
-                'action_label' => 'Open Builder',
+                'action_label' => 'Buka Builder',
             ]))
             ->merge($this->projectsWithoutTarget($visibleProjectIds)->take(1)->map(fn (array $item): array => [
                 'title' => $item['title'],
-                'context' => 'Project setup',
-                'badge' => 'No Target',
+                'context' => 'Setup project',
+                'badge' => 'Belum Ada Target',
                 'date_label' => null,
                 'is_risk' => false,
                 'url' => $item['url'],
-                'action_label' => 'Open Projects',
+                'action_label' => 'Buka Project',
             ]))
             ->take(8)
             ->values();
@@ -464,8 +464,8 @@ class DashboardDataService
             ->get()
             ->map(fn (Document $document): array => [
                 'title' => $document->title,
-                'project' => $document->project?->title ?? 'No project',
-                'status' => $document->statusLabel(),
+                'project' => $document->project?->title ?? 'Tanpa project',
+                'status' => $this->label($document->status),
                 'status_key' => $document->status,
                 'due_date' => $document->revision_due_date?->toFormattedDateString(),
                 'is_overdue' => $document->isRevisionOverdue(),
@@ -502,10 +502,10 @@ class DashboardDataService
             ->get()
             ->map(fn (SupervisionFollowUpItem $item): array => [
                 'title' => $item->title,
-                'project' => $item->session?->project?->title ?? 'No project',
-                'session' => $item->session?->title ?? 'No session',
-                'status' => SupervisionFollowUpItem::STATUS_LABELS[$item->status] ?? $this->label($item->status),
-                'priority' => SupervisionFollowUpItem::PRIORITY_LABELS[$item->priority] ?? $this->label($item->priority),
+                'project' => $item->session?->project?->title ?? 'Tanpa project',
+                'session' => $item->session?->title ?? 'Tanpa sesi',
+                'status' => $this->label($item->status),
+                'priority' => $this->label($item->priority),
                 'due_date' => $item->due_date?->toFormattedDateString(),
                 'is_overdue' => $item->due_date !== null && $item->due_date->isBefore(today()),
                 'url' => $item->session?->project
@@ -546,9 +546,9 @@ class DashboardDataService
             ->map(fn (SurveyValidationRound $round): array => [
                 'survey' => $round->survey?->title ?? $round->title,
                 'round' => $round->title,
-                'project' => $round->project?->title ?? 'No project',
-                'round_status' => SurveyValidationRound::STATUS_LABELS[$round->status] ?? $this->label($round->status),
-                'progress_label' => $round->submitted_assignments_count.' / '.$round->total_assignments_count.' submitted',
+                'project' => $round->project?->title ?? 'Tanpa project',
+                'round_status' => $this->label($round->status),
+                'progress_label' => $round->submitted_assignments_count.' / '.$round->total_assignments_count.' terkirim',
                 'url' => $round->survey
                     ? route('admin.surveys.validation.index', ['survey' => $round->survey])
                     : route('filament.admin.resources.surveys.index'),
@@ -585,11 +585,11 @@ class DashboardDataService
 
                 return [
                     'title' => $session->title,
-                    'project' => $session->project?->title ?? 'No project',
-                    'status' => SupervisionSession::STATUS_LABELS[$session->status] ?? $this->label($session->status),
+                    'project' => $session->project?->title ?? 'Tanpa project',
+                    'status' => $this->label($session->status),
                     'status_key' => $session->status,
                     'decision' => $feedback
-                        ? (SupervisionFeedback::DECISION_LABELS[$feedback->decision] ?? $this->label($feedback->decision))
+                        ? $this->label($feedback->decision)
                         : 'Feedback',
                     'submitted_at' => $session->submitted_at?->toFormattedDateString() ?? $feedback?->created_at?->toFormattedDateString(),
                     'url' => $session->project
@@ -622,7 +622,7 @@ class DashboardDataService
             ->get()
             ->map(fn (ProjectTimelineTask $task): array => [
                 'title' => $task->title,
-                'project' => $task->project?->title ?? 'No project',
+                'project' => $task->project?->title ?? 'Tanpa project',
                 'milestone' => $task->milestone?->title,
                 'planned_end_date' => $task->planned_end_date?->toFormattedDateString(),
                 'status' => $this->label($task->status),
@@ -653,7 +653,7 @@ class DashboardDataService
             ->get()
             ->map(fn (Survey $survey): array => [
                 'title' => $survey->title,
-                'project' => $survey->project?->title ?? 'No project',
+                'project' => $survey->project?->title ?? 'Tanpa project',
                 'url' => route('admin.surveys.builder.index', ['survey' => $survey]),
             ]);
     }
@@ -689,32 +689,32 @@ class DashboardDataService
     {
         return [
             [
-                'label' => 'Open Projects',
-                'description' => 'Manage research workspaces and project timelines.',
+                'label' => 'Buka Project',
+                'description' => 'Kelola workspace riset, status, dan timeline project.',
                 'url' => route('filament.admin.resources.projects.research-projects.index'),
                 'initial' => 'P',
             ],
             [
-                'label' => 'Open Documents',
-                'description' => 'Review document metadata, versions, and review links.',
+                'label' => 'Buka Dokumen',
+                'description' => 'Kelola metadata, versi, status revisi, dan link review dokumen.',
                 'url' => route('filament.admin.resources.documents.index'),
                 'initial' => 'D',
             ],
             [
-                'label' => 'Open Surveys',
-                'description' => 'Manage instruments, responses, scoring, and analysis.',
+                'label' => 'Buka Survey',
+                'description' => 'Susun instrumen, pantau respons, skoring, dan analisis.',
                 'url' => route('filament.admin.resources.surveys.index'),
                 'initial' => 'S',
             ],
             [
-                'label' => 'Open Research Links',
-                'description' => 'Access pinned journals, datasets, repositories, and OJS pages.',
+                'label' => 'Buka Link Riset',
+                'description' => 'Akses jurnal, dataset, repositori, OJS, dan referensi penting.',
                 'url' => route('filament.admin.resources.research-links.index'),
                 'initial' => 'L',
             ],
             [
-                'label' => 'Google Drive Settings',
-                'description' => 'Connect Drive before storing research files.',
+                'label' => 'Atur Google Drive',
+                'description' => 'Hubungkan Drive sebelum menyimpan file riset.',
                 'url' => route('filament.admin.pages.settings.google-drive'),
                 'initial' => 'G',
             ],
@@ -744,6 +744,38 @@ class DashboardDataService
 
     private function label(?string $value): string
     {
-        return Str::headline((string) $value);
+        return match ((string) $value) {
+            'draft' => 'Draft',
+            'active' => 'Aktif',
+            'submitted' => 'Terkirim',
+            'under_review' => 'Sedang Direview',
+            'revision_required' => 'Perlu Revisi',
+            'revision_needed' => 'Perlu Revisi',
+            'approved' => 'Disetujui',
+            'final' => 'Final',
+            'archived' => 'Diarsipkan',
+            'open' => 'Terbuka',
+            'closed' => 'Ditutup',
+            'pending' => 'Menunggu',
+            'link_generated' => 'Link Dibuat',
+            'opened' => 'Dibuka',
+            'expired' => 'Kedaluwarsa',
+            'revoked' => 'Dicabut',
+            'todo' => 'Perlu Dikerjakan',
+            'to_do' => 'Perlu Dikerjakan',
+            'in_progress' => 'Berjalan',
+            'waiting_supervisor' => 'Menunggu Pembimbing',
+            'completed' => 'Selesai',
+            'cancelled' => 'Dibatalkan',
+            'low' => 'Rendah',
+            'normal' => 'Normal',
+            'high' => 'Tinggi',
+            'urgent' => 'Mendesak',
+            'minor_revision' => 'Revisi Minor',
+            'major_revision' => 'Revisi Mayor',
+            'needs_discussion' => 'Perlu Diskusi',
+            'rejected' => 'Ditolak',
+            default => Str::headline((string) $value),
+        };
     }
 }

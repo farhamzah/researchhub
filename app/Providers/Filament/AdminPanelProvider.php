@@ -128,11 +128,12 @@ class AdminPanelProvider extends PanelProvider
                 HTML))
             ->navigationGroups([
                 NavigationGroup::make('Workspace'),
-                NavigationGroup::make('Research Resources'),
-                NavigationGroup::make('Projects'),
-                NavigationGroup::make('Research Documents'),
-                NavigationGroup::make('Survey & Analysis'),
-                NavigationGroup::make('Integrations'),
+                NavigationGroup::make('Tata Kelola Riset'),
+                NavigationGroup::make('Referensi Riset'),
+                NavigationGroup::make('Project'),
+                NavigationGroup::make('Dokumen Riset'),
+                NavigationGroup::make('Survey & Analisis'),
+                NavigationGroup::make('Integrasi'),
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')

@@ -23,8 +23,8 @@ class PublicSurveyController extends Controller
         if (filled($pilotToken) && ! $pilotRun) {
             return response()
                 ->view('surveys.unavailable', [
-                    'title' => 'Pilot link is no longer active.',
-                    'message' => 'This pilot test link is invalid, expired, or revoked. Request a fresh pilot link from the researcher.',
+                    'title' => 'Link uji coba tidak aktif.',
+                    'message' => 'Link uji coba ini tidak valid, sudah kedaluwarsa, atau sudah dicabut. Minta link uji coba baru kepada peneliti.',
                 ], 403);
         }
 
@@ -56,14 +56,14 @@ class PublicSurveyController extends Controller
         if (filled($pilotToken) && ! $pilotRun) {
             return response()
                 ->view('surveys.unavailable', [
-                    'title' => 'Pilot link is no longer active.',
-                    'message' => 'This pilot test link is invalid, expired, or revoked. It was not stored as real respondent data.',
+                    'title' => 'Link uji coba tidak aktif.',
+                    'message' => 'Link uji coba ini tidak valid, sudah kedaluwarsa, atau sudah dicabut. Data tidak disimpan sebagai respons responden utama.',
                 ], 403);
         }
 
         if (($survey->canReceiveResponses() || $pilotRun) && $survey->require_consent_before_start && $request->input('intro_consent') !== '1') {
             throw ValidationException::withMessages([
-                'intro_consent' => 'Please confirm that you have read the survey explanation before continuing.',
+                'intro_consent' => 'Mohon konfirmasi bahwa Anda sudah membaca penjelasan survey sebelum melanjutkan.',
             ]);
         }
 

@@ -161,7 +161,7 @@ class SurveyDistributionCenterTest extends TestCase
             ],
         ])
             ->assertOk()
-            ->assertSee('Response submitted');
+            ->assertSee('Respons berhasil dikirim');
 
         $this->assertSame(1, SurveyResponse::count());
     }

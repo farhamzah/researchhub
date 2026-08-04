@@ -52,7 +52,7 @@ class PublicSurveySubmissionTest extends TestCase
             ],
         ])
             ->assertOk()
-            ->assertSee('Response submitted')
+            ->assertSee('Respons berhasil dikirim')
             ->assertDontSee('Should Not Be Stored In Pseudonym Mode');
 
         $response = SurveyResponse::with(['respondent', 'answers'])->firstOrFail();
@@ -76,7 +76,7 @@ class PublicSurveySubmissionTest extends TestCase
 
         $this->get(route('survey.show', ['survey' => $survey->slug]))
             ->assertOk()
-            ->assertSee('This survey is unavailable')
+            ->assertSee('Survey tidak tersedia')
             ->assertDontSee($survey->title)
             ->assertDontSee($project->title);
 
@@ -84,7 +84,7 @@ class PublicSurveySubmissionTest extends TestCase
             'answers' => ['name_need' => 'Blocked'],
         ])
             ->assertForbidden()
-            ->assertSee('This survey is unavailable');
+            ->assertSee('Survey tidak tersedia');
 
         app(PublishSurveyAction::class)->handle($owner, $survey);
         app(CloseSurveyAction::class)->handle($owner, $survey->fresh());
@@ -93,7 +93,7 @@ class PublicSurveySubmissionTest extends TestCase
             'answers' => ['name_need' => 'Blocked again'],
         ])
             ->assertForbidden()
-            ->assertSee('This survey is unavailable');
+            ->assertSee('Survey tidak tersedia');
 
         $this->assertSame(0, SurveyResponse::count());
         $this->assertSame(2, ActivityLog::where('action', 'survey.response_rejected')->count());
@@ -185,7 +185,7 @@ class PublicSurveySubmissionTest extends TestCase
             'answers' => $validAnswers,
         ])
             ->assertOk()
-            ->assertSee('Response submitted');
+            ->assertSee('Respons berhasil dikirim');
 
         $this->assertSame(1, SurveyResponse::count());
     }

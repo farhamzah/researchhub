@@ -2,6 +2,21 @@
 
 Audit date: 2026-06-13
 
+Follow-up audit date: 2026-08-05
+
+## Follow-up Fixes Applied
+
+- Standardized the dashboard orientation screen to Indonesian copy so the first admin experience no longer mixes English and Indonesian labels.
+- Renamed the dashboard Action Center copy to a clearer `Pusat Tindakan` pattern while preserving the underlying card data and security filtering.
+- Reworded dashboard empty states so users see the next practical step, especially when projects, documents, surveys, links, timeline tasks, and analysis results are still empty.
+- Updated dashboard CTA labels from generic `Open ...` wording to clearer actions such as `Buka Project`, `Buka Dokumen`, `Buka Timeline`, and `Lihat semua`.
+- Simplified Google Drive status wording on the dashboard to `Terhubung` / `Belum terhubung` with user-facing storage guidance.
+- Localized the main Filament sidebar groups and primary resource labels so users no longer move from an Indonesian dashboard into English navigation labels.
+- Localized public survey respondent copy, including introduction, privacy, instructions, identity helper text, pilot mode banner, unavailable state, thank-you state, and submit CTA.
+- Localized the public document review page, including unavailable links, password gate, metadata labels, version history, comment submission, and approve/revision decisions.
+- Rechecked dashboard and public survey pages in browser QA at desktop and mobile widths; no horizontal overflow was observed on the checked screens.
+- Updated feature tests that protect the dashboard, journey, and template flows from returning to mixed-language or unclear labels.
+
 ## Scope
 
 This audit reviewed the current MyRiset UI after the dashboard, project templates, project journey, document revision flow, survey builder, expert validation, supervision, academic output, public link polish, and Google Drive settings foundation work.

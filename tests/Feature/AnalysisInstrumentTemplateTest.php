@@ -151,7 +151,7 @@ class AnalysisInstrumentTemplateTest extends TestCase
 
         $this->get(session('generated_pilot_url'))
             ->assertOk()
-            ->assertSeeText('PILOT/REVIEWER MODE')
+            ->assertSeeText('MODE UJI COBA / REVIEWER')
             ->assertSeeText('Pengantar Kuesioner Analisis Kebutuhan Dosen PharmVR');
 
         $this->assertSame(Survey::INSTRUMENT_PRACTITIONER_INTERVIEW, $practitioner->instrument_type);

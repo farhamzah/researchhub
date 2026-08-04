@@ -37,7 +37,9 @@ class DocumentResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentText;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Research Documents';
+    protected static string|UnitEnum|null $navigationGroup = 'Dokumen Riset';
+
+    protected static ?string $navigationLabel = 'Dokumen';
 
     protected static ?string $recordTitleAttribute = 'title';
 

@@ -137,8 +137,8 @@ class ResearchLinkFilamentCrudTest extends TestCase
         $this->actingAs($admin)
             ->get('/admin')
             ->assertOk()
-            ->assertSee('Research Resources')
-            ->assertSee('Research Links');
+            ->assertSee('Referensi Riset')
+            ->assertSee('Link Riset');
     }
 
     private function adminUser(string $email = 'admin@example.test'): User

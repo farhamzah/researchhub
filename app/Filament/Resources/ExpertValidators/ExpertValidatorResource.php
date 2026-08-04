@@ -29,9 +29,9 @@ class ExpertValidatorResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedAcademicCap;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Research Governance';
+    protected static string|UnitEnum|null $navigationGroup = 'Tata Kelola Riset';
 
-    protected static ?string $navigationLabel = 'Expert Validators';
+    protected static ?string $navigationLabel = 'Validator Ahli';
 
     protected static ?string $recordTitleAttribute = 'name';
 

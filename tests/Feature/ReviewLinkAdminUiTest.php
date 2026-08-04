@@ -180,7 +180,7 @@ class ReviewLinkAdminUiTest extends TestCase
 
         $this->get($result->url)
             ->assertForbidden()
-            ->assertSee('This review link is unavailable')
+            ->assertSee('Link review tidak tersedia')
             ->assertDontSee($document->title);
     }
 

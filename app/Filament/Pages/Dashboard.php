@@ -40,8 +40,8 @@ class Dashboard extends BaseDashboard
                 'stats' => [],
                 'driveStatus' => [
                     'connected' => false,
-                    'label' => 'Not connected',
-                    'description' => 'Sign in to view your Google Drive status.',
+                    'label' => 'Belum terhubung',
+                    'description' => 'Masuk ke akun untuk melihat status Google Drive.',
                 ],
                 'activeProjects' => collect(),
                 'journeyProjects' => collect(),

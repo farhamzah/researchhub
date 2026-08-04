@@ -185,9 +185,9 @@ class ProjectResearchJourneyTest extends TestCase
         $this->actingAs($owner)
             ->get('/admin')
             ->assertOk()
-            ->assertSeeText('Continue Your Research Journey')
+            ->assertSeeText('Lanjutkan Alur Riset')
             ->assertSeeText('Dashboard Journey Project')
-            ->assertSeeText('Open Journey')
+            ->assertSeeText('Buka Alur Riset')
             ->assertSee(route('admin.projects.journey.show', ['researchProject' => $project]), false)
             ->assertSee('data-dashboard-card="research-journey"', false);
 
@@ -196,7 +196,7 @@ class ProjectResearchJourneyTest extends TestCase
         $this->actingAs($newUser)
             ->get('/admin')
             ->assertOk()
-            ->assertSeeText('Welcome to MyRiset')
+            ->assertSeeText('Selamat datang di MyRiset')
             ->assertSeeText('Buat project riset pertama')
             ->assertSeeText('Tambahkan dokumen riset')
             ->assertSeeText('Bangun instrumen survey')

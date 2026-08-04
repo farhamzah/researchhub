@@ -143,7 +143,7 @@ class ProjectTemplateCreationTest extends TestCase
             ->get('/admin')
             ->assertOk()
             ->assertSeeText('Template PharmVR Baru')
-            ->assertSeeText('Continue Your Research Journey')
+            ->assertSeeText('Lanjutkan Alur Riset')
             ->assertDontSee('token_hash')
             ->assertDontSee('drive_file_id');
 

@@ -23,10 +23,10 @@ Do not use real personal data, real tokens, production Google credentials, or pr
 - Pass/fail: [ ]
 - Notes:
 
-## 2. Dashboard Action Center
+## 2. Dashboard Action Center / Pusat Tindakan
 
 - URL/path: `/admin`
-- Expected screen: Dashboard with Action Center, Pending Follow-Up, Expert Validation Pending, Supervisor Feedback, and Timeline Risks.
+- Expected screen: Dashboard with Pusat Tindakan, Tindak Lanjut Revisi, Validasi Ahli Menunggu, Feedback Bimbingan, and Risiko Timeline.
 - Expected action: Confirm demo items for Disertasi PharmVR are visible and no token/hash/private data is shown.
 - Pass/fail: [ ]
 - Notes:
@@ -42,13 +42,13 @@ Do not use real personal data, real tokens, production Google credentials, or pr
 ## 3B. Project Template QA
 
 - URL/path: `/admin/projects/research-projects`, `/admin/projects/templates`
-- Expected action: Open Projects and click Create from Template / Buat dari Template.
+- Expected action: Buka Project and click Create from Template / Buat dari Template.
 - Expected catalog check: Confirm Disertasi / Tesis, R&D ADDIE, Validasi Instrumen, Artikel Jurnal, and PharmVR Development & Evaluation are visible.
 - Expected preview check: Open a template preview and confirm project title, milestones, documents, starter survey, tasks, and research links are readable before submit.
 - Expected creation check: Create a project from the Disertasi / Tesis template and confirm MyRiset redirects to Project Journey.
 - Expected created data check: Verify milestones, timeline tasks, starter documents with v01 draft metadata, and Project Journey status are created.
 - Expected PharmVR quick check: Repeat with PharmVR Development & Evaluation and confirm starter survey/questions are created.
-- Expected dashboard check: Confirm Dashboard Continue Your Research Journey shows the templated project.
+- Expected dashboard check: Confirm Dashboard Lanjutkan Alur Riset shows the templated project.
 - Expected safety check: Confirm no public links, raw tokens, token hashes, private file paths, Drive IDs, OAuth data, fake personal data, or respondent identity are created or visible.
 - Pass/fail: [ ]
 - Notes:
@@ -87,9 +87,9 @@ Do not use real personal data, real tokens, production Google credentials, or pr
 ## 4A. Document Revision Flow QA
 
 - URL/path: `/admin/documents`, `/admin`, `/admin/projects/{researchProject}/journey`
-- Expected documents check: Open Documents and confirm status badges, document types, version labels, current markers, revision due dates, and next actions are visible.
+- Expected documents check: Buka Dokumen and confirm status badges, document types, version labels, current markers, revision due dates, and next actions are visible.
 - Expected demo document check: Open or edit BAB III Metodologi Penelitian and verify revision summary, next action, revision due date, and suggested file name are readable.
-- Expected dashboard check: Confirm Dashboard Action Center shows at least one document revision item for Disertasi PharmVR without overcrowding the dashboard.
+- Expected dashboard check: Confirm Dashboard Pusat Tindakan shows at least one document revision item for Disertasi PharmVR without overcrowding the dashboard.
 - Expected journey check: Confirm Project Journey document step detects needs attention when BAB III requires revision.
 - Expected safety check: Confirm no private paths, Drive IDs, raw tokens, token hashes, public review URLs, respondent identity, validator contacts, OAuth data, or secrets are visible.
 - Pass/fail: [ ]

@@ -106,7 +106,7 @@ class ReviewLinkSecurityTest extends TestCase
 
         $this->get('/review/not-a-real-token')
             ->assertNotFound()
-            ->assertSee('This review link is unavailable')
+            ->assertSee('Link review tidak tersedia')
             ->assertDontSee($document->title);
 
         $expired = app(CreateReviewLinkAction::class)->handle($owner, $document, [
@@ -115,7 +115,7 @@ class ReviewLinkSecurityTest extends TestCase
 
         $this->get($expired->url)
             ->assertForbidden()
-            ->assertSee('This review link is unavailable')
+            ->assertSee('Link review tidak tersedia')
             ->assertDontSee($document->title);
 
         $revoked = app(CreateReviewLinkAction::class)->handle($owner, $document);
@@ -123,7 +123,7 @@ class ReviewLinkSecurityTest extends TestCase
 
         $this->get($revoked->url)
             ->assertForbidden()
-            ->assertSee('This review link is unavailable')
+            ->assertSee('Link review tidak tersedia')
             ->assertDontSee($document->title);
 
         $limited = app(CreateReviewLinkAction::class)->handle($owner, $document, [
@@ -133,7 +133,7 @@ class ReviewLinkSecurityTest extends TestCase
         $this->get($limited->url)->assertOk()->assertSee($document->title);
         $this->get($limited->url)
             ->assertForbidden()
-            ->assertSee('This review link is unavailable');
+            ->assertSee('Link review tidak tersedia');
         $this->assertSame(1, $limited->reviewLink->fresh()->access_count);
         $this->assertDatabaseHas('review_link_access_logs', ['action' => ReviewLinkAccessLog::ACTION_INVALID_TOKEN]);
         $this->assertDatabaseHas('review_link_access_logs', ['action' => ReviewLinkAccessLog::ACTION_EXPIRED]);
@@ -149,7 +149,7 @@ class ReviewLinkSecurityTest extends TestCase
 
         $this->get($result->url)
             ->assertOk()
-            ->assertSee('Password required')
+            ->assertSee('Password diperlukan')
             ->assertDontSee($document->title);
 
         $this->post(route('review.password', ['token' => $result->rawToken]), [

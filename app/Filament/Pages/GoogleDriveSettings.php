@@ -14,7 +14,7 @@ class GoogleDriveSettings extends Page
 {
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-cloud';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Integrations';
+    protected static string|UnitEnum|null $navigationGroup = 'Integrasi';
 
     protected static ?string $navigationLabel = 'Google Drive';
 
@@ -22,7 +22,7 @@ class GoogleDriveSettings extends Page
 
     protected static ?string $slug = 'settings/google-drive';
 
-    protected static ?string $title = 'Google Drive Settings';
+    protected static ?string $title = 'Pengaturan Google Drive';
 
     protected string $view = 'filament.pages.google-drive-settings';
 

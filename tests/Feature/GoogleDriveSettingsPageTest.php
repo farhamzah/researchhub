@@ -36,7 +36,7 @@ class GoogleDriveSettingsPageTest extends TestCase
             ->assertSee('data-testid="setup-checklist-card"', false)
             ->assertSee('data-testid="drive-actions-card"', false)
             ->assertSee('data-testid="drive-folder-bootstrap-card"', false)
-            ->assertSee('Google Drive Settings')
+            ->assertSee('Pengaturan Google Drive')
             ->assertSee('Connect MyRiset to Google Drive')
             ->assertSee('Connect MyRiset to your own Google Drive account.')
             ->assertSee('MyRiset remains the source of truth for workflow and metadata')

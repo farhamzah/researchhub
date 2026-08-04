@@ -71,7 +71,7 @@
                         <table class="min-w-full text-sm">
                             <thead>
                                 <tr>
-                                    <th class="py-2 pr-3 text-left font-medium text-gray-500">Item</th>
+                                    <th class="py-2 pr-3 text-left font-medium text-gray-500">Butir</th>
                                     @foreach ($columns as $column)
                                         <th class="px-3 py-2 text-center font-medium text-gray-500">{{ $columnLabel($column) }}</th>
                                     @endforeach

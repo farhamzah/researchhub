@@ -40,7 +40,7 @@ class ReviewLinkResolver
             return new ReviewLinkResolution(
                 reviewLink: $reviewLink,
                 status: 'password_required',
-                message: 'Password required.',
+                message: 'Password diperlukan.',
                 requiresPassword: true,
             );
         }
@@ -83,7 +83,7 @@ class ReviewLinkResolver
             return new ReviewLinkResolution(
                 reviewLink: $reviewLink,
                 status: 'password_required',
-                message: 'Password required.',
+                message: 'Password diperlukan.',
                 requiresPassword: true,
             );
         }
@@ -150,7 +150,7 @@ class ReviewLinkResolver
                 $request,
             );
 
-            return new ReviewLinkResolution(null, 'invalid', 'This review link is unavailable.');
+            return new ReviewLinkResolution(null, 'invalid', 'Link review tidak tersedia.');
         }
 
         if ($reviewLink->isRevoked()) {
@@ -161,7 +161,7 @@ class ReviewLinkResolver
                 $request,
             );
 
-            return new ReviewLinkResolution($reviewLink, 'revoked', 'This review link is unavailable.');
+            return new ReviewLinkResolution($reviewLink, 'revoked', 'Link review tidak tersedia.');
         }
 
         if ($reviewLink->isExpired()) {
@@ -172,7 +172,7 @@ class ReviewLinkResolver
                 $request,
             );
 
-            return new ReviewLinkResolution($reviewLink, 'expired', 'This review link is unavailable.');
+            return new ReviewLinkResolution($reviewLink, 'expired', 'Link review tidak tersedia.');
         }
 
         if ($reviewLink->status !== ReviewLink::STATUS_ACTIVE || $reviewLink->accessLimitReached()) {
@@ -184,7 +184,7 @@ class ReviewLinkResolver
                 ['reason' => $reviewLink->status !== ReviewLink::STATUS_ACTIVE ? 'inactive_status' : 'access_limit'],
             );
 
-            return new ReviewLinkResolution($reviewLink, 'blocked', 'This review link is unavailable.');
+            return new ReviewLinkResolution($reviewLink, 'blocked', 'Link review tidak tersedia.');
         }
 
         return new ReviewLinkResolution($reviewLink, 'allowed', 'Review link ready.', allowed: true);

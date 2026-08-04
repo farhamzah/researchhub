@@ -33,9 +33,9 @@ class ResearchLinkResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedLink;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Research Resources';
+    protected static string|UnitEnum|null $navigationGroup = 'Referensi Riset';
 
-    protected static ?string $navigationLabel = 'Research Links';
+    protected static ?string $navigationLabel = 'Link Riset';
 
     protected static ?string $recordTitleAttribute = 'title';
 

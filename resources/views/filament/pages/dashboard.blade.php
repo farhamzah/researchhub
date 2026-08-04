@@ -461,19 +461,19 @@
         <section class="rh-card rh-hero" data-dashboard-card="hero">
             <div class="rh-hero-grid">
                 <div>
-                    <span class="rh-badge">Academic Research Command Center</span>
-                    <h1 class="rh-hero-title">Welcome to MyRiset</h1>
+                    <span class="rh-badge">Pusat Kendali Riset Akademik</span>
+                    <h1 class="rh-hero-title">Selamat datang di MyRiset</h1>
                     <p class="rh-hero-copy">
                         Platform manajemen riset, validasi ahli, bimbingan, dan laporan akademik.
                     </p>
                     <div class="rh-hero-actions">
-                        <a href="{{ route('filament.admin.resources.projects.research-projects.index') }}" class="rh-button">Open Projects</a>
-                        <a href="{{ route('filament.admin.resources.research-links.index') }}" class="rh-button-ghost">Open Research Links</a>
+                        <a href="{{ route('filament.admin.resources.projects.research-projects.index') }}" class="rh-button">Lihat Project</a>
+                        <a href="{{ route('filament.admin.resources.research-links.index') }}" class="rh-button-ghost">Buka Link Riset</a>
                     </div>
                 </div>
 
-                <aside class="rh-drive-panel" aria-label="Google Drive status" data-dashboard-card="drive-status">
-                    <p class="rh-drive-label">Drive Status</p>
+                <aside class="rh-drive-panel" aria-label="Status Google Drive" data-dashboard-card="drive-status">
+                    <p class="rh-drive-label">Status Google Drive</p>
                     <p class="rh-drive-value">{{ $driveStatus['label'] }}</p>
                     <p class="rh-drive-copy">{{ $driveStatus['description'] }}</p>
                 </aside>
@@ -493,10 +493,10 @@
         <section class="rh-card rh-action-center" data-dashboard-card="action-center">
             <div class="rh-section-head">
                 <div>
-                    <p class="rh-section-kicker">Action Center</p>
+                    <p class="rh-section-kicker">Pusat Tindakan</p>
                     <h2 class="rh-section-title">Yang Perlu Dikerjakan Sekarang</h2>
                 </div>
-                <a href="{{ route('filament.admin.resources.projects.research-projects.index') }}" class="rh-link">Open Projects</a>
+                <a href="{{ route('filament.admin.resources.projects.research-projects.index') }}" class="rh-link">Lihat Project</a>
             </div>
 
             @if ($actionCenterItems->isEmpty())
@@ -528,14 +528,14 @@
             <div class="rh-section-head">
                 <div>
                     <p class="rh-section-kicker">Alur Riset</p>
-                    <h2 class="rh-section-title">Continue Your Research Journey</h2>
+                    <h2 class="rh-section-title">Lanjutkan Alur Riset</h2>
                 </div>
-                <a href="{{ route('filament.admin.resources.projects.research-projects.index') }}" class="rh-link">Open Projects</a>
+                <a href="{{ route('filament.admin.resources.projects.research-projects.index') }}" class="rh-link">Lihat Project</a>
             </div>
 
             @if (! empty($onboardingChecklist))
                 <p class="rh-item-copy" style="margin-top: 0.75rem;">
-                    Welcome to MyRiset. Mulai dari langkah kecil yang paling penting, lalu biarkan workspace riset terbentuk bertahap.
+                    Mulai dari langkah kecil yang paling penting, lalu biarkan workspace riset terbentuk bertahap.
                 </p>
                 <div class="rh-onboarding-list">
                     @foreach ($onboardingChecklist as $item)
@@ -547,7 +547,7 @@
                 </div>
             @elseif ($journeyProjects->isEmpty())
                 <p class="rh-empty">
-                    Start your first research project.
+                    Belum ada project riset. Buat project pertama untuk mulai mengelola dokumen, survey, timeline, dan bimbingan.
                 </p>
             @else
                 <div class="rh-journey-grid">
@@ -566,7 +566,7 @@
                             <p class="rh-item-copy" style="margin-top: 0.8rem;">
                                 {{ $journeyProject['next_step']['description'] }}
                             </p>
-                            <a href="{{ $journeyProject['url'] }}" class="rh-link">Open Journey</a>
+                            <a href="{{ $journeyProject['url'] }}" class="rh-link">Buka Alur Riset</a>
                         </article>
                     @endforeach
                 </div>
@@ -578,7 +578,7 @@
                 <div class="rh-section-head">
                     <div>
                         <p class="rh-section-kicker">Tindak Lanjut</p>
-                        <h2 class="rh-section-title">Pending Follow-Up</h2>
+                        <h2 class="rh-section-title">Tindak Lanjut Revisi</h2>
                     </div>
                 </div>
 
@@ -593,16 +593,16 @@
                                 <p class="rh-item-meta">{{ $item['project'] }} | {{ $item['session'] }}</p>
                                 <p class="rh-item-meta">
                                     @if ($item['due_date'])
-                                        Due {{ $item['due_date'] }}
+                                        Batas waktu {{ $item['due_date'] }}
                                     @else
-                                        No due date
+                                        Tanpa batas waktu
                                     @endif
                                 </p>
                             </div>
                             <span class="rh-pill {{ $item['is_overdue'] ? 'rh-pill-risk' : 'rh-pill-warn' }}">{{ $item['priority'] }}</span>
                         </div>
                         <p class="rh-item-meta">Status: {{ $item['status'] }}</p>
-                        <a href="{{ $item['url'] }}" class="rh-link">Open Supervision</a>
+                        <a href="{{ $item['url'] }}" class="rh-link">Buka Bimbingan</a>
                     </article>
                     @if ($loop->last)
                         </div>
@@ -618,9 +618,9 @@
                 <div class="rh-section-head">
                     <div>
                         <p class="rh-section-kicker">Validasi Ahli</p>
-                        <h2 class="rh-section-title">Expert Validation Pending</h2>
+                        <h2 class="rh-section-title">Validasi Ahli Menunggu</h2>
                     </div>
-                    <a href="{{ route('filament.admin.resources.surveys.index') }}" class="rh-link">Open Surveys</a>
+                    <a href="{{ route('filament.admin.resources.surveys.index') }}" class="rh-link">Buka Survey</a>
                 </div>
 
                 @forelse ($validationPending as $item)
@@ -636,7 +636,7 @@
                             <span class="rh-pill">{{ $item['round_status'] }}</span>
                         </div>
                         <p class="rh-item-meta">{{ $item['progress_label'] }}</p>
-                        <a href="{{ $item['url'] }}" class="rh-link">Open Validation</a>
+                        <a href="{{ $item['url'] }}" class="rh-link">Buka Validasi</a>
                     </article>
                     @if ($loop->last)
                         </div>
@@ -652,7 +652,7 @@
                 <div class="rh-section-head">
                     <div>
                         <p class="rh-section-kicker">Bimbingan</p>
-                        <h2 class="rh-section-title">Supervisor Feedback</h2>
+                        <h2 class="rh-section-title">Feedback Bimbingan</h2>
                     </div>
                 </div>
 
@@ -666,13 +666,13 @@
                                 <h3 class="rh-item-title">{{ $item['title'] }}</h3>
                                 <p class="rh-item-meta">{{ $item['project'] }}</p>
                                 @if ($item['submitted_at'])
-                                    <p class="rh-item-meta">Submitted {{ $item['submitted_at'] }}</p>
+                                    <p class="rh-item-meta">Dikirim {{ $item['submitted_at'] }}</p>
                                 @endif
                             </div>
                             <span class="rh-pill">{{ $item['decision'] }}</span>
                         </div>
                         <p class="rh-item-meta">Status: {{ $item['status'] }}</p>
-                        <a href="{{ $item['url'] }}" class="rh-link">Open Supervision</a>
+                        <a href="{{ $item['url'] }}" class="rh-link">Buka Bimbingan</a>
                     </article>
                     @if ($loop->last)
                         </div>
@@ -688,7 +688,7 @@
                 <div class="rh-section-head">
                     <div>
                         <p class="rh-section-kicker">Timeline Terlambat</p>
-                        <h2 class="rh-section-title">Timeline Risks</h2>
+                        <h2 class="rh-section-title">Risiko Timeline</h2>
                     </div>
                 </div>
 
@@ -703,11 +703,11 @@
                                 <p class="rh-item-meta">
                                     {{ $item['project'] }} @if ($item['milestone']) | {{ $item['milestone'] }} @endif
                                 </p>
-                                <p class="rh-item-meta">Due {{ $item['planned_end_date'] }}</p>
+                                <p class="rh-item-meta">Batas waktu {{ $item['planned_end_date'] }}</p>
                             </div>
                             <span class="rh-pill rh-pill-risk">{{ $item['status'] }}</span>
                         </div>
-                        <a href="{{ $item['url'] }}" class="rh-link">Open Timeline</a>
+                        <a href="{{ $item['url'] }}" class="rh-link">Buka Timeline</a>
                     </article>
                     @if ($loop->last)
                         </div>
@@ -722,15 +722,15 @@
             <section class="rh-card rh-section" data-dashboard-card="active-projects">
                 <div class="rh-section-head">
                     <div>
-                        <p class="rh-section-kicker">Projects</p>
-                        <h2 class="rh-section-title">Active Projects</h2>
+                        <p class="rh-section-kicker">Project</p>
+                        <h2 class="rh-section-title">Project Aktif</h2>
                     </div>
-                    <a href="{{ route('filament.admin.resources.projects.research-projects.index') }}" class="rh-link">Open all</a>
+                    <a href="{{ route('filament.admin.resources.projects.research-projects.index') }}" class="rh-link">Lihat semua</a>
                 </div>
 
                 @if ($activeProjects->isEmpty())
                     <p class="rh-empty">
-                        No projects yet. Create your first research project to organize your documents, surveys, and timeline.
+                        Belum ada project. Buat project riset pertama untuk menyatukan dokumen, survey, timeline, dan bimbingan.
                     </p>
                 @else
                     <div class="rh-list">
@@ -749,11 +749,11 @@
                                     <span style="width: {{ $project['progress_percentage'] }}%;"></span>
                                 </div>
                                 <p class="rh-item-meta">
-                                    {{ $project['completed_tasks'] }} of {{ $project['total_tasks'] }} timeline tasks completed.
+                                    {{ $project['completed_tasks'] }} dari {{ $project['total_tasks'] }} tugas timeline selesai.
                                 </p>
                                 <div class="rh-row-actions">
-                                    <a href="{{ $project['project_url'] }}" class="rh-link">Open Projects</a>
-                                    <a href="{{ $project['timeline_url'] }}" class="rh-link">Open Timeline</a>
+                                    <a href="{{ $project['project_url'] }}" class="rh-link">Buka Project</a>
+                                    <a href="{{ $project['timeline_url'] }}" class="rh-link">Buka Timeline</a>
                                 </div>
                             </article>
                         @endforeach
@@ -765,36 +765,36 @@
                 <div class="rh-section-head">
                     <div>
                         <p class="rh-section-kicker">Timeline</p>
-                        <h2 class="rh-section-title">Timeline Focus</h2>
+                        <h2 class="rh-section-title">Fokus Timeline</h2>
                     </div>
                 </div>
 
                 <div class="rh-focus-grid">
                     <div class="rh-focus-cell">
                         <p class="rh-focus-value">{{ $timelineSummary['delayed_tasks'] }}</p>
-                        <p class="rh-focus-label">Delayed Tasks</p>
+                        <p class="rh-focus-label">Tugas Terlambat</p>
                     </div>
                     <div class="rh-focus-cell">
                         <p class="rh-focus-value">{{ $timelineSummary['upcoming_tasks'] }}</p>
-                        <p class="rh-focus-label">Upcoming 14 Days</p>
+                        <p class="rh-focus-label">Jatuh Tempo 14 Hari</p>
                     </div>
                     <div class="rh-focus-cell">
                         <p class="rh-focus-value">{{ $timelineSummary['active_tasks'] }}</p>
-                        <p class="rh-focus-label">Active Tasks</p>
+                        <p class="rh-focus-label">Tugas Aktif</p>
                     </div>
                 </div>
 
                 @if ($timelineSummary['next_due_task'])
                     <article class="rh-item" style="margin-top: 1rem;">
-                        <h3 class="rh-item-title">Next due: {{ $timelineSummary['next_due_task']['title'] }}</h3>
+                        <h3 class="rh-item-title">Tenggat berikutnya: {{ $timelineSummary['next_due_task']['title'] }}</h3>
                         <p class="rh-item-meta">
-                            {{ $timelineSummary['next_due_task']['project'] }} | Due {{ $timelineSummary['next_due_task']['planned_end_date'] }}
+                            {{ $timelineSummary['next_due_task']['project'] }} | Batas waktu {{ $timelineSummary['next_due_task']['planned_end_date'] }}
                         </p>
-                        <a href="{{ $timelineSummary['next_due_task']['url'] }}" class="rh-link">Open Timeline</a>
+                        <a href="{{ $timelineSummary['next_due_task']['url'] }}" class="rh-link">Buka Timeline</a>
                     </article>
                 @else
                     <p class="rh-empty">
-                        No upcoming timeline tasks. Add timeline tasks inside a project to track dissertation milestones and deadlines.
+                        Belum ada tugas timeline terdekat. Tambahkan tugas di dalam project agar milestone dan tenggat disertasi mudah dipantau.
                     </p>
                 @endif
             </section>
@@ -802,10 +802,10 @@
             <section class="rh-card rh-section" data-dashboard-card="recent-documents">
                 <div class="rh-section-head">
                     <div>
-                        <p class="rh-section-kicker">Documents</p>
-                        <h2 class="rh-section-title">Recent Documents</h2>
+                        <p class="rh-section-kicker">Dokumen</p>
+                        <h2 class="rh-section-title">Dokumen Terbaru</h2>
                     </div>
-                    <a href="{{ route('filament.admin.resources.documents.index') }}" class="rh-link">Open all</a>
+                    <a href="{{ route('filament.admin.resources.documents.index') }}" class="rh-link">Lihat semua</a>
                 </div>
 
                 @forelse ($recentDocuments as $document)
@@ -816,18 +816,18 @@
                         <div class="rh-item-top">
                             <div>
                                 <h3 class="rh-item-title">{{ $document['title'] }}</h3>
-                                <p class="rh-item-meta">{{ $document['project'] }} | Updated {{ $document['updated_at'] }}</p>
+                                <p class="rh-item-meta">{{ $document['project'] }} | Diperbarui {{ $document['updated_at'] }}</p>
                             </div>
                             <span class="rh-pill">{{ $document['status'] }}</span>
                         </div>
-                        <a href="{{ $document['url'] }}" class="rh-link">Open Documents</a>
+                        <a href="{{ $document['url'] }}" class="rh-link">Buka Dokumen</a>
                     </article>
                     @if ($loop->last)
                         </div>
                     @endif
                 @empty
                     <p class="rh-empty">
-                        No documents yet. Upload or create your first research document.
+                        Belum ada dokumen. Tambahkan proposal, bab, instrumen, atau draft artikel agar riwayat riset tersimpan rapi.
                     </p>
                 @endforelse
             </section>
@@ -835,10 +835,10 @@
             <section class="rh-card rh-section" data-dashboard-card="recent-surveys">
                 <div class="rh-section-head">
                     <div>
-                        <p class="rh-section-kicker">Surveys</p>
-                        <h2 class="rh-section-title">Recent Surveys</h2>
+                        <p class="rh-section-kicker">Survey</p>
+                        <h2 class="rh-section-title">Survey Terbaru</h2>
                     </div>
-                    <a href="{{ route('filament.admin.resources.surveys.index') }}" class="rh-link">Open all</a>
+                    <a href="{{ route('filament.admin.resources.surveys.index') }}" class="rh-link">Lihat semua</a>
                 </div>
 
                 @forelse ($recentSurveys as $survey)
@@ -850,19 +850,19 @@
                             <div>
                                 <h3 class="rh-item-title">{{ $survey['title'] }}</h3>
                                 <p class="rh-item-meta">
-                                    {{ $survey['project'] }} | {{ $survey['responses_count'] }} responses
+                                    {{ $survey['project'] }} | {{ $survey['responses_count'] }} respons
                                 </p>
                             </div>
                             <span class="rh-pill">{{ $survey['status'] }}</span>
                         </div>
-                        <a href="{{ $survey['url'] }}" class="rh-link">Open Survey</a>
+                        <a href="{{ $survey['url'] }}" class="rh-link">Buka Survey</a>
                     </article>
                     @if ($loop->last)
                         </div>
                     @endif
                 @empty
                     <p class="rh-empty">
-                        No surveys yet. Create your first survey instrument.
+                        Belum ada survey. Buat instrumen pertama saat pertanyaan, indikator, dan skoring mulai disiapkan.
                     </p>
                 @endforelse
             </section>
@@ -870,10 +870,10 @@
             <section class="rh-card rh-section" data-dashboard-card="pinned-research-links">
                 <div class="rh-section-head">
                     <div>
-                        <p class="rh-section-kicker">Resources</p>
-                        <h2 class="rh-section-title">Pinned Research Links</h2>
+                        <p class="rh-section-kicker">Referensi</p>
+                        <h2 class="rh-section-title">Link Riset Tersemat</h2>
                     </div>
-                    <a href="{{ route('filament.admin.resources.research-links.index') }}" class="rh-link">Open library</a>
+                    <a href="{{ route('filament.admin.resources.research-links.index') }}" class="rh-link">Buka pustaka</a>
                 </div>
 
                 @forelse ($pinnedResearchLinks as $link)
@@ -888,14 +888,14 @@
                             </div>
                             <span class="rh-pill">{{ $link['category'] }}</span>
                         </div>
-                        <a href="{{ $link['url'] }}" target="_blank" rel="noopener noreferrer" class="rh-link">Open Link</a>
+                        <a href="{{ $link['url'] }}" target="_blank" rel="noopener noreferrer" class="rh-link">Buka Link</a>
                     </article>
                     @if ($loop->last)
                         </div>
                     @endif
                 @empty
                     <p class="rh-empty">
-                        No pinned research links yet. Add journals, OJS pages, regulations, repositories, or datasets for quick access.
+                        Belum ada link riset tersemat. Tambahkan jurnal, OJS, regulasi, repositori, atau dataset yang sering dipakai.
                     </p>
                 @endforelse
             </section>
@@ -903,8 +903,8 @@
             <section class="rh-card rh-section" data-dashboard-card="recent-analysis">
                 <div class="rh-section-head">
                     <div>
-                        <p class="rh-section-kicker">Analysis</p>
-                        <h2 class="rh-section-title">Recent Analysis Results</h2>
+                        <p class="rh-section-kicker">Analisis</p>
+                        <h2 class="rh-section-title">Analisis Terbaru</h2>
                     </div>
                 </div>
 
@@ -917,15 +917,15 @@
                         <p class="rh-item-meta">
                             {{ $result['project'] }} @if ($result['survey']) | {{ $result['survey'] }} @endif
                         </p>
-                        <p class="rh-item-meta">Updated {{ $result['updated_at'] }}</p>
-                        <a href="{{ $result['url'] }}" class="rh-link">Open Analysis</a>
+                        <p class="rh-item-meta">Diperbarui {{ $result['updated_at'] }}</p>
+                        <a href="{{ $result['url'] }}" class="rh-link">Buka Analisis</a>
                     </article>
                     @if ($loop->last)
                         </div>
                     @endif
                 @empty
                     <p class="rh-empty">
-                        No analysis results yet. Run descriptive analysis from a survey when response data is ready.
+                        Belum ada hasil analisis. Jalankan analisis deskriptif dari survey setelah data respons siap.
                     </p>
                 @endforelse
             </section>
@@ -934,8 +934,8 @@
         <section class="rh-card rh-section" data-dashboard-card="quick-actions">
             <div class="rh-section-head">
                 <div>
-                    <p class="rh-section-kicker">Workspace shortcuts</p>
-                    <h2 class="rh-section-title">Quick Actions</h2>
+                    <p class="rh-section-kicker">Pintasan Workspace</p>
+                    <h2 class="rh-section-title">Aksi Cepat</h2>
                 </div>
             </div>
 
@@ -947,7 +947,7 @@
                             <span class="rh-action-title">{{ $action['label'] }}</span>
                         </span>
                         <span class="rh-item-copy">{{ $action['description'] }}</span>
-                        <span class="rh-link">Open</span>
+                        <span class="rh-link">Buka</span>
                     </a>
                 @endforeach
             </div>

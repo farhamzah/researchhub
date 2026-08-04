@@ -861,7 +861,7 @@
                     <section class="mt-6 rounded-lg border border-emerald-200 bg-emerald-50/60 p-5">
                         <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                             <div>
-                                <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Survey Introduction</p>
+                                <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Pengantar Survey</p>
                                 <h4 class="mt-2 text-xl font-semibold text-slate-950">{{ $survey->intro_title ?: $survey->title }}</h4>
                             </div>
                             <span class="inline-flex rounded-full border border-emerald-200 bg-white px-3 py-1 text-xs font-semibold text-emerald-800">

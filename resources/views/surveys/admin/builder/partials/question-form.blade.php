@@ -77,8 +77,8 @@
     </div>
 </div>
 
-<details class="rounded-md border border-slate-200 bg-slate-50 md:col-span-2">
-    <summary class="cursor-pointer px-4 py-3 text-sm font-semibold text-slate-700">Advanced matrix and JSON options</summary>
+<details data-question-advanced class="rounded-md border border-slate-200 bg-slate-50 md:col-span-2" @if ($errors->has('options_json') || $errors->has('settings_json') || old('options_json') || old('settings_json')) open @endif>
+    <summary class="cursor-pointer px-4 py-3 text-sm font-semibold text-slate-700">Pilihan matriks dan JSON lanjutan</summary>
     <div class="grid gap-4 border-t border-slate-200 p-4 md:grid-cols-2">
         <div>
             <label class="block text-sm font-medium text-slate-700">Matrix rows</label>
@@ -108,7 +108,7 @@
             <label class="block text-sm font-medium text-slate-700">Settings JSON</label>
             <textarea name="settings_json" rows="5" @readonly($isLocked) placeholder='{"scale":[1,2,3,4,5]}' class="mt-2 block w-full rounded-md border border-slate-300 px-3 py-2 font-mono text-xs shadow-sm @if ($isLocked) bg-slate-100 text-slate-500 @endif">{{ old('settings_json', $json($question?->settings)) }}</textarea>
         </div>
-        <p class="text-xs leading-5 text-slate-500 md:col-span-2">For choice, Likert, and matrix types, the structured fields above are used first. Advanced JSON is kept for custom edge cases when structured fields are blank.</p>
+        <p class="text-xs leading-5 text-slate-500 md:col-span-2">Untuk pilihan, Likert, dan matriks, isian terstruktur dipakai lebih dahulu. JSON lanjutan tetap tersedia untuk kasus khusus saat isian terstruktur kosong.</p>
     </div>
 </details>
 

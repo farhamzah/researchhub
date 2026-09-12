@@ -14,7 +14,7 @@ class GoogleDriveSettings extends Page
 {
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-cloud';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Integrasi';
+    protected static string|UnitEnum|null $navigationGroup = 'Pengaturan';
 
     protected static ?string $navigationLabel = 'Google Drive';
 
@@ -114,7 +114,7 @@ class GoogleDriveSettings extends Page
     private function maskedClientId(string $clientId): string
     {
         if ($clientId === '') {
-            return 'Not configured';
+            return 'Belum dikonfigurasi';
         }
 
         if (strlen($clientId) <= 12) {
@@ -168,7 +168,7 @@ class GoogleDriveSettings extends Page
     private function maskedFolderId(string $folderId): string
     {
         if ($folderId === '') {
-            return 'Not created';
+            return 'Belum dibuat';
         }
 
         if (strlen($folderId) <= 12) {

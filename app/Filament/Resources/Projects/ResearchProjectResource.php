@@ -30,9 +30,9 @@ class ResearchProjectResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedFolder;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Project';
+    protected static string|UnitEnum|null $navigationGroup = 'Penelitian';
 
-    protected static ?string $navigationLabel = 'Project Riset';
+    protected static ?string $navigationLabel = 'Proyek Riset';
 
     protected static ?string $recordTitleAttribute = 'title';
 
@@ -41,11 +41,11 @@ class ResearchProjectResource extends Resource
         return $schema
             ->components([
                 TextInput::make('title')
-                    ->label('Title')
+                    ->label('Judul')
                     ->required()
                     ->maxLength(255),
                 Textarea::make('description')
-                    ->label('Description')
+                    ->label('Deskripsi')
                     ->rows(4)
                     ->maxLength(5000)
                     ->columnSpanFull(),
@@ -56,10 +56,10 @@ class ResearchProjectResource extends Resource
                     ->required()
                     ->in(ResearchProject::STATUSES),
                 DatePicker::make('started_at')
-                    ->label('Started at')
+                    ->label('Tanggal mulai')
                     ->native(false),
                 DatePicker::make('target_finished_at')
-                    ->label('Target finish')
+                    ->label('Target selesai')
                     ->native(false)
                     ->afterOrEqual('started_at'),
             ]);
@@ -68,15 +68,15 @@ class ResearchProjectResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->emptyStateHeading('No research projects yet')
-            ->emptyStateDescription('Create your first research project to organize documents, surveys, analysis, and timeline milestones.')
+            ->emptyStateHeading('Belum ada proyek riset')
+            ->emptyStateDescription('Buat proyek riset pertama untuk menyatukan dokumen, survey, analisis, bimbingan, dan target timeline.')
             ->recordTitleAttribute('title')
             ->columns([
                 TextColumn::make('title')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('owner.name')
-                    ->label('Owner')
+                    ->label('Pemilik')
                     ->sortable(),
                 TextColumn::make('status')
                     ->badge()
@@ -93,7 +93,7 @@ class ResearchProjectResource extends Resource
                     ->date()
                     ->sortable(),
                 TextColumn::make('target_finished_at')
-                    ->label('Target Finish')
+                    ->label('Target selesai')
                     ->date()
                     ->sortable(),
                 TextColumn::make('updated_at')
@@ -114,26 +114,26 @@ class ResearchProjectResource extends Resource
                     ->visible(fn (ResearchProject $record): bool => auth()->user()?->can('view', $record) ?? false)
                     ->url(fn (ResearchProject $record): string => route('admin.projects.journey.show', ['researchProject' => $record])),
                 Action::make('timeline')
-                    ->label('Open Timeline')
+                    ->label('Buka Timeline')
                     ->icon('heroicon-o-calendar-days')
                     ->visible(fn (ResearchProject $record): bool => auth()->user()?->can('viewTimeline', $record) ?? false)
                     ->url(fn (ResearchProject $record): string => route('admin.projects.timeline.index', ['researchProject' => $record])),
                 Action::make('validators')
-                    ->label('Validators')
+                    ->label('Validator')
                     ->icon('heroicon-o-academic-cap')
                     ->visible(fn (ResearchProject $record): bool => auth()->user()?->can('update', $record) ?? false)
                     ->url(fn (ResearchProject $record): string => route('admin.projects.validators.index', ['researchProject' => $record])),
                 Action::make('supervision')
-                    ->label('Supervision')
+                    ->label('Bimbingan')
                     ->icon('heroicon-o-chat-bubble-left-right')
                     ->visible(fn (ResearchProject $record): bool => auth()->user()?->can('viewSupervision', $record) ?? false)
                     ->url(fn (ResearchProject $record): string => route('admin.projects.supervision.index', ['researchProject' => $record])),
                 Action::make('bootstrapDriveFolders')
-                    ->label('Create Drive Folders')
+                    ->label('Buat Folder Drive')
                     ->icon('heroicon-o-cloud-arrow-up')
                     ->requiresConfirmation()
-                    ->modalHeading('Create MyRiset Drive folders?')
-                    ->modalDescription('This creates or reuses the standard project folder structure in your connected Google Drive. No folders are shared publicly.')
+                    ->modalHeading('Buat folder MyRiset di Google Drive?')
+                    ->modalDescription('MyRiset akan membuat atau memakai ulang struktur folder standar di Google Drive yang terhubung. Tidak ada folder yang dibagikan publik.')
                     ->visible(fn (ResearchProject $record): bool => auth()->user()?->can('bootstrapDriveFolders', $record) ?? false)
                     ->action(function (ResearchProject $record): void {
                         try {
@@ -141,14 +141,14 @@ class ResearchProjectResource extends Resource
                                 ->handleResult(auth()->user(), $record, request());
 
                             Notification::make()
-                                ->title('MyRiset Drive folders are ready')
-                                ->body("Created {$result->createdCount()} folder(s), reused {$result->reusedCount()} folder(s).")
+                                ->title('Folder MyRiset Drive siap')
+                                ->body("Membuat {$result->createdCount()} folder, memakai ulang {$result->reusedCount()} folder.")
                                 ->success()
                                 ->send();
                         } catch (Throwable) {
                             Notification::make()
-                                ->title('Drive folders could not be prepared')
-                                ->body('Connect Google Drive first, then try again. No tokens or secrets were exposed.')
+                                ->title('Folder Drive belum bisa disiapkan')
+                                ->body('Hubungkan Google Drive terlebih dahulu, lalu coba lagi. Token dan rahasia tidak ditampilkan.')
                                 ->danger()
                                 ->send();
                         }
@@ -198,10 +198,10 @@ class ResearchProjectResource extends Resource
     {
         return [
             ResearchProject::STATUS_DRAFT => 'Draft',
-            ResearchProject::STATUS_ACTIVE => 'Active',
-            ResearchProject::STATUS_PAUSED => 'Paused',
-            ResearchProject::STATUS_COMPLETED => 'Completed',
-            ResearchProject::STATUS_ARCHIVED => 'Archived',
+            ResearchProject::STATUS_ACTIVE => 'Aktif',
+            ResearchProject::STATUS_PAUSED => 'Dijeda',
+            ResearchProject::STATUS_COMPLETED => 'Selesai',
+            ResearchProject::STATUS_ARCHIVED => 'Diarsipkan',
         ];
     }
 }

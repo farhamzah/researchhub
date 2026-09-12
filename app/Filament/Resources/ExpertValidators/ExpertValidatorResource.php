@@ -29,7 +29,7 @@ class ExpertValidatorResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedAcademicCap;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Tata Kelola Riset';
+    protected static string|UnitEnum|null $navigationGroup = 'Instrumen & Survei';
 
     protected static ?string $navigationLabel = 'Validator Ahli';
 
@@ -40,31 +40,37 @@ class ExpertValidatorResource extends Resource
         return $schema
             ->components([
                 TextInput::make('name')
+                    ->label('Nama')
                     ->required()
                     ->maxLength(255),
                 TextInput::make('email')
+                    ->label('Email')
                     ->email()
                     ->maxLength(255),
                 TextInput::make('phone')
+                    ->label('Nomor telepon')
                     ->tel()
                     ->maxLength(255),
                 TextInput::make('institution')
+                    ->label('Institusi')
                     ->maxLength(255),
                 TextInput::make('position')
+                    ->label('Jabatan')
                     ->maxLength(255),
                 TagsInput::make('expertise_areas')
-                    ->label('Expertise Areas')
-                    ->placeholder('Add expertise area')
+                    ->label('Bidang keahlian')
+                    ->placeholder('Tambahkan bidang keahlian')
                     ->columnSpanFull(),
                 Textarea::make('notes')
+                    ->label('Catatan internal')
                     ->rows(3)
                     ->maxLength(5000)
                     ->columnSpanFull(),
                 Toggle::make('is_active')
-                    ->label('Active')
+                    ->label('Aktif')
                     ->default(true),
                 Toggle::make('is_global')
-                    ->label('Global reusable validator')
+                    ->label('Validator global yang bisa dipakai ulang')
                     ->default(false)
                     ->visible(fn (): bool => auth()->user()?->hasRole('super_admin') ?? false),
             ]);
@@ -73,24 +79,24 @@ class ExpertValidatorResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->emptyStateHeading('No expert validators yet')
-            ->emptyStateDescription('Create a reusable expert validator profile before assigning validators to research projects.')
+            ->emptyStateHeading('Belum ada validator ahli')
+            ->emptyStateDescription('Tambahkan profil validator ahli agar bisa dipilih saat menugaskan validasi instrumen atau proyek riset.')
             ->recordTitleAttribute('name')
             ->columns([
                 TextColumn::make('name')
-                    ->label('Expert')
-                    ->description(fn (ExpertValidator $record): string => collect([$record->position, $record->institution])->filter()->join(' - ') ?: 'No affiliation recorded')
+                    ->label('Validator')
+                    ->description(fn (ExpertValidator $record): string => collect([$record->position, $record->institution])->filter()->join(' - ') ?: 'Afiliasi belum dicatat')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('email')
                     ->searchable()
                     ->toggleable(),
                 TextColumn::make('expertise_areas')
-                    ->label('Expertise')
+                    ->label('Keahlian')
                     ->formatStateUsing(fn (mixed $state): string => is_array($state) ? implode(', ', $state) : (string) $state)
-                    ->placeholder('Not set'),
+                    ->placeholder('Belum diisi'),
                 IconColumn::make('is_active')
-                    ->label('Active')
+                    ->label('Aktif')
                     ->boolean()
                     ->sortable(),
                 IconColumn::make('is_global')
@@ -98,7 +104,7 @@ class ExpertValidatorResource extends Resource
                     ->boolean()
                     ->sortable(),
                 TextColumn::make('assignments_count')
-                    ->label('Projects')
+                    ->label('Proyek')
                     ->counts('assignments')
                     ->sortable(),
                 TextColumn::make('updated_at')
@@ -107,16 +113,16 @@ class ExpertValidatorResource extends Resource
             ])
             ->filters([
                 SelectFilter::make('is_active')
-                    ->label('Active')
+                    ->label('Aktif')
                     ->options([
-                        '1' => 'Active',
-                        '0' => 'Inactive',
+                        '1' => 'Aktif',
+                        '0' => 'Tidak aktif',
                     ]),
                 SelectFilter::make('is_global')
                     ->label('Global')
                     ->options([
                         '1' => 'Global',
-                        '0' => 'Private',
+                        '0' => 'Pribadi',
                     ]),
             ])
             ->recordActions([

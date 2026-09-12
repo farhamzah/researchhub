@@ -10,7 +10,6 @@ use App\Models\ProjectTimelineTask;
 use App\Models\ResearchLink;
 use App\Models\ResearchProject;
 use App\Models\ReviewLink;
-use App\Models\SupervisionFeedback;
 use App\Models\SupervisionFollowUpItem;
 use App\Models\SupervisionSession;
 use App\Models\Survey;
@@ -150,9 +149,9 @@ class DashboardDataService
 
         return [
             [
-                'label' => 'Project Riset',
+                'label' => 'Proyek Riset',
                 'value' => $visibleProjectIds->count(),
-                'description' => 'Workspace riset yang bisa diakses',
+                'description' => 'Ruang kerja riset yang bisa diakses',
                 'accent' => '#2563eb',
             ],
             [
@@ -184,7 +183,7 @@ class DashboardDataService
                 'value' => $projectIds === []
                     ? 0
                     : ProjectTimelineTask::query()->whereIn('research_project_id', $projectIds)->count(),
-                'description' => 'Tugas riset dalam project',
+                'description' => 'Tugas riset dalam proyek',
                 'accent' => '#d97706',
             ],
             [
@@ -690,7 +689,7 @@ class DashboardDataService
         return [
             [
                 'label' => 'Buka Project',
-                'description' => 'Kelola workspace riset, status, dan timeline project.',
+                'description' => 'Kelola ruang kerja riset, status, dan timeline proyek.',
                 'url' => route('filament.admin.resources.projects.research-projects.index'),
                 'initial' => 'P',
             ],

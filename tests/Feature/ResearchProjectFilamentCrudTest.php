@@ -21,8 +21,8 @@ class ResearchProjectFilamentCrudTest extends TestCase
 
         Livewire::actingAs($admin)
             ->test(ManageResearchProjects::class)
-            ->assertSee('No research projects yet')
-            ->assertSee('Create your first research project to organize documents, surveys, analysis, and timeline milestones.')
+            ->assertSee('Belum ada proyek riset')
+            ->assertSee('Buat proyek riset pertama untuk menyatukan dokumen, survey, analisis, bimbingan, dan target timeline.')
             ->callAction('create', [
                 'title' => 'Manual Timeline Test',
                 'description' => 'Created from the Filament project resource.',

@@ -25,8 +25,8 @@ class ExpertValidatorRegistryTest extends TestCase
 
         Livewire::actingAs($admin)
             ->test(ManageExpertValidators::class)
-            ->assertSee('No expert validators yet')
-            ->assertSee('Create a reusable expert validator profile before assigning validators to research projects.')
+            ->assertSee('Belum ada validator ahli')
+            ->assertSee('Tambahkan profil validator ahli agar bisa dipilih saat menugaskan validasi instrumen atau proyek riset.')
             ->callAction('create', [
                 'name' => 'Dr. Content Expert',
                 'email' => 'content@example.test',

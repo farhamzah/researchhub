@@ -22,8 +22,8 @@ class SurveyFilamentCrudTest extends TestCase
 
         Livewire::actingAs($admin)
             ->test(ManageSurveys::class)
-            ->assertSee('No surveys yet')
-            ->assertSee('Create your first research survey to collect responses, evaluate instruments, and generate descriptive analysis.')
+            ->assertSee('Belum ada survey')
+            ->assertSee('Buat survey riset pertama untuk menyusun instrumen, mengumpulkan respons, validasi ahli, dan analisis deskriptif.')
             ->callAction('create', [
                 'project_id' => $project->id,
                 'title' => 'Manual Browser Survey',
@@ -110,19 +110,16 @@ class SurveyFilamentCrudTest extends TestCase
             ->get('/admin')
             ->assertOk()
             ->assertSeeInOrder([
-                'Workspace',
-                'Dashboard',
-                'Tata Kelola Riset',
+                'Beranda',
+                'Penelitian',
+                'Proyek Riset',
+                'Instrumen &amp; Survei',
                 'Validator Ahli',
-                'Referensi Riset',
-                'Link Riset',
-                'Project',
-                'Project Riset',
-                'Dokumen Riset',
+                'Survei',
+                'Dokumen &amp; Referensi',
                 'Dokumen',
-                'Survey &amp; Analisis',
-                'Survey',
-                'Integrasi',
+                'Tautan Riset',
+                'Pengaturan',
                 'Google Drive',
             ], false);
     }

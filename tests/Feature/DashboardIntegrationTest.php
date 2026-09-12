@@ -190,10 +190,10 @@ class DashboardIntegrationTest extends TestCase
             ->assertSeeText('Validasi Ahli Menunggu')
             ->assertSeeText('Instrument Validation Round')
             ->assertSeeText('0 / 1 terkirim')
-            ->assertSeeText('Feedback Bimbingan')
+            ->assertSeeText('Umpan Balik Bimbingan')
             ->assertSeeText('Bab 2 Supervision Feedback')
             ->assertSeeText('Revisi Mayor')
-            ->assertSeeText('Risiko Timeline')
+            ->assertSeeText('Risiko Jadwal')
             ->assertSeeText('Delayed Literature Review')
             ->assertSee('data-dashboard-card="action-center"', false)
             ->assertSee('data-dashboard-card="pending-follow-ups"', false)
@@ -345,15 +345,15 @@ class DashboardIntegrationTest extends TestCase
             ->assertDontSee('other-supervision-token')
             ->assertDontSee(SupervisionReviewLink::hashToken('other-supervision-token'))
             ->assertDontSeeText('private.example.test')
-            ->assertSeeText('Belum ada project. Buat project riset pertama')
+            ->assertSeeText('Belum ada proyek. Buat proyek riset pertama')
             ->assertSeeText('Belum ada dokumen. Tambahkan proposal')
-            ->assertSeeText('Belum ada survey. Buat instrumen pertama')
-            ->assertSeeText('Belum ada link riset tersemat.')
-            ->assertSeeText('Belum ada tindak lanjut, validasi, feedback bimbingan, atau risiko timeline yang perlu ditangani.')
-            ->assertSeeText('Tidak ada follow-up revisi yang sedang berjalan.')
-            ->assertSeeText('Tidak ada validasi ahli yang sedang menunggu submit.')
-            ->assertSeeText('Belum ada feedback bimbingan yang perlu ditindaklanjuti.')
-            ->assertSeeText('Tidak ada timeline task yang terlambat.');
+            ->assertSeeText('Belum ada survei. Buat instrumen pertama')
+            ->assertSeeText('Belum ada tautan riset tersemat.')
+            ->assertSeeText('Belum ada tindak lanjut, validasi, umpan balik bimbingan, atau risiko jadwal yang perlu ditangani.')
+            ->assertSeeText('Tidak ada tindak lanjut revisi yang sedang berjalan.')
+            ->assertSeeText('Tidak ada validasi ahli yang sedang menunggu pengiriman.')
+            ->assertSeeText('Belum ada umpan balik bimbingan yang perlu ditindaklanjuti.')
+            ->assertSeeText('Tidak ada tugas jadwal yang terlambat.');
     }
 
     private function adminUser(string $email): User

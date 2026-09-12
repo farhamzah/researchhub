@@ -31,14 +31,13 @@ class DashboardRenderingTest extends TestCase
             ->assertDontSee('Welcome to ResearchHub')
             ->assertDontSee('<h1 class="fi-header-heading', false)
             ->assertSee('Platform manajemen riset, validasi ahli, bimbingan, dan laporan akademik.')
-            ->assertSee('Project Riset')
-            ->assertSee('Project Aktif')
-            ->assertSee('Fokus Timeline')
+            ->assertSee('Proyek Riset')
+            ->assertSee('Proyek Aktif')
+            ->assertSee('Fokus Jadwal')
             ->assertSee('Dokumen Terbaru')
-            ->assertSee('Survey Terbaru')
-            ->assertSee('Link Riset Tersemat')
+            ->assertSee('Survei Terbaru')
+            ->assertSee('Tautan Riset Tersemat')
             ->assertSee('Aksi Cepat')
-            ->assertSee('Pusat Kendali Riset Akademik')
             ->assertSee('data-dashboard-card="hero"', false)
             ->assertSee('data-dashboard-card="stat"', false)
             ->assertSee('data-dashboard-card="active-projects"', false)
@@ -50,12 +49,12 @@ class DashboardRenderingTest extends TestCase
             ->assertSee('--default-theme-mode: light', false)
             ->assertSee('background: #f8fafc;', false)
             ->assertDontSee('linear-gradient(135deg, #0f172a', false)
-            ->assertSee('Buka Project')
+            ->assertSee('Buka Proyek')
             ->assertSee('Buka Dokumen')
-            ->assertSee('Buka Survey')
-            ->assertSee('Buka Link Riset')
+            ->assertSee('Buka Survei')
+            ->assertSee('Buka Tautan Riset')
             ->assertSee('Atur Google Drive')
-            ->assertSee('Belum ada project. Buat project riset pertama')
+            ->assertSee('Belum ada proyek. Buat proyek riset pertama')
             ->assertDontSee('filamentphp.com');
     }
 
@@ -73,7 +72,7 @@ class DashboardRenderingTest extends TestCase
             ->assertOk()
             ->assertSee('Selamat datang di MyRiset')
             ->assertDontSee('Welcome to ResearchHub')
-            ->assertSee('Fokus Timeline')
+            ->assertSee('Fokus Jadwal')
             ->assertSee('Aksi Cepat')
             ->assertSee('rh-action-tile');
     }
@@ -97,7 +96,8 @@ class DashboardRenderingTest extends TestCase
                 ->assertSee('--default-theme-mode: light', false)
                 ->assertSee('color-scheme: light', false)
                 ->assertSee('.fi-page-heading', false)
-                ->assertSee('color: #0f172a !important;', false);
+                ->assertSee('--myriset-text: #0f172a;', false)
+                ->assertSee('color: var(--myriset-text) !important;', false);
         }
     }
 

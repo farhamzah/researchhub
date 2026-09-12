@@ -58,8 +58,8 @@ class AcademicOutputBlocksTest extends TestCase
         $journey = $this->actingAs($admin)
             ->get(route('admin.projects.journey.show', ['researchProject' => $project]))
             ->assertOk()
-            ->assertSeeText('Project Progress Summary')
-            ->assertSeeText('Follow-Up Revision Summary')
+            ->assertSeeText('Ringkasan Progres Proyek')
+            ->assertSeeText('Ringkasan Tindak Lanjut Revisi')
             ->assertSeeText('Alur riset project');
 
         $this->assertSafeAcademicOutputResponse($journey);

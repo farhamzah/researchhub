@@ -32,9 +32,9 @@ class SurveyResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentList;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Survey & Analisis';
+    protected static string|UnitEnum|null $navigationGroup = 'Instrumen & Survei';
 
-    protected static ?string $navigationLabel = 'Survey';
+    protected static ?string $navigationLabel = 'Survei';
 
     protected static ?string $recordTitleAttribute = 'title';
 
@@ -43,16 +43,16 @@ class SurveyResource extends Resource
         return $schema
             ->components([
                 Select::make('project_id')
-                    ->label('Research Project')
+                    ->label('Proyek riset')
                     ->options(fn (): array => self::manageableProjectOptions())
                     ->searchable()
                     ->required(),
                 TextInput::make('title')
-                    ->label('Title')
+                    ->label('Judul')
                     ->required()
                     ->maxLength(255),
                 Textarea::make('description')
-                    ->label('Description')
+                    ->label('Deskripsi')
                     ->rows(4)
                     ->maxLength(5000)
                     ->columnSpanFull(),
@@ -63,14 +63,14 @@ class SurveyResource extends Resource
                     ->required()
                     ->in(Survey::STATUSES),
                 Select::make('identity_mode')
-                    ->label('Identity Mode')
+                    ->label('Mode identitas')
                     ->options(self::identityModeOptions())
                     ->default(Survey::IDENTITY_HIDDEN)
                     ->required()
                     ->in(Survey::IDENTITY_MODES),
                 Toggle::make('is_public')
-                    ->label('Public survey link')
-                    ->helperText('Only published public surveys can receive public responses.')
+                    ->label('Link survey publik')
+                    ->helperText('Hanya survey yang sudah diterbitkan dan berstatus publik yang bisa menerima respons.')
                     ->default(false),
             ]);
     }
@@ -78,15 +78,15 @@ class SurveyResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->emptyStateHeading('No surveys yet')
-            ->emptyStateDescription('Create your first research survey to collect responses, evaluate instruments, and generate descriptive analysis.')
+            ->emptyStateHeading('Belum ada survey')
+            ->emptyStateDescription('Buat survey riset pertama untuk menyusun instrumen, mengumpulkan respons, validasi ahli, dan analisis deskriptif.')
             ->recordTitleAttribute('title')
             ->columns([
                 TextColumn::make('title')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('project.title')
-                    ->label('Project')
+                    ->label('Proyek')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('status')
@@ -100,15 +100,15 @@ class SurveyResource extends Resource
                     })
                     ->sortable(),
                 TextColumn::make('identity_mode')
-                    ->label('Identity')
+                    ->label('Identitas')
                     ->badge()
                     ->formatStateUsing(fn (string $state): string => self::identityModeOptions()[$state] ?? ucfirst(str_replace('_', ' ', $state)))
                     ->sortable(),
                 IconColumn::make('is_public')
-                    ->label('Public')
+                    ->label('Publik')
                     ->boolean(),
                 TextColumn::make('responses_count')
-                    ->label('Responses')
+                    ->label('Respons')
                     ->sortable(),
                 TextColumn::make('updated_at')
                     ->dateTime()
@@ -116,7 +116,7 @@ class SurveyResource extends Resource
             ])
             ->filters([
                 SelectFilter::make('project_id')
-                    ->label('Project')
+                    ->label('Proyek')
                     ->options(fn (): array => self::visibleProjectOptions()),
                 SelectFilter::make('status')
                     ->options(self::statusOptions()),
@@ -128,55 +128,55 @@ class SurveyResource extends Resource
                     ->mutateDataUsing(fn (array $data): array => self::validatedProjectScopedData($data))
                     ->visible(fn (Survey $record): bool => auth()->user()?->can('update', $record) ?? false),
                 Action::make('publish')
-                    ->label('Publish')
+                    ->label('Terbitkan')
                     ->icon('heroicon-o-paper-airplane')
                     ->visible(fn (Survey $record): bool => $record->status === Survey::STATUS_DRAFT && (auth()->user()?->can('publish', $record) ?? false))
                     ->requiresConfirmation()
                     ->action(fn (Survey $record): Survey => app(PublishSurveyAction::class)->handle(auth()->user(), $record)),
                 Action::make('close')
-                    ->label('Close')
+                    ->label('Tutup')
                     ->icon('heroicon-o-lock-closed')
                     ->visible(fn (Survey $record): bool => $record->status === Survey::STATUS_PUBLISHED && (auth()->user()?->can('close', $record) ?? false))
                     ->requiresConfirmation()
                     ->action(fn (Survey $record): Survey => app(CloseSurveyAction::class)->handle(auth()->user(), $record)),
                 Action::make('publicLink')
-                    ->label('Public Link')
+                    ->label('Link Publik')
                     ->icon('heroicon-o-link')
                     ->visible(fn (Survey $record): bool => $record->canReceiveResponses())
                     ->url(fn (Survey $record): string => route('survey.show', ['survey' => $record->slug]))
                     ->openUrlInNewTab(),
                 Action::make('responses')
-                    ->label('Responses')
+                    ->label('Respons')
                     ->icon('heroicon-o-clipboard-document-check')
                     ->visible(fn (Survey $record): bool => auth()->user()?->can('view', $record) ?? false)
                     ->url(fn (Survey $record): string => route('admin.surveys.responses.index', ['survey' => $record])),
                 Action::make('analysis')
-                    ->label('Analysis Dashboard')
+                    ->label('Dashboard Analisis')
                     ->icon('heroicon-o-chart-bar')
                     ->visible(fn (Survey $record): bool => auth()->user()?->can('runAnalysis', $record) ?? false)
                     ->url(fn (Survey $record): string => route('admin.surveys.analysis.index', ['survey' => $record])),
                 Action::make('builder')
-                    ->label('Builder')
+                    ->label('Susun Pertanyaan')
                     ->icon('heroicon-o-pencil-square')
                     ->visible(fn (Survey $record): bool => auth()->user()?->can('update', $record) ?? false)
                     ->url(fn (Survey $record): string => route('admin.surveys.builder.index', ['survey' => $record])),
                 Action::make('distribution')
-                    ->label('Distribution Center')
+                    ->label('Distribusi')
                     ->icon('heroicon-o-paper-airplane')
                     ->visible(fn (Survey $record): bool => auth()->user()?->can('update', $record) ?? false)
                     ->url(fn (Survey $record): string => route('admin.surveys.distribution.index', ['survey' => $record])),
                 Action::make('scoring')
-                    ->label('Scoring')
+                    ->label('Skoring')
                     ->icon('heroicon-o-adjustments-horizontal')
                     ->visible(fn (Survey $record): bool => auth()->user()?->can('manageScoring', $record) ?? false)
                     ->url(fn (Survey $record): string => route('admin.surveys.scoring.index', ['survey' => $record])),
                 Action::make('validation')
-                    ->label('Expert Validation')
+                    ->label('Validasi Ahli')
                     ->icon('heroicon-o-academic-cap')
                     ->visible(fn (Survey $record): bool => auth()->user()?->can('manageValidation', $record) ?? false)
                     ->url(fn (Survey $record): string => route('admin.surveys.validation.index', ['survey' => $record])),
                 Action::make('readability')
-                    ->label('Readability Test')
+                    ->label('Uji Keterbacaan')
                     ->icon('heroicon-o-eye')
                     ->visible(fn (Survey $record): bool => auth()->user()?->can('manageValidation', $record) ?? false)
                     ->url(fn (Survey $record): string => route('admin.surveys.readability.index', ['survey' => $record])),
@@ -231,7 +231,7 @@ class SurveyResource extends Resource
 
         if (! $user || ! $project || ! $user->can('update', $project)) {
             throw ValidationException::withMessages([
-                'project_id' => 'Select a research project you are allowed to manage.',
+                'project_id' => 'Pilih proyek riset yang boleh Anda kelola.',
             ]);
         }
 
@@ -283,9 +283,9 @@ class SurveyResource extends Resource
     {
         return [
             Survey::STATUS_DRAFT => 'Draft',
-            Survey::STATUS_PUBLISHED => 'Published',
-            Survey::STATUS_CLOSED => 'Closed',
-            Survey::STATUS_ARCHIVED => 'Archived',
+            Survey::STATUS_PUBLISHED => 'Terbit',
+            Survey::STATUS_CLOSED => 'Ditutup',
+            Survey::STATUS_ARCHIVED => 'Diarsipkan',
         ];
     }
 
@@ -295,10 +295,10 @@ class SurveyResource extends Resource
     public static function identityModeOptions(): array
     {
         return [
-            Survey::IDENTITY_FULL => 'Full Identity',
-            Survey::IDENTITY_HIDDEN => 'Hidden Identity',
-            Survey::IDENTITY_ANONYMOUS => 'Anonymous',
-            Survey::IDENTITY_PSEUDONYM => 'Pseudonym',
+            Survey::IDENTITY_FULL => 'Identitas lengkap',
+            Survey::IDENTITY_HIDDEN => 'Identitas disembunyikan',
+            Survey::IDENTITY_ANONYMOUS => 'Anonim',
+            Survey::IDENTITY_PSEUDONYM => 'Pseudonim',
         ];
     }
 }

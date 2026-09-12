@@ -13,15 +13,20 @@ class Dashboard extends BaseDashboard
 {
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-home';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Workspace';
+    protected static string|UnitEnum|null $navigationGroup = 'Beranda';
 
-    protected static ?string $navigationLabel = 'Dashboard';
+    protected static ?string $navigationLabel = 'Beranda';
 
     protected static ?int $navigationSort = -100;
 
-    protected static ?string $title = 'Dashboard';
+    protected static ?string $title = 'Beranda';
 
     protected string $view = 'filament.pages.dashboard';
+
+    public function mount(): void
+    {
+        app()->setLocale('id');
+    }
 
     public function getHeading(): string|Htmlable|null
     {

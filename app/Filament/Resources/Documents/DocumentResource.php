@@ -37,7 +37,7 @@ class DocumentResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentText;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Dokumen Riset';
+    protected static string|UnitEnum|null $navigationGroup = 'Dokumen & Referensi';
 
     protected static ?string $navigationLabel = 'Dokumen';
 
@@ -48,17 +48,17 @@ class DocumentResource extends Resource
         return $schema
             ->components([
                 Select::make('project_id')
-                    ->label('Project')
+                    ->label('Proyek')
                     ->options(fn (): array => self::manageableProjectOptions())
                     ->searchable()
                     ->required(),
                 Select::make('category_id')
-                    ->label('Category')
+                    ->label('Kategori')
                     ->options(fn (): array => self::categoryOptions())
                     ->searchable()
                     ->required(),
                 TextInput::make('title')
-                    ->label('Title')
+                    ->label('Judul')
                     ->required()
                     ->maxLength(255),
                 Select::make('status')
@@ -68,54 +68,54 @@ class DocumentResource extends Resource
                     ->required()
                     ->in(Document::STATUSES),
                 Select::make('document_type')
-                    ->label('Academic document type')
+                    ->label('Jenis dokumen akademik')
                     ->options(self::documentTypeOptions())
                     ->searchable()
                     ->nullable()
                     ->in(Document::TYPES),
                 Select::make('visibility')
-                    ->label('Visibility')
+                    ->label('Visibilitas')
                     ->options(self::visibilityOptions())
                     ->default(Document::VISIBILITY_PRIVATE)
                     ->required()
                     ->in(Document::VISIBILITIES),
                 TextInput::make('version_label')
-                    ->label('Version label')
+                    ->label('Label versi')
                     ->placeholder('v01')
                     ->maxLength(50),
                 TextInput::make('version_number')
-                    ->label('Version number')
+                    ->label('Nomor versi')
                     ->numeric()
                     ->default(1)
                     ->minValue(1)
                     ->required(),
                 Toggle::make('is_current')
-                    ->label('Current active version')
+                    ->label('Versi aktif saat ini')
                     ->default(true),
                 TextInput::make('reviewer_name')
-                    ->label('Reviewer / supervisor')
+                    ->label('Reviewer / pembimbing')
                     ->maxLength(255),
                 DatePicker::make('reviewed_at')
-                    ->label('Reviewed at'),
+                    ->label('Tanggal direview'),
                 DatePicker::make('revision_due_date')
-                    ->label('Revision due date'),
+                    ->label('Tenggat revisi'),
                 Placeholder::make('suggested_file_name')
                     ->label('Saran nama file')
                     ->content(fn (?Document $record): string => $record
                         ? app(DocumentFileNameSuggestionService::class)->suggest($record->loadMissing(['project', 'category']))
                         : 'Simpan dokumen untuk membuat saran nama file akademik.'),
                 TextInput::make('next_action')
-                    ->label('Next action')
+                    ->label('Tindak lanjut')
                     ->placeholder('Kirim ulang ke pembimbing.')
                     ->maxLength(255)
                     ->columnSpanFull(),
                 Textarea::make('revision_summary')
-                    ->label('Revision summary')
+                    ->label('Ringkasan revisi')
                     ->rows(3)
                     ->maxLength(5000)
                     ->columnSpanFull(),
                 Textarea::make('description')
-                    ->label('Description / notes')
+                    ->label('Deskripsi / catatan')
                     ->rows(3)
                     ->maxLength(5000)
                     ->columnSpanFull(),
@@ -125,26 +125,26 @@ class DocumentResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->emptyStateHeading('No research documents yet')
-            ->emptyStateDescription('Create your first research document record, such as a proposal, chapter draft, revision file, dataset, presentation, or poster.')
+            ->emptyStateHeading('Belum ada dokumen riset')
+            ->emptyStateDescription('Tambahkan metadata proposal, bab disertasi, instrumen, dataset, presentasi, poster, atau artikel agar riwayat dokumen rapi.')
             ->recordTitleAttribute('title')
             ->columns([
                 TextColumn::make('title')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('project.title')
-                    ->label('Project')
+                    ->label('Proyek')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('category.name')
-                    ->label('Category')
+                    ->label('Kategori')
                     ->sortable(),
                 TextColumn::make('document_type')
-                    ->label('Type')
+                    ->label('Jenis')
                     ->badge()
                     ->formatStateUsing(fn (?string $state): string => $state
                         ? (Document::TYPE_LABELS[$state] ?? self::label($state))
-                        : 'Unclassified')
+                        : 'Belum diklasifikasikan')
                     ->color('gray')
                     ->sortable(),
                 TextColumn::make('status')
@@ -155,10 +155,10 @@ class DocumentResource extends Resource
                 TextColumn::make('visibility')
                     ->badge()
                     ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'private' => 'Private',
-                        'project' => 'Project Members',
-                        'review_link' => 'Review Link',
-                        'public' => 'Public',
+                        'private' => 'Pribadi',
+                        'project' => 'Anggota Proyek',
+                        'review_link' => 'Link Review',
+                        'public' => 'Publik',
                         default => ucfirst(str_replace('_', ' ', $state)),
                     })
                     ->color(fn (string $state): string => match ($state) {
@@ -170,44 +170,44 @@ class DocumentResource extends Resource
                     })
                     ->sortable(),
                 TextColumn::make('version_label')
-                    ->label('Version')
+                    ->label('Versi')
                     ->state(fn (Document $record): string => $record->versionDisplay())
                     ->badge()
                     ->color('info'),
                 TextColumn::make('is_current')
-                    ->label('Current')
-                    ->formatStateUsing(fn (bool $state): string => $state ? 'Current' : 'Older')
+                    ->label('Aktif')
+                    ->formatStateUsing(fn (bool $state): string => $state ? 'Aktif' : 'Versi lama')
                     ->badge()
                     ->color(fn (bool $state): string => $state ? 'success' : 'gray'),
                 TextColumn::make('revision_due_date')
-                    ->label('Revision due')
+                    ->label('Tenggat revisi')
                     ->date()
-                    ->placeholder('No due date')
+                    ->placeholder('Belum ada tenggat')
                     ->sortable(),
                 TextColumn::make('next_action')
-                    ->label('Next action')
+                    ->label('Tindak lanjut')
                     ->limit(44)
-                    ->placeholder('No next action'),
+                    ->placeholder('Belum ada tindak lanjut'),
                 TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable(),
             ])
             ->filters([
                 SelectFilter::make('project_id')
-                    ->label('Project')
+                    ->label('Proyek')
                     ->options(fn (): array => self::visibleProjectOptions()),
                 SelectFilter::make('category_id')
-                    ->label('Category')
+                    ->label('Kategori')
                     ->relationship('category', 'name'),
                 SelectFilter::make('status')
                     ->options(self::statusOptions()),
                 SelectFilter::make('document_type')
-                    ->label('Type')
+                    ->label('Jenis')
                     ->options(self::documentTypeOptions()),
             ])
             ->recordActions([
                 Action::make('reviewLinks')
-                    ->label('Review Links')
+                    ->label('Link Review')
                     ->icon('heroicon-o-link')
                     ->visible(fn (Document $record): bool => auth()->user()?->can('createReviewLink', $record) ?? false)
                     ->url(fn (Document $record): string => route('admin.documents.review-links.index', ['document' => $record])),
@@ -257,7 +257,7 @@ class DocumentResource extends Resource
     {
         return self::canCreate()
             ? Response::allow()
-            : Response::deny('No manageable research project is available for document creation.');
+            : Response::deny('Belum ada proyek riset yang bisa Anda kelola untuk membuat dokumen.');
     }
 
     public static function canEdit(mixed $record): bool
@@ -326,7 +326,16 @@ class DocumentResource extends Resource
     public static function statusOptions(): array
     {
         return collect(Document::STATUSES)
-            ->mapWithKeys(fn (string $status): array => [$status => Document::STATUS_LABELS[$status] ?? self::label($status)])
+            ->mapWithKeys(fn (string $status): array => [$status => match ($status) {
+                Document::STATUS_DRAFT => 'Draft',
+                Document::STATUS_SUBMITTED => 'Diajukan',
+                Document::STATUS_UNDER_REVIEW => 'Sedang direview',
+                Document::STATUS_REVISION_REQUIRED => 'Perlu revisi',
+                Document::STATUS_APPROVED => 'Disetujui',
+                Document::STATUS_FINAL => 'Final',
+                Document::STATUS_ARCHIVED => 'Diarsipkan',
+                default => self::label($status),
+            }])
             ->all();
     }
 
@@ -347,10 +356,10 @@ class DocumentResource extends Resource
     {
         return collect(Document::VISIBILITIES)
             ->mapWithKeys(fn (string $visibility): array => [$visibility => match ($visibility) {
-                Document::VISIBILITY_PRIVATE => 'Private',
-                Document::VISIBILITY_PROJECT => 'Project Members',
-                Document::VISIBILITY_REVIEW_LINK => 'Review Link',
-                Document::VISIBILITY_PUBLIC => 'Public',
+                Document::VISIBILITY_PRIVATE => 'Pribadi',
+                Document::VISIBILITY_PROJECT => 'Anggota Proyek',
+                Document::VISIBILITY_REVIEW_LINK => 'Link Review',
+                Document::VISIBILITY_PUBLIC => 'Publik',
                 default => self::label($visibility),
             }])
             ->all();
@@ -364,7 +373,7 @@ class DocumentResource extends Resource
 
         if (! $project || ! array_key_exists($project->getKey(), self::manageableProjectOptions())) {
             throw ValidationException::withMessages([
-                'project_id' => 'Select a project you are allowed to manage.',
+                'project_id' => 'Pilih proyek yang boleh Anda kelola.',
             ]);
         }
 
@@ -379,7 +388,7 @@ class DocumentResource extends Resource
 
         if (! $category) {
             throw ValidationException::withMessages([
-                'category_id' => 'Select a valid document category.',
+                'category_id' => 'Pilih kategori dokumen yang valid.',
             ]);
         }
 

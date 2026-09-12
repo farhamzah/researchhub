@@ -23,8 +23,8 @@ class ResearchLinkFilamentCrudTest extends TestCase
 
         Livewire::actingAs($admin)
             ->test(ManageResearchLinks::class)
-            ->assertSee('No research links yet')
-            ->assertSee('Save useful research websites such as journals, OJS pages, regulations, datasets, repositories, and learning resources.')
+            ->assertSee('Belum ada link riset')
+            ->assertSee('Simpan jurnal, OJS, regulasi, dataset, repositori, metodologi, dan sumber belajar yang sering dipakai.')
             ->callAction('create', [
                 'research_project_id' => $project->id,
                 'title' => 'Google Scholar',
@@ -52,7 +52,7 @@ class ResearchLinkFilamentCrudTest extends TestCase
         Livewire::actingAs($admin)
             ->test(ManageResearchLinks::class)
             ->assertSee('Google Scholar')
-            ->assertSee('Reference')
+            ->assertSee('Referensi')
             ->assertSee('scholar.google.com')
             ->assertTableActionVisible('open', $link)
             ->assertTableActionShouldOpenUrlInNewTab('open', $link)
@@ -137,8 +137,8 @@ class ResearchLinkFilamentCrudTest extends TestCase
         $this->actingAs($admin)
             ->get('/admin')
             ->assertOk()
-            ->assertSee('Referensi Riset')
-            ->assertSee('Link Riset');
+            ->assertSee('Dokumen &amp; Referensi', false)
+            ->assertSee('Tautan Riset');
     }
 
     private function adminUser(string $email = 'admin@example.test'): User

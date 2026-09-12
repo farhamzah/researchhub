@@ -3,6 +3,27 @@
     use App\Models\SurveyQuestion;
 
     $label = fn (?string $value): string => str($value ?: 'not_set')->replace('_', ' ')->title()->toString();
+    $statusLabel = fn (?string $value): string => match ($value) {
+        Survey::STATUS_DRAFT => 'Draf',
+        Survey::STATUS_PUBLISHED => 'Dipublikasikan',
+        Survey::STATUS_CLOSED => 'Ditutup',
+        Survey::STATUS_ARCHIVED => 'Diarsipkan',
+        default => $label($value),
+    };
+    $identityLabel = fn (?string $value): string => match ($value) {
+        Survey::IDENTITY_FULL => 'Identitas lengkap',
+        Survey::IDENTITY_HIDDEN => 'Identitas disembunyikan',
+        Survey::IDENTITY_ANONYMOUS => 'Anonim',
+        Survey::IDENTITY_PSEUDONYM => 'Pseudonim',
+        default => $label($value),
+    };
+    $instrumentLabel = fn (?string $value): string => match ($value) {
+        Survey::INSTRUMENT_ANALYSIS_STUDENT => 'Kuesioner mahasiswa',
+        Survey::INSTRUMENT_ANALYSIS_LECTURER => 'Kuesioner dosen',
+        Survey::INSTRUMENT_PRACTITIONER_INTERVIEW => 'Formulir wawancara praktisi',
+        Survey::INSTRUMENT_OTHER => 'Lainnya',
+        default => 'Belum ditetapkan',
+    };
     $typeClass = fn (string $type): string => match ($type) {
         SurveyQuestion::TYPE_SINGLE_CHOICE, SurveyQuestion::TYPE_MULTIPLE_CHOICE => 'border-blue-200 bg-blue-50 text-blue-700',
         SurveyQuestion::TYPE_LIKERT, SurveyQuestion::TYPE_LIKERT_MATRIX => 'border-emerald-200 bg-emerald-50 text-emerald-700',
@@ -48,73 +69,179 @@
         return array_pad(array_slice($columns, 0, 7), 7, ['value' => '', 'label' => '']);
     };
     $bulkPreview = session('bulk_question_preview');
+    $stepLabels = [
+        'setup-survey' => 'Identitas & Persetujuan',
+        'indikator' => 'Kisi-kisi & Indikator',
+        'pertanyaan' => 'Pertanyaan',
+        'skoring' => 'Rincian Skoring',
+        'preview' => 'Pratinjau Aman',
+        'validasi-ahli' => 'Validasi Ahli',
+        'respons-analisis' => 'Respons & Analisis',
+    ];
 @endphp
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Survey Builder - MyRiset</title>
+    <title>Ruang Kerja Instrumen - MyRiset</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-slate-50 text-slate-950 antialiased">
     <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <section data-ui="myriset-page-header" class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+        <section data-ui="myriset-page-header" class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
             <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-                <div class="max-w-3xl">
-                    <p class="text-sm font-semibold uppercase tracking-wide text-emerald-700">MyRiset Admin</p>
-                    <h1 class="mt-2 text-3xl font-semibold">Survey Builder</h1>
-                    <p class="mt-2 text-lg font-semibold text-slate-800">{{ $survey->title }}</p>
-                    <p class="mt-1 text-sm leading-6 text-slate-600">
-                        Bangun instrumen survey untuk {{ $survey->project?->title ?: 'project belum dipilih' }} dengan alur setup, indikator, pertanyaan, skoring, preview, validasi, dan analisis.
-                    </p>
+                <div class="min-w-0 max-w-4xl">
+                    <p class="text-sm font-semibold uppercase tracking-wide text-emerald-700">MyRiset · Instrumen & Survei</p>
+                    <h1 class="mt-2 text-3xl font-semibold tracking-tight">Ruang Kerja Instrumen</h1>
+                    <p data-instrument-title class="mt-3 break-words text-xl font-semibold text-slate-900">{{ $survey->title }}</p>
+                    <p class="mt-2 text-sm leading-6 text-slate-600">Kelola satu instrumen melalui lima tujuan kerja. Pengelompokan ini tidak mengubah tujuh langkah builder, status ilmiah, atau aturan publikasi.</p>
                 </div>
-
                 <div class="flex flex-wrap gap-2">
-                    <a href="{{ route('filament.admin.resources.surveys.index') }}" class="rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-600">
-                        Edit Survey
-                    </a>
-                    <a href="{{ route('filament.admin.resources.surveys.index') }}" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">
-                        Back to Surveys
-                    </a>
-                    <a href="{{ route('admin.surveys.readability.index', ['survey' => $survey]) }}" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">
-                        Readability Test
-                    </a>
-                    <a href="{{ route('admin.surveys.supervisor-review.index', ['survey' => $survey]) }}" class="rounded-md border border-indigo-300 bg-white px-4 py-2 text-sm font-semibold text-indigo-800 shadow-sm hover:bg-indigo-50">
-                        Supervisor Review
-                    </a>
-                    <a href="{{ route('admin.surveys.analysis.index', ['survey' => $survey]) }}" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">
-                        Analysis Dashboard
-                    </a>
-                    <a href="{{ route('admin.surveys.distribution.index', ['survey' => $survey]) }}" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">
-                        Distribution Center
-                    </a>
-                    <a href="{{ route('admin.surveys.collection-monitoring.index', ['survey' => $survey]) }}" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">
-                        Collection Monitoring
-                    </a>
-                    <a href="{{ route('admin.surveys.analysis-package.index', ['survey' => $survey]) }}" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">
-                        Analysis Package
-                    </a>
-                    <a href="{{ route('admin.surveys.preflight.index', ['survey' => $survey]) }}" class="rounded-md border border-emerald-300 bg-white px-4 py-2 text-sm font-semibold text-emerald-800 shadow-sm hover:bg-emerald-50">
-                        Preflight QA
-                    </a>
-                    <a href="{{ route('admin.surveys.respondent-package.index', ['survey' => $survey]) }}" class="rounded-md border border-amber-300 bg-white px-4 py-2 text-sm font-semibold text-amber-900 shadow-sm hover:bg-amber-50">
-                        Respondent Package
-                    </a>
-                    @if ($survey->project)
-                        <a href="{{ route('admin.projects.journey.show', ['researchProject' => $survey->project]) }}" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">
-                            Open Project Journey
-                        </a>
-                    @endif
+                    <a href="{{ route('filament.admin.resources.surveys.index') }}" class="rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700">Edit instrumen</a>
+                    <a href="{{ route('filament.admin.resources.surveys.index') }}" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700">Kembali ke daftar survei</a>
                 </div>
             </div>
 
-            <nav aria-label="Survey builder wizard steps" class="mt-6 grid gap-2 md:grid-cols-7">
+            <dl class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <div class="min-w-0 rounded-lg border border-slate-200 bg-slate-50 p-4">
+                    <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Proyek</dt>
+                    <dd data-instrument-project class="mt-2 break-words text-sm font-semibold text-slate-900">{{ $survey->project?->title ?: 'Belum ditetapkan' }}</dd>
+                </div>
+                <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                    <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Status instrumen</dt>
+                    <dd class="mt-2"><x-myriset.status-badge :status="$survey->status" :label="$statusLabel($survey->status)" /></dd>
+                </div>
+                <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                    <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Jenis instrumen</dt>
+                    <dd class="mt-2 text-sm font-semibold text-slate-900">{{ $instrumentLabel($survey->instrument_type) }}</dd>
+                </div>
+                <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                    <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Mode identitas</dt>
+                    <dd class="mt-2"><x-myriset.status-badge :status="$survey->identity_mode" :label="$identityLabel($survey->identity_mode)" /></dd>
+                </div>
+            </dl>
+        </section>
+
+        <nav aria-label="Lima area kerja instrumen" class="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+            @foreach ([
+                ['key' => 'siapkan', 'label' => 'Siapkan', 'description' => 'Identitas, persetujuan, kisi-kisi, pertanyaan, dan skoring.'],
+                ['key' => 'tinjau', 'label' => 'Tinjau', 'description' => 'Review pembimbing, validasi ahli, hasil, dan revisi.'],
+                ['key' => 'uji-coba', 'label' => 'Uji Coba', 'description' => 'Pratinjau tanpa simpan, keterpahaman, pilot, dan kesiapan.'],
+                ['key' => 'kumpulkan-data', 'label' => 'Kumpulkan Data', 'description' => 'Distribusi, tautan utama, dan pemantauan respons.'],
+                ['key' => 'laporan', 'label' => 'Laporan', 'description' => 'Analisis, paket dokumen, dan ekspor sesuai izin.'],
+            ] as $workspaceGroup)
+                <a data-workspace-group="{{ $workspaceGroup['key'] }}" href="#area-{{ $workspaceGroup['key'] }}" class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-emerald-300 hover:bg-emerald-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700">
+                    <span class="block text-base font-semibold text-slate-950">{{ $workspaceGroup['label'] }}</span>
+                    <span class="mt-1 block text-xs leading-5 text-slate-600">{{ $workspaceGroup['description'] }}</span>
+                </a>
+            @endforeach
+        </nav>
+
+        <section aria-labelledby="workspace-actions-title" class="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Pilih tujuan kerja</p>
+                <h2 id="workspace-actions-title" class="mt-1 text-xl font-semibold">Apa yang ingin Anda kerjakan?</h2>
+                <p class="mt-1 text-sm text-slate-600">Setiap area menonjolkan satu tindakan utama. Tindakan lain tetap tersedia pada panel yang dapat dibuka.</p>
+            </div>
+
+            <div class="mt-5 grid gap-4 lg:grid-cols-2">
+                <article id="area-siapkan" data-workspace-area="siapkan" class="scroll-mt-6 rounded-xl border border-emerald-200 bg-emerald-50/60 p-5">
+                    <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">1 · Siapkan</p>
+                    <h3 class="mt-1 text-lg font-semibold">Lengkapi struktur instrumen</h3>
+                    <p class="mt-1 text-sm leading-6 text-slate-700">Mulai dari identitas dan persetujuan, lalu periksa indikator, butir, opsi jawaban, dan skoring.</p>
+                    <a href="#setup-survey" class="mt-4 inline-flex rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700">Lanjutkan persiapan</a>
+                    <details class="mt-4 rounded-md border border-emerald-200 bg-white">
+                        <summary class="cursor-pointer px-4 py-3 text-sm font-semibold text-emerald-900">Bagian persiapan lainnya</summary>
+                        <div class="grid gap-2 border-t border-emerald-100 p-4 text-sm">
+                            <a href="#indikator" class="font-semibold text-emerald-800 hover:underline">Kisi-kisi dan indikator</a>
+                            <a href="#pertanyaan" class="font-semibold text-emerald-800 hover:underline">Pertanyaan dan opsi jawaban</a>
+                            <a href="#skoring" class="font-semibold text-emerald-800 hover:underline">Rincian skoring</a>
+                            <a href="#pengaturan-lanjutan" class="font-semibold text-emerald-800 hover:underline">Pengaturan lanjutan</a>
+                        </div>
+                    </details>
+                </article>
+
+                <article id="area-tinjau" data-workspace-area="tinjau" class="scroll-mt-6 rounded-xl border border-indigo-200 bg-indigo-50/60 p-5">
+                    <p class="text-xs font-semibold uppercase tracking-wide text-indigo-700">2 · Tinjau</p>
+                    <h3 class="mt-1 text-lg font-semibold">Kelola telaah ilmiah</h3>
+                    <p class="mt-1 text-sm leading-6 text-slate-700">Buka review pembimbing sebagai tindakan utama; validasi ahli dan hasilnya tetap terpisah.</p>
+                    <a href="{{ route('admin.surveys.supervisor-review.index', ['survey' => $survey]) }}" class="mt-4 inline-flex rounded-md bg-indigo-700 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-700">Buka review pembimbing</a>
+                    <details class="mt-4 rounded-md border border-indigo-200 bg-white">
+                        <summary class="cursor-pointer px-4 py-3 text-sm font-semibold text-indigo-900">Telaah lainnya</summary>
+                        <div class="grid gap-2 border-t border-indigo-100 p-4 text-sm">
+                            <a href="{{ route('admin.surveys.validation.index', ['survey' => $survey]) }}" class="font-semibold text-indigo-800 hover:underline">Validasi ahli</a>
+                            @if ($builderWizard['validation']['round_id'])
+                                <a href="{{ route('admin.surveys.validation.results.show', ['survey' => $survey, 'round' => $builderWizard['validation']['round_id']]) }}" class="font-semibold text-indigo-800 hover:underline">Hasil validasi ahli</a>
+                            @else
+                                <span class="text-slate-600">Hasil validasi belum tersedia karena belum ada ronde validasi.</span>
+                            @endif
+                        </div>
+                    </details>
+                </article>
+
+                <article id="area-uji-coba" data-workspace-area="uji-coba" class="scroll-mt-6 rounded-xl border border-amber-200 bg-amber-50/60 p-5">
+                    <p class="text-xs font-semibold uppercase tracking-wide text-amber-800">3 · Uji Coba</p>
+                    <h3 class="mt-1 text-lg font-semibold">Periksa sebelum pengumpulan utama</h3>
+                    <p class="mt-1 text-sm leading-6 text-slate-700">Pratinjau admin tidak menyimpan respons. Jalur pilot tetap memakai data uji yang dikecualikan dari respons resmi.</p>
+                    <a href="{{ route('admin.surveys.readability.index', ['survey' => $survey]) }}" class="mt-4 inline-flex rounded-md bg-amber-700 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700">Buka uji keterpahaman</a>
+                    <details class="mt-4 rounded-md border border-amber-200 bg-white">
+                        <summary class="cursor-pointer px-4 py-3 text-sm font-semibold text-amber-950">Pemeriksaan lainnya</summary>
+                        <div class="grid gap-2 border-t border-amber-100 p-4 text-sm">
+                            <a href="#preview" class="font-semibold text-amber-900 hover:underline">Pratinjau admin tanpa simpan</a>
+                            <a href="{{ route('admin.surveys.respondent-package.index', ['survey' => $survey]) }}" class="font-semibold text-amber-900 hover:underline">Paket pilot dan responden</a>
+                            <a href="{{ route('admin.surveys.preflight.index', ['survey' => $survey]) }}" class="font-semibold text-amber-900 hover:underline">Preflight QA — periksa kesiapan</a>
+                        </div>
+                    </details>
+                </article>
+
+                <article id="area-kumpulkan-data" data-workspace-area="kumpulkan-data" class="scroll-mt-6 rounded-xl border border-blue-200 bg-blue-50/60 p-5">
+                    <p class="text-xs font-semibold uppercase tracking-wide text-blue-700">4 · Kumpulkan Data</p>
+                    <h3 class="mt-1 text-lg font-semibold">Atur distribusi dan pantau respons</h3>
+                    <p class="mt-1 text-sm leading-6 text-slate-700">Tautan responden utama hanya tersedia saat status dan akses publik existing mengizinkannya.</p>
+                    <a href="{{ route('admin.surveys.distribution.index', ['survey' => $survey]) }}" class="mt-4 inline-flex rounded-md bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">Buka pusat distribusi</a>
+                    <details class="mt-4 rounded-md border border-blue-200 bg-white">
+                        <summary class="cursor-pointer px-4 py-3 text-sm font-semibold text-blue-900">Pengumpulan lainnya</summary>
+                        <div class="grid gap-2 border-t border-blue-100 p-4 text-sm">
+                            <a href="{{ route('admin.surveys.collection-monitoring.index', ['survey' => $survey]) }}" class="font-semibold text-blue-800 hover:underline">Pemantauan pengumpulan</a>
+                            <a href="{{ route('admin.surveys.responses.index', ['survey' => $survey]) }}" class="font-semibold text-blue-800 hover:underline">Daftar respons</a>
+                            @if ($survey->canReceiveResponses())
+                                <a href="{{ route('survey.show', ['survey' => $survey->slug]) }}" target="_blank" rel="noopener" class="font-semibold text-blue-800 hover:underline">Buka tautan responden utama</a>
+                            @else
+                                <span class="rounded-md border border-amber-200 bg-amber-50 p-3 text-amber-950">Tautan responden utama belum tersedia. Instrumen harus berstatus dipublikasikan dan akses publik harus aktif. <a href="{{ route('admin.surveys.preflight.index', ['survey' => $survey]) }}" class="font-semibold underline">Lihat langkah perbaikan</a>.</span>
+                            @endif
+                        </div>
+                    </details>
+                </article>
+
+                <article id="area-laporan" data-workspace-area="laporan" class="scroll-mt-6 rounded-xl border border-slate-300 bg-slate-50 p-5 lg:col-span-2">
+                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-600">5 · Laporan</p>
+                    <h3 class="mt-1 text-lg font-semibold">Tinjau hasil dan keluaran</h3>
+                    <p class="mt-1 text-sm leading-6 text-slate-700">Analisis menjadi tindakan utama. Paket dokumen dan ekspor memakai rute serta izin existing.</p>
+                    <a href="{{ route('admin.surveys.analysis.index', ['survey' => $survey]) }}" class="mt-4 inline-flex rounded-md bg-slate-800 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-800">Buka analisis</a>
+                    <details class="mt-4 rounded-md border border-slate-300 bg-white">
+                        <summary class="cursor-pointer px-4 py-3 text-sm font-semibold text-slate-900">Keluaran lainnya</summary>
+                        <div class="grid gap-2 border-t border-slate-200 p-4 text-sm">
+                            <a href="{{ route('admin.surveys.analysis-package.index', ['survey' => $survey]) }}" class="font-semibold text-slate-800 hover:underline">Paket dokumen analisis</a>
+                            <a href="{{ route('admin.surveys.responses.export', ['survey' => $survey]) }}" class="font-semibold text-slate-800 hover:underline">Ekspor respons sesuai izin</a>
+                        </div>
+                    </details>
+                </article>
+            </div>
+        </section>
+
+        <section aria-labelledby="builder-steps-title" class="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Status struktur existing</p>
+                <h2 id="builder-steps-title" class="mt-1 text-lg font-semibold">Tujuh langkah builder tetap dipertahankan</h2>
+                <p class="mt-1 text-sm text-slate-600">Status berikut berasal dari sumber readiness yang sama; membuka area tidak menandai tahap ilmiah selesai.</p>
+            </div>
+            <nav aria-label="Tujuh langkah builder" class="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
                 @foreach ($builderWizard['steps'] as $step)
-                    <a href="#{{ $step['anchor'] }}" class="rounded-md border border-slate-200 bg-slate-50 p-3 text-sm hover:border-emerald-200 hover:bg-emerald-50">
-                        <span class="block text-xs font-semibold uppercase tracking-wide text-slate-500">Step {{ $loop->iteration }}</span>
-                        <span class="mt-1 block font-semibold text-slate-950">{{ $step['label'] }}</span>
+                    <a data-builder-step data-step-label="{{ $step['label'] }}" data-step-status="{{ $step['status'] }}" href="#{{ $step['anchor'] }}" class="rounded-md border border-slate-200 bg-slate-50 p-3 text-sm hover:border-emerald-200 hover:bg-emerald-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700">
+                        <span class="block text-xs font-semibold uppercase tracking-wide text-slate-500">Langkah {{ $loop->iteration }}</span>
+                        <span class="mt-1 block font-semibold text-slate-950">{{ $stepLabels[$step['anchor']] ?? $step['label'] }}</span>
                         <x-myriset.status-badge :status="$step['status']" :label="$step['status']" size="xs" class="mt-2" />
                     </a>
                 @endforeach
@@ -147,18 +274,18 @@
         <section id="setup-survey" class="mt-6 scroll-mt-6 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
             <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                    <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Setup Survey</p>
+                    <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Siapkan Instrumen</p>
                     <h2 class="mt-1 text-xl font-semibold">Apa yang sedang dikerjakan?</h2>
                     <p class="mt-1 text-sm text-slate-600">{{ $survey->description ?: 'Deskripsi survey belum diisi.' }}</p>
                 </div>
                 <div class="flex flex-wrap gap-2">
                     @if ($survey->canReceiveResponses())
-                        <a href="{{ route('survey.show', ['survey' => $survey->slug]) }}" target="_blank" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">
-                            Open Public Survey
+                        <a href="{{ route('survey.show', ['survey' => $survey->slug]) }}" target="_blank" rel="noopener" class="rounded-md border border-blue-300 bg-white px-4 py-2 text-sm font-semibold text-blue-800 shadow-sm hover:bg-blue-50">
+                            Buka tautan responden utama
                         </a>
                     @else
-                        <span class="rounded-md border border-slate-200 bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-500">
-                            Public survey not open
+                        <span class="max-w-sm rounded-md border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold leading-5 text-amber-900">
+                            Tautan responden utama belum tersedia. Periksa status publikasi dan akses publik pada area Kumpulkan Data.
                         </span>
                     @endif
                 </div>
@@ -171,11 +298,11 @@
                 </div>
                 <div class="rounded-md border border-slate-100 bg-slate-50 p-4">
                     <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Status</p>
-                    <x-myriset.status-badge :status="$survey->status" :label="$label($survey->status)" class="mt-2" />
+                    <x-myriset.status-badge :status="$survey->status" :label="$statusLabel($survey->status)" class="mt-2" />
                 </div>
                 <div class="rounded-md border border-slate-100 bg-slate-50 p-4">
                     <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Identity Mode</p>
-                    <x-myriset.status-badge :status="$survey->identity_mode" :label="$label($survey->identity_mode)" class="mt-2" />
+                    <x-myriset.status-badge :status="$survey->identity_mode" :label="$identityLabel($survey->identity_mode)" class="mt-2" />
                 </div>
                 <div class="rounded-md border border-slate-100 bg-slate-50 p-4">
                     <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Questions / Responses</p>
@@ -214,7 +341,7 @@
                 @method('PUT')
                 <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                     <div>
-                        <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Opening / Introduction</p>
+                        <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Pembuka / Pengantar</p>
                         <h3 class="mt-1 text-lg font-semibold text-slate-950">Intro sebelum pertanyaan</h3>
                         <p class="mt-1 text-sm leading-6 text-slate-600">Intro muncul sebelum pertanyaan pada public survey. Kosongkan narasi intro jika survey tidak membutuhkan halaman pembuka.</p>
                     </div>
@@ -369,7 +496,7 @@
             <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Pertanyaan</p>
-                    <h2 class="mt-1 text-xl font-semibold">Question List</h2>
+                    <h2 class="mt-1 text-xl font-semibold">Daftar Pertanyaan</h2>
                     <p class="mt-1 text-sm text-slate-600">Questions are displayed in the order respondents will see them.</p>
                 </div>
                 <div class="flex flex-wrap gap-2">
@@ -452,7 +579,7 @@
                 </section>
 
                 <section id="add-question" class="rounded-lg border border-slate-200 bg-slate-50 p-5">
-                    <h3 class="text-lg font-semibold">Add Question</h3>
+                    <h3 class="text-lg font-semibold">Tambah Pertanyaan</h3>
                     <p class="mt-1 text-sm text-slate-600">Use structured choice fields for common research instrument questions. Advanced JSON remains available for edge cases.</p>
 
                     <form method="POST" action="{{ route('admin.surveys.builder.questions.store', ['survey' => $survey]) }}" class="mt-5 grid gap-4 md:grid-cols-2">
@@ -475,12 +602,17 @@
                 </section>
             </div>
 
-            <section id="bulk-add-questions" class="mt-6 rounded-lg border border-blue-200 bg-blue-50 p-5">
-                <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                    <div>
-                        <p class="text-xs font-semibold uppercase tracking-wide text-blue-800">Bulk Add Questions</p>
-                        <h3 class="mt-1 text-lg font-semibold text-blue-950">Paste text or JSON instrument sections</h3>
-                        <p class="mt-1 text-sm leading-6 text-blue-900">Preview before import. Imports are transactional and duplicate question keys stop the whole import.</p>
+            <details id="pengaturan-lanjutan" data-advanced-settings class="mt-6 min-w-0 rounded-lg border border-blue-200 bg-blue-50" @if ($bulkPreview || old('bulk_input') || $errors->has('bulk_input') || $errors->has('indicator_strategy')) open @endif>
+                <summary class="cursor-pointer px-5 py-4 text-sm font-semibold text-blue-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">
+                    Pengaturan lanjutan · template, import bulk, dan pemetaan teknis
+                    <span class="mt-1 block text-xs font-normal leading-5 text-blue-800">Buka hanya saat perlu. Error dan hasil pratinjau import akan membuka panel ini otomatis.</span>
+                </summary>
+                <div class="min-w-0 border-t border-blue-200 p-5">
+                <div class="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                    <div class="min-w-0">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-blue-800">Tambah Pertanyaan Massal</p>
+                        <h3 class="mt-1 text-lg font-semibold text-blue-950">Tempel bagian instrumen dalam teks atau JSON</h3>
+                        <p class="mt-1 text-sm leading-6 text-blue-900">Pratinjau sebelum import. Import tetap transaksional dan question key duplikat menghentikan seluruh proses.</p>
                     </div>
                     <div class="flex flex-wrap gap-2">
                         @if ($templateActionScope === 'student')
@@ -511,21 +643,21 @@
                 </div>
 
                 @if ($templateActionScope === 'student')
-                <div class="mt-4 grid gap-3 md:grid-cols-3">
-                    <div class="rounded-md border border-blue-100 bg-white p-3">
+                <div class="mt-4 grid min-w-0 gap-3 md:grid-cols-3">
+                    <div class="min-w-0 rounded-md border border-blue-100 bg-white p-3">
                         <p class="text-xs font-semibold uppercase tracking-wide text-blue-700">PharmVR student template keys</p>
                         <p class="mt-1 text-sm text-blue-950">{{ $pharmVrTemplatePreview['existing_count'] }} existing / {{ $pharmVrTemplatePreview['template_count'] }} total</p>
                     </div>
-                    <div class="rounded-md border border-emerald-100 bg-white p-3">
+                    <div class="min-w-0 rounded-md border border-emerald-100 bg-white p-3">
                         <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Missing PharmVR keys</p>
                         <p class="mt-1 text-sm text-emerald-950">{{ $pharmVrTemplatePreview['missing_count'] }} keys</p>
                         @if ($pharmVrTemplatePreview['missing_count'] > 0)
                             <p class="mt-1 truncate text-xs text-emerald-800" title="{{ implode(', ', $pharmVrTemplatePreview['missing_keys']) }}">{{ implode(', ', array_slice($pharmVrTemplatePreview['missing_keys'], 0, 14)) }}{{ $pharmVrTemplatePreview['missing_count'] > 14 ? ', ...' : '' }}</p>
                         @endif
                     </div>
-                    <div class="rounded-md border border-slate-200 bg-white p-3">
+                    <div data-fill-missing-pages-card class="min-w-0 rounded-md border border-slate-200 bg-white p-3">
                         <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Fill missing pages</p>
-                        <p class="mt-1 truncate text-sm text-slate-700" title="{{ implode(', ', $pharmVrTemplatePreview['missing_pages']) }}">{{ $pharmVrTemplatePreview['missing_pages'] === [] ? 'No missing sections' : implode(', ', $pharmVrTemplatePreview['missing_pages']) }}</p>
+                        <p class="mt-1 break-words text-sm text-slate-700" title="{{ implode(', ', $pharmVrTemplatePreview['missing_pages']) }}">{{ $pharmVrTemplatePreview['missing_pages'] === [] ? 'No missing sections' : implode(', ', $pharmVrTemplatePreview['missing_pages']) }}</p>
                     </div>
                 </div>
 
@@ -576,14 +708,14 @@
                             <option value="skip" @selected(old('indicator_strategy') === 'skip')>Skip indicator link</option>
                             <option value="cancel" @selected(old('indicator_strategy') === 'cancel')>Cancel if indicator missing</option>
                         </select>
-                        <button type="submit" @disabled($hasResponses) class="rounded-md border border-blue-300 bg-white px-4 py-2 text-sm font-semibold text-blue-900 shadow-sm hover:bg-blue-100 disabled:bg-slate-300">Preview</button>
-                        <button type="submit" formaction="{{ route('admin.surveys.builder.bulk-questions.import', ['survey' => $survey]) }}" @disabled($hasResponses) class="rounded-md bg-blue-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:bg-slate-300">Import</button>
+                        <button type="submit" @disabled($hasResponses) class="rounded-md border border-blue-300 bg-white px-4 py-2 text-sm font-semibold text-blue-900 shadow-sm hover:bg-blue-100 disabled:bg-slate-300">Pratinjau import</button>
+                        <button type="submit" formaction="{{ route('admin.surveys.builder.bulk-questions.import', ['survey' => $survey]) }}" @disabled($hasResponses) class="rounded-md bg-blue-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:bg-slate-300">Import pertanyaan</button>
                     </div>
                 </form>
 
                 @if (is_array($bulkPreview))
-                    <div class="mt-5 rounded-md border border-blue-200 bg-white p-4">
-                        <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <div data-bulk-preview-result class="mt-5 rounded-md border border-blue-200 bg-white p-4">
+                        <div data-bulk-preview-result class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                             <div>
                                 <p class="text-sm font-semibold text-slate-950">Bulk import preview</p>
                                 <p class="mt-1 text-sm text-slate-600">Page: {{ $bulkPreview['page']['title'] }} ({{ $bulkPreview['page_exists'] ? 'existing page will be reused' : 'will be created' }})</p>
@@ -639,7 +771,8 @@
                         </div>
                     </div>
                 @endif
-            </section>
+                </div>
+            </details>
 
             <div class="mt-6 rounded-lg border border-slate-200 bg-slate-50 p-4">
                 <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -766,7 +899,7 @@
             <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Skoring</p>
-                    <h2 class="mt-1 text-xl font-semibold">Scoring readiness</h2>
+                    <h2 class="mt-1 text-xl font-semibold">Kesiapan skoring</h2>
                     <p class="mt-1 text-sm text-slate-600">{{ $builderWizard['scoring']['guidance'] ?? 'Ringkasan konfigurasi skoring untuk pertanyaan yang bisa dinilai.' }}</p>
                 </div>
                 <a href="{{ route('admin.surveys.scoring.index', ['survey' => $survey]) }}" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">
@@ -841,16 +974,12 @@
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Preview</p>
                     <div class="mt-1 flex flex-wrap items-center gap-2">
-                        <h2 class="text-xl font-semibold">Admin-only respondent preview</h2>
-                        <span class="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800">admin preview no-save - no response will be saved.</span>
+                        <h2 class="text-xl font-semibold">Pratinjau responden khusus admin</h2>
+                        <span class="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800">pratinjau admin tanpa simpan — tidak ada respons yang disimpan.</span>
                     </div>
                     <p class="mt-1 text-sm text-slate-600">Preview ini tidak membuat SurveyResponse dan tidak menampilkan data responden.</p>
                 </div>
-                @if ($survey->canReceiveResponses())
-                    <a href="{{ route('survey.show', ['survey' => $survey->slug]) }}" target="_blank" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">
-                        Open Public Survey
-                    </a>
-                @endif
+
             </div>
 
             <div class="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-5">
@@ -1020,7 +1149,7 @@
             <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Validasi Ahli</p>
-                    <h2 class="mt-1 text-xl font-semibold">Expert validation readiness</h2>
+                    <h2 class="mt-1 text-xl font-semibold">Kesiapan validasi ahli</h2>
                     <p class="mt-1 text-sm text-slate-600">Checklist kesiapan sebelum instrumen dikirim ke validator.</p>
                 </div>
                 <div class="flex flex-wrap gap-2">
@@ -1068,7 +1197,7 @@
             <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Respons & Analisis</p>
-                    <h2 class="mt-1 text-xl font-semibold">Responses and analysis status</h2>
+                    <h2 class="mt-1 text-xl font-semibold">Status respons dan analisis</h2>
                     <p class="mt-1 text-sm text-slate-600">Ringkasan aman tanpa identitas responden.</p>
                 </div>
                 <div class="flex flex-wrap gap-2">
@@ -1123,8 +1252,25 @@
             @endif
         </section>
     </main>
-    <script>
+    <script data-unsaved-warning>
         document.addEventListener('DOMContentLoaded', () => {
+            let hasUnsavedChanges = false;
+
+            document.querySelectorAll('form').forEach((form) => {
+                form.addEventListener('input', () => { hasUnsavedChanges = true; });
+                form.addEventListener('change', () => { hasUnsavedChanges = true; });
+                form.addEventListener('submit', () => { hasUnsavedChanges = false; });
+            });
+
+            window.addEventListener('beforeunload', (event) => {
+                if (!hasUnsavedChanges) {
+                    return;
+                }
+
+                event.preventDefault();
+                event.returnValue = '';
+            });
+
             const list = document.querySelector('[data-question-list]');
             const form = document.getElementById('question-order-form');
 

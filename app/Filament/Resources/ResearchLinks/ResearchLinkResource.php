@@ -33,9 +33,9 @@ class ResearchLinkResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedLink;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Referensi Riset';
+    protected static string|UnitEnum|null $navigationGroup = 'Dokumen & Referensi';
 
-    protected static ?string $navigationLabel = 'Link Riset';
+    protected static ?string $navigationLabel = 'Tautan Riset';
 
     protected static ?string $recordTitleAttribute = 'title';
 
@@ -44,12 +44,12 @@ class ResearchLinkResource extends Resource
         return $schema
             ->components([
                 Select::make('research_project_id')
-                    ->label('Research Project')
+                    ->label('Proyek riset')
                     ->options(fn (): array => self::manageableProjectOptions())
                     ->searchable()
-                    ->placeholder('Global link'),
+                    ->placeholder('Link global'),
                 TextInput::make('title')
-                    ->label('Site or resource name')
+                    ->label('Nama situs atau referensi')
                     ->required()
                     ->maxLength(255),
                 TextInput::make('url')
@@ -58,32 +58,32 @@ class ResearchLinkResource extends Resource
                     ->url()
                     ->maxLength(2048),
                 Select::make('category')
-                    ->label('Category')
-                    ->options(ResearchLink::CATEGORY_LABELS)
+                    ->label('Kategori')
+                    ->options(self::categoryOptions())
                     ->default(ResearchLink::CATEGORY_OTHER)
                     ->required()
                     ->in(ResearchLink::CATEGORIES),
                 Textarea::make('description')
-                    ->label('Short description')
+                    ->label('Deskripsi singkat')
                     ->rows(3)
                     ->maxLength(5000)
                     ->columnSpanFull(),
                 TextInput::make('thumbnail_url')
-                    ->label('Thumbnail URL')
+                    ->label('URL thumbnail')
                     ->url()
                     ->maxLength(2048),
                 TextInput::make('favicon_url')
-                    ->label('Favicon URL')
+                    ->label('URL favicon')
                     ->url()
                     ->maxLength(2048),
                 Toggle::make('is_pinned')
-                    ->label('Pinned')
+                    ->label('Sematkan')
                     ->default(false),
                 Toggle::make('is_active')
-                    ->label('Active')
+                    ->label('Aktif')
                     ->default(true),
                 TextInput::make('sort_order')
-                    ->label('Sort order')
+                    ->label('Urutan tampil')
                     ->numeric()
                     ->default(0)
                     ->minValue(0),
@@ -93,24 +93,24 @@ class ResearchLinkResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->emptyStateHeading('No research links yet')
-            ->emptyStateDescription('Save useful research websites such as journals, OJS pages, regulations, datasets, repositories, and learning resources.')
+            ->emptyStateHeading('Belum ada link riset')
+            ->emptyStateDescription('Simpan jurnal, OJS, regulasi, dataset, repositori, metodologi, dan sumber belajar yang sering dipakai.')
             ->recordTitleAttribute('title')
             ->defaultSort('sort_order')
             ->columns([
                 ImageColumn::make('preview')
-                    ->label('Preview')
+                    ->label('Pratinjau')
                     ->state(fn (ResearchLink $record): ?string => $record->thumbnail_url ?: $record->favicon_url)
                     ->square()
                     ->size(40),
                 TextColumn::make('title')
-                    ->label('Resource')
-                    ->description(fn (ResearchLink $record): string => $record->description ? str($record->description)->limit(90)->toString() : 'No description')
+                    ->label('Referensi')
+                    ->description(fn (ResearchLink $record): string => $record->description ? str($record->description)->limit(90)->toString() : 'Belum ada deskripsi')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('category')
                     ->badge()
-                    ->formatStateUsing(fn (string $state): string => ResearchLink::CATEGORY_LABELS[$state] ?? ucfirst(str_replace('_', ' ', $state)))
+                    ->formatStateUsing(fn (string $state): string => self::categoryOptions()[$state] ?? ucfirst(str_replace('_', ' ', $state)))
                     ->color(fn (string $state): string => match ($state) {
                         ResearchLink::CATEGORY_JOURNAL,
                         ResearchLink::CATEGORY_REFERENCE,
@@ -127,16 +127,16 @@ class ResearchLinkResource extends Resource
                     })
                     ->sortable(),
                 TextColumn::make('project.title')
-                    ->label('Project')
+                    ->label('Proyek')
                     ->placeholder('Global')
                     ->searchable()
                     ->sortable(),
                 IconColumn::make('is_pinned')
-                    ->label('Pinned')
+                    ->label('Tersemat')
                     ->boolean()
                     ->sortable(),
                 IconColumn::make('is_active')
-                    ->label('Active')
+                    ->label('Aktif')
                     ->boolean()
                     ->sortable(),
                 TextColumn::make('url')
@@ -149,26 +149,26 @@ class ResearchLinkResource extends Resource
             ])
             ->filters([
                 SelectFilter::make('research_project_id')
-                    ->label('Project')
+                    ->label('Proyek')
                     ->options(fn (): array => self::visibleProjectOptions()),
                 SelectFilter::make('category')
-                    ->options(ResearchLink::CATEGORY_LABELS),
+                    ->options(self::categoryOptions()),
                 SelectFilter::make('is_pinned')
-                    ->label('Pinned')
+                    ->label('Tersemat')
                     ->options([
-                        '1' => 'Pinned',
-                        '0' => 'Not pinned',
+                        '1' => 'Tersemat',
+                        '0' => 'Tidak tersemat',
                     ]),
                 SelectFilter::make('is_active')
-                    ->label('Active')
+                    ->label('Aktif')
                     ->options([
-                        '1' => 'Active',
-                        '0' => 'Inactive',
+                        '1' => 'Aktif',
+                        '0' => 'Tidak aktif',
                     ]),
             ])
             ->recordActions([
                 Action::make('open')
-                    ->label('Open Link')
+                    ->label('Buka Link')
                     ->icon('heroicon-o-arrow-top-right-on-square')
                     ->url(fn (ResearchLink $record): string => $record->url)
                     ->openUrlInNewTab()
@@ -256,5 +256,28 @@ class ResearchLinkResource extends Resource
             ->filter(fn (ResearchProject $project): bool => Gate::forUser($user)->allows('update', $project))
             ->pluck('title', 'id')
             ->all();
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function categoryOptions(): array
+    {
+        return [
+            ResearchLink::CATEGORY_JOURNAL => 'Jurnal',
+            ResearchLink::CATEGORY_CONFERENCE => 'Konferensi',
+            ResearchLink::CATEGORY_REGULATION => 'Regulasi',
+            ResearchLink::CATEGORY_REFERENCE => 'Referensi',
+            ResearchLink::CATEGORY_DATASET => 'Dataset',
+            ResearchLink::CATEGORY_REPOSITORY => 'Repositori',
+            ResearchLink::CATEGORY_GOOGLE_DRIVE => 'Google Drive',
+            ResearchLink::CATEGORY_OJS => 'OJS',
+            ResearchLink::CATEGORY_ETHICS => 'Etik',
+            ResearchLink::CATEGORY_STATISTICS => 'Statistik',
+            ResearchLink::CATEGORY_LEARNING_RESOURCE => 'Sumber Belajar',
+            ResearchLink::CATEGORY_METHODOLOGY => 'Metodologi',
+            ResearchLink::CATEGORY_AI_TOOL => 'AI Tool',
+            ResearchLink::CATEGORY_OTHER => 'Lainnya',
+        ];
     }
 }

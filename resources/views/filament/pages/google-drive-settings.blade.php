@@ -1,8 +1,24 @@
 <x-filament-panels::page>
     @php
-        $connectionLabel = $isConnected ? 'Connected' : 'Not connected';
-        $storedStatus = ucfirst($connection?->status ?: 'disconnected');
-        $readinessLabel = $credentialsConfigured ? 'Ready' : 'Not configured';
+        $connectionLabel = $isConnected ? 'Terhubung' : 'Belum terhubung';
+        $storedStatus = match ($connection?->status ?: 'disconnected') {
+            'connected' => 'Terhubung',
+            'failed' => 'Gagal',
+            default => 'Belum terhubung',
+        };
+        $readinessLabel = $credentialsConfigured ? 'Siap' : 'Belum dikonfigurasi';
+        $healthLabel = match ($healthStatus) {
+            'Healthy' => 'Sehat',
+            'Token expired' => 'Token kedaluwarsa',
+            'Connection failed' => 'Koneksi gagal',
+            'Credentials missing' => 'Credential belum lengkap',
+            default => 'Siap dihubungkan',
+        };
+        $folderStatusLabel = match ($folderBootstrapStatus) {
+            'Ready' => 'Siap',
+            'Partially created' => 'Sebagian dibuat',
+            default => 'Belum dibuat',
+        };
         $visibleRedirectUri = $configuredRedirectUri ?: $routeRedirectUri;
 
         $statusClass = $isConnected ? 'drive-badge drive-badge-success' : 'drive-badge drive-badge-muted';
@@ -37,13 +53,14 @@
         .drive-hero,
         .drive-card {
             background: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+            border: 1px solid #dbe4ee;
+            border-radius: 8px;
+            box-shadow: 0 14px 34px rgba(15, 23, 42, 0.06);
         }
 
         .drive-hero {
-            padding: 24px;
+            background: linear-gradient(135deg, #ffffff 0%, #ffffff 58%, #f8fbff 100%);
+            padding: 26px;
         }
 
         .drive-grid {
@@ -72,7 +89,7 @@
 
         .drive-title {
             color: #0f172a;
-            font-size: 28px;
+            font-size: 30px;
             font-weight: 700;
             line-height: 1.2;
             margin: 8px 0 0;
@@ -161,7 +178,7 @@
         .drive-fact {
             background: #f8fafc;
             border: 1px solid #e2e8f0;
-            border-radius: 10px;
+            border-radius: 8px;
             min-width: 0;
             padding: 14px;
         }
@@ -187,7 +204,7 @@
         .drive-code {
             background: #f8fafc;
             border: 1px solid #cbd5e1;
-            border-radius: 10px;
+            border-radius: 8px;
             color: #0f172a;
             display: block;
             font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
@@ -200,7 +217,7 @@
         }
 
         .drive-alert {
-            border-radius: 10px;
+            border-radius: 8px;
             font-size: 14px;
             line-height: 1.6;
             margin-top: 16px;
@@ -239,7 +256,7 @@
             align-items: flex-start;
             background: #f8fafc;
             border: 1px solid #e2e8f0;
-            border-radius: 10px;
+            border-radius: 8px;
             color: #334155;
             display: flex;
             font-size: 14px;
@@ -273,7 +290,7 @@
 
         .drive-button {
             align-items: center;
-            border-radius: 10px;
+            border-radius: 8px;
             display: inline-flex;
             font-size: 14px;
             font-weight: 700;
@@ -336,7 +353,7 @@
         .drive-roadmap li {
             background: #f8fafc;
             border: 1px solid #e2e8f0;
-            border-radius: 10px;
+            border-radius: 8px;
             color: #334155;
             font-size: 14px;
             line-height: 1.55;
@@ -372,18 +389,18 @@
         <section class="drive-hero" aria-labelledby="google-drive-settings-title">
             <div class="drive-header-row">
                 <div>
-                    <p class="drive-eyebrow">Google Drive Integration</p>
-                    <h2 id="google-drive-settings-title" class="drive-title">Connect MyRiset to Google Drive</h2>
-                    <p class="drive-copy">Connect MyRiset to your own Google Drive account.</p>
+                    <p class="drive-eyebrow">Integrasi Google Drive</p>
+                    <h2 id="google-drive-settings-title" class="drive-title">Hubungkan MyRiset ke Google Drive</h2>
+                    <p class="drive-copy">Gunakan akun Google Drive Anda sendiri untuk menyimpan file, folder, dan hasil ekspor riset.</p>
                     <p class="drive-copy">
-                        MyRiset remains the source of truth for workflow and metadata. Google Drive is used only for files, folders, and exports.
+                        MyRiset tetap menjadi pusat workflow dan metadata. Google Drive hanya dipakai untuk file, folder, dan ekspor.
                     </p>
                 </div>
 
                 <div class="drive-badge-row" aria-label="Google Drive status summary">
                     <span class="{{ $statusClass }}">{{ $connectionLabel }}</span>
                     <span class="{{ $readinessClass }}">{{ $readinessLabel }}</span>
-                    <span class="{{ $healthClass }}">{{ $healthStatus }}</span>
+                    <span class="{{ $healthClass }}">{{ $healthLabel }}</span>
                 </div>
             </div>
         </section>
@@ -392,42 +409,42 @@
             <section class="drive-card" data-testid="drive-status-card" aria-labelledby="drive-status-card-title">
                 <div class="drive-header-row">
                     <div>
-                        <p class="drive-eyebrow">Connection Status</p>
-                        <h3 id="drive-status-card-title" class="drive-card-title">Current Google Drive connection</h3>
+                        <p class="drive-eyebrow">Status Koneksi</p>
+                        <h3 id="drive-status-card-title" class="drive-card-title">Koneksi Google Drive saat ini</h3>
                     </div>
                     <span class="{{ $statusClass }}">{{ $connectionLabel }}</span>
                 </div>
 
                 <dl class="drive-facts">
                     <div class="drive-fact">
-                        <dt class="drive-fact-label">Google account</dt>
-                        <dd class="drive-fact-value">{{ $connection?->email ?: 'Not connected' }}</dd>
+                        <dt class="drive-fact-label">Akun Google</dt>
+                        <dd class="drive-fact-value">{{ $connection?->email ?: 'Belum terhubung' }}</dd>
                     </div>
                     <div class="drive-fact">
-                        <dt class="drive-fact-label">Last connected</dt>
-                        <dd class="drive-fact-value">{{ $connection?->last_connected_at?->format('Y-m-d H:i') ?: 'Not available' }}</dd>
+                        <dt class="drive-fact-label">Terakhir terhubung</dt>
+                        <dd class="drive-fact-value">{{ $connection?->last_connected_at?->format('Y-m-d H:i') ?: 'Belum tersedia' }}</dd>
                     </div>
                     <div class="drive-fact">
-                        <dt class="drive-fact-label">Token expiry</dt>
-                        <dd class="drive-fact-value">{{ $connection?->token_expires_at?->format('Y-m-d H:i') ?: 'Not available' }}</dd>
+                        <dt class="drive-fact-label">Token kedaluwarsa</dt>
+                        <dd class="drive-fact-value">{{ $connection?->token_expires_at?->format('Y-m-d H:i') ?: 'Belum tersedia' }}</dd>
                     </div>
                     <div class="drive-fact">
-                        <dt class="drive-fact-label">Stored status</dt>
+                        <dt class="drive-fact-label">Status tersimpan</dt>
                         <dd class="drive-fact-value">{{ $storedStatus }}</dd>
                     </div>
                     <div class="drive-fact">
-                        <dt class="drive-fact-label">Privacy boundary</dt>
-                        <dd class="drive-fact-value">Current user only</dd>
+                        <dt class="drive-fact-label">Batas privasi</dt>
+                        <dd class="drive-fact-value">Hanya pengguna saat ini</dd>
                     </div>
                     <div class="drive-fact">
-                        <dt class="drive-fact-label">Status detail</dt>
-                        <dd class="drive-fact-value">{{ $healthStatus }}</dd>
+                        <dt class="drive-fact-label">Detail status</dt>
+                        <dd class="drive-fact-value">{{ $healthLabel }}</dd>
                     </div>
                 </dl>
 
                 @if ($connection?->last_error)
                     <div class="drive-alert drive-alert-warning">
-                        A previous connection error was recorded. The exact secret-bearing OAuth payload is not displayed here.
+                        Error koneksi sebelumnya tercatat. Payload OAuth yang mungkin berisi rahasia tidak ditampilkan di halaman ini.
                     </div>
                 @endif
             </section>
@@ -435,29 +452,29 @@
             <section class="drive-card" data-testid="oauth-readiness-card" aria-labelledby="oauth-readiness-card-title">
                 <div class="drive-header-row">
                     <div>
-                        <p class="drive-eyebrow">OAuth Readiness</p>
-                        <h3 id="oauth-readiness-card-title" class="drive-card-title">Configuration readiness</h3>
+                        <p class="drive-eyebrow">Kesiapan OAuth</p>
+                        <h3 id="oauth-readiness-card-title" class="drive-card-title">Kesiapan konfigurasi</h3>
                     </div>
                     <span class="{{ $readinessClass }}">{{ $readinessLabel }}</span>
                 </div>
 
                 <dl class="drive-facts">
                     <div class="drive-fact">
-                        <dt class="drive-fact-label">Client ID configured</dt>
-                        <dd class="drive-fact-value">{{ $clientIdConfigured ? 'Yes' : 'No' }}</dd>
+                        <dt class="drive-fact-label">Client ID terisi</dt>
+                        <dd class="drive-fact-value">{{ $clientIdConfigured ? 'Ya' : 'Belum' }}</dd>
                         <dd class="drive-copy">{{ $maskedClientId }}</dd>
                     </div>
                     <div class="drive-fact">
-                        <dt class="drive-fact-label">Client secret configured</dt>
-                        <dd class="drive-fact-value">{{ $clientSecretConfigured ? 'Yes' : 'No' }}</dd>
-                        <dd class="drive-copy">Value hidden for security.</dd>
+                        <dt class="drive-fact-label">Client Secret terisi</dt>
+                        <dd class="drive-fact-value">{{ $clientSecretConfigured ? 'Ya' : 'Belum' }}</dd>
+                        <dd class="drive-copy">Nilai disembunyikan demi keamanan.</dd>
                     </div>
                     <div class="drive-fact">
-                        <dt class="drive-fact-label">Redirect URI configured</dt>
-                        <dd class="drive-fact-value">{{ $redirectUriConfigured ? 'Yes' : 'No' }}</dd>
+                        <dt class="drive-fact-label">Redirect URI terisi</dt>
+                        <dd class="drive-fact-value">{{ $redirectUriConfigured ? 'Ya' : 'Belum' }}</dd>
                     </div>
                     <div class="drive-fact">
-                        <dt class="drive-fact-label">Configuration readiness</dt>
+                        <dt class="drive-fact-label">Kesiapan konfigurasi</dt>
                         <dd class="drive-fact-value">{{ $readinessLabel }}</dd>
                     </div>
                 </dl>
@@ -470,34 +487,34 @@
             </section>
 
             <section class="drive-card" data-testid="redirect-scope-card" aria-labelledby="redirect-scope-card-title">
-                <p class="drive-eyebrow">Redirect URI and Scope</p>
-                <h3 id="redirect-scope-card-title" class="drive-card-title">Copy these values into Google Cloud</h3>
+                <p class="drive-eyebrow">Redirect URI dan Scope</p>
+                <h3 id="redirect-scope-card-title" class="drive-card-title">Salin nilai ini ke Google Cloud</h3>
                 <p class="drive-copy">
-                    The canonical redirect URI must match the web application OAuth client in Google Cloud Console.
+                    Redirect URI utama harus sama persis dengan OAuth client aplikasi web di Google Cloud Console.
                 </p>
 
                 <div class="drive-facts">
                     <div class="drive-fact">
-                        <span class="drive-fact-label">Canonical redirect URI</span>
+                        <span class="drive-fact-label">Redirect URI utama</span>
                         <code class="drive-code">{{ $visibleRedirectUri }}</code>
                     </div>
                     <div class="drive-fact">
-                        <span class="drive-fact-label">Required scope</span>
+                        <span class="drive-fact-label">Scope wajib</span>
                         <code class="drive-code">{{ $primaryScope }}</code>
                     </div>
                     <div class="drive-fact">
-                        <span class="drive-fact-label">Local example redirect URI</span>
+                        <span class="drive-fact-label">Contoh redirect lokal</span>
                         <code class="drive-code">{{ $localExampleRedirectUri }}</code>
                     </div>
                     <div class="drive-fact">
-                        <span class="drive-fact-label">Production example redirect URI</span>
+                        <span class="drive-fact-label">Contoh redirect produksi</span>
                         <code class="drive-code">{{ $productionRedirectUri }}</code>
                     </div>
                 </div>
 
                 @if (count($requiredScopes) > 1)
                     <div class="drive-alert drive-alert-info">
-                        Additional configured scopes:
+                        Scope tambahan yang dikonfigurasi:
                         @foreach (array_slice($requiredScopes, 1) as $scope)
                             <code>{{ $scope }}</code>@if (! $loop->last), @endif
                         @endforeach
@@ -506,28 +523,28 @@
 
                 @if (! $redirectUriConfigured)
                     <div class="drive-alert drive-alert-warning">
-                        GOOGLE_REDIRECT_URI is not configured. The route currently resolves to {{ $routeRedirectUri }}.
+                        GOOGLE_REDIRECT_URI belum dikonfigurasi. Route saat ini mengarah ke {{ $routeRedirectUri }}.
                     </div>
                 @elseif ($redirectUriMismatch)
                     <div class="drive-alert drive-alert-warning">
-                        Configured redirect URI differs from the route URL. Configured: {{ $configuredRedirectUri }}. Route URL: {{ $routeRedirectUri }}.
+                        Redirect URI konfigurasi berbeda dari URL route. Konfigurasi: {{ $configuredRedirectUri }}. URL route: {{ $routeRedirectUri }}.
                     </div>
                 @endif
 
                 <div class="drive-alert drive-alert-info">
-                    Optional compatibility alias if enabled in Google Cloud: <code>{{ $optionalAliasRedirectUri }}</code>. Keep the canonical route above as the primary URI.
+                    Alias kompatibilitas opsional jika diaktifkan di Google Cloud: <code>{{ $optionalAliasRedirectUri }}</code>. Tetap jadikan route utama di atas sebagai URI primer.
                 </div>
 
                 <div class="drive-alert drive-alert-warning">
-                    If Google shows <code>redirect_uri_mismatch</code>, copy the canonical redirect URI from this page into Google Cloud Console exactly. Match protocol, domain or 127.0.0.1, port, and path.
+                    Jika Google menampilkan <code>redirect_uri_mismatch</code>, salin Redirect URI utama dari halaman ini ke Google Cloud Console persis sama. Cocokkan protokol, domain atau 127.0.0.1, port, dan path.
                 </div>
             </section>
 
             <section class="drive-card" data-testid="drive-actions-card" aria-labelledby="drive-actions-card-title">
-                <p class="drive-eyebrow">Actions</p>
-                <h3 id="drive-actions-card-title" class="drive-card-title">Manage connection</h3>
+                <p class="drive-eyebrow">Aksi Utama</p>
+                <h3 id="drive-actions-card-title" class="drive-card-title">Kelola koneksi</h3>
                 <p class="drive-copy">
-                    Connect is available only when OAuth readiness is complete. Refresh is safe and only reloads this page.
+                    Tombol hubungkan aktif setelah konfigurasi OAuth lengkap. Muat ulang aman karena hanya memperbarui status halaman ini.
                 </p>
 
                 <div class="drive-actions">
@@ -536,79 +553,79 @@
                             @csrf
                             <button
                                 type="submit"
-                                onclick="return confirm('Disconnect Google Drive for this user? Local OAuth tokens will be cleared from MyRiset.')"
+                                onclick="return confirm('Putuskan Google Drive untuk pengguna ini? Token OAuth lokal akan dihapus dari MyRiset.')"
                                 class="drive-button drive-button-danger"
                             >
-                                Disconnect / Revoke Connection
+                                Putuskan Koneksi
                             </button>
                         </form>
                     @elseif ($credentialsConfigured)
                         <a href="{{ $connectUrl }}" class="drive-button drive-button-primary">
-                            Connect Google Drive
+                            Hubungkan Google Drive
                         </a>
                     @else
                         <button type="button" disabled class="drive-button drive-button-disabled" aria-disabled="true">
-                            Connect Google Drive unavailable
+                            Lengkapi OAuth dulu
                         </button>
                     @endif
 
                     <a href="{{ $refreshUrl }}" class="drive-button drive-button-secondary">
-                        Refresh Status
+                        Muat Ulang Status
                     </a>
                 </div>
 
                 <div class="drive-alert drive-alert-info">
-                    JSON status endpoint for diagnostics: <code>{{ $statusUrl }}</code>. It never returns access tokens or refresh tokens.
+                    Endpoint status JSON untuk diagnostik: <code>{{ $statusUrl }}</code>. Endpoint ini tidak mengembalikan access token atau refresh token.
                 </div>
             </section>
 
             <section class="drive-card" data-testid="drive-folder-bootstrap-card" aria-labelledby="drive-folder-bootstrap-card-title">
                 <div class="drive-header-row">
                     <div>
-                        <p class="drive-eyebrow">Drive Folder Bootstrap</p>
-                        <h3 id="drive-folder-bootstrap-card-title" class="drive-card-title">Create MyRiset folder structure</h3>
+                        <p class="drive-eyebrow">Folder Google Drive</p>
+                        <h3 id="drive-folder-bootstrap-card-title" class="drive-card-title">Siapkan struktur folder MyRiset</h3>
                     </div>
-                    <span class="{{ $folderStatusClass }}">{{ $folderBootstrapStatus }}</span>
+                    <span class="{{ $folderStatusClass }}">{{ $folderStatusLabel }}</span>
                 </div>
 
                 <p class="drive-copy">
-                    Prepare standard folders in the connected user's Google Drive. The action reuses stored folder IDs and searches by name before creating new folders.
+                    MyRiset menyiapkan folder standar di Google Drive pengguna yang terhubung. Jika folder sudah ada, sistem akan memakai ulang sebelum membuat folder baru.
                 </p>
 
                 <dl class="drive-facts">
                     <div class="drive-fact">
-                        <dt class="drive-fact-label">Root folder name</dt>
+                        <dt class="drive-fact-label">Nama folder utama</dt>
                         <dd class="drive-fact-value">{{ $rootFolderName }}</dd>
                     </div>
                     <div class="drive-fact">
-                        <dt class="drive-fact-label">Root folder ID</dt>
+                        <dt class="drive-fact-label">ID folder utama</dt>
                         <dd class="drive-fact-value">{{ $rootFolderIdPreview }}</dd>
                     </div>
                     <div class="drive-fact">
-                        <dt class="drive-fact-label">Global folders</dt>
+                        <dt class="drive-fact-label">Folder global</dt>
                         <dd class="drive-fact-value">{{ $globalFolderCount }} / {{ $expectedGlobalFolderCount }}</dd>
                     </div>
                     <div class="drive-fact">
-                        <dt class="drive-fact-label">Project folders</dt>
+                        <dt class="drive-fact-label">Folder proyek</dt>
                         <dd class="drive-fact-value">{{ $projectFolderCount }}</dd>
                     </div>
                     <div class="drive-fact">
-                        <dt class="drive-fact-label">Last bootstrap</dt>
-                        <dd class="drive-fact-value">{{ $lastBootstrapAt ?: 'Not available' }}</dd>
+                        <dt class="drive-fact-label">Terakhir disiapkan</dt>
+                        <dd class="drive-fact-value">{{ $lastBootstrapAt ?: 'Belum tersedia' }}</dd>
                     </div>
                     <div class="drive-fact">
-                        <dt class="drive-fact-label">Privacy boundary</dt>
-                        <dd class="drive-fact-value">Current user Drive only</dd>
+                        <dt class="drive-fact-label">Batas privasi</dt>
+                        <dd class="drive-fact-value">Hanya Drive pengguna saat ini</dd>
                     </div>
                 </dl>
 
                 @if ($folderStatusParts)
                     <div class="drive-alert drive-alert-info">
-                        MyRiset Drive folders are ready. Created {{ $folderStatusParts[1] ?? 0 }} folder(s), reused {{ $folderStatusParts[2] ?? 0 }} folder(s).
+                        Folder MyRiset Drive siap. Membuat {{ $folderStatusParts[1] ?? 0 }} folder dan memakai ulang {{ $folderStatusParts[2] ?? 0 }} folder.
                     </div>
                 @elseif ($isConnected && $globalFolderCount === 0)
                     <div class="drive-alert drive-alert-warning">
-                        Google Drive sudah terhubung, tetapi folder MyRiset belum dibuat. Klik Create MyRiset Folders.
+                        Google Drive sudah terhubung, tetapi folder MyRiset belum dibuat. Klik Siapkan Folder MyRiset.
                     </div>
                 @endif
 
@@ -617,39 +634,39 @@
                         <form method="POST" action="{{ $bootstrapFoldersUrl }}">
                             @csrf
                             <button type="submit" class="drive-button drive-button-primary">
-                                Create MyRiset Folders
+                                Siapkan Folder MyRiset
                             </button>
                         </form>
                     @else
                         <button type="button" disabled class="drive-button drive-button-disabled" aria-disabled="true">
-                            Connect Google Drive first
+                            Hubungkan Google Drive dulu
                         </button>
                     @endif
 
                     <a href="{{ $refreshUrl }}" class="drive-button drive-button-secondary">
-                        Refresh Folder Status
+                        Muat Ulang Status Folder
                     </a>
                 </div>
             </section>
 
             <section class="drive-card drive-card-wide" data-testid="setup-checklist-card" aria-labelledby="setup-checklist-card-title">
-                <p class="drive-eyebrow">Setup Checklist</p>
-                <h3 id="setup-checklist-card-title" class="drive-card-title">Prepare Google Cloud OAuth</h3>
+                <p class="drive-eyebrow">Checklist Setup</p>
+                <h3 id="setup-checklist-card-title" class="drive-card-title">Siapkan OAuth Google Cloud</h3>
 
                 <ol class="drive-checklist">
-                    <li>Open Google Cloud Console.</li>
-                    <li>Create or select a Google Cloud project.</li>
-                    <li>Enable Google Drive API.</li>
-                    <li>Configure OAuth consent screen.</li>
-                    <li>Create OAuth Client ID with type Web application.</li>
-                    <li>Add the redirect URI shown on this page.</li>
-                    <li>Copy Client ID and Client Secret.</li>
-                    <li>Add them to your local .env file.</li>
-                    <li>Run php artisan optimize:clear.</li>
-                    <li>Refresh this page and click Connect Google Drive.</li>
+                    <li>Buka Google Cloud Console.</li>
+                    <li>Buat atau pilih project Google Cloud.</li>
+                    <li>Aktifkan Google Drive API.</li>
+                    <li>Atur OAuth consent screen.</li>
+                    <li>Buat OAuth Client ID dengan tipe Web application.</li>
+                    <li>Tambahkan Redirect URI yang tampil di halaman ini.</li>
+                    <li>Salin Client ID dan Client Secret.</li>
+                    <li>Tambahkan ke file .env lokal atau konfigurasi server.</li>
+                    <li>Jalankan php artisan optimize:clear.</li>
+                    <li>Muat ulang halaman ini lalu klik Hubungkan Google Drive.</li>
                 </ol>
 
-                <p class="drive-copy">Safe local placeholder snippet. Do not paste real secrets into source control.</p>
+                <p class="drive-copy">Contoh placeholder yang aman. Jangan masukkan secret asli ke source control.</p>
                 <code class="drive-code">GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 GOOGLE_REDIRECT_URI={{ $visibleRedirectUri }}
@@ -657,12 +674,12 @@ GOOGLE_DRIVE_SCOPES="https://www.googleapis.com/auth/drive.file"</code>
             </section>
 
             <section class="drive-card drive-card-wide" data-testid="drive-roadmap-card" aria-labelledby="drive-roadmap-card-title">
-                <p class="drive-eyebrow">Coming Next</p>
-                <h3 id="drive-roadmap-card-title" class="drive-card-title">Planned Google workspace integrations</h3>
+                <p class="drive-eyebrow">Berikutnya</p>
+                <h3 id="drive-roadmap-card-title" class="drive-card-title">Integrasi Google Workspace yang direncanakan</h3>
                 <ul class="drive-roadmap">
-                    <li>Export validation and supervision reports to Google Docs.</li>
-                    <li>Export survey and validation data to Google Sheets.</li>
-                    <li>Bootstrap project folders in Google Drive.</li>
+                    <li>Ekspor laporan validasi dan bimbingan ke Google Docs.</li>
+                    <li>Ekspor data survey dan validasi ke Google Sheets.</li>
+                    <li>Siapkan folder proyek langsung di Google Drive.</li>
                 </ul>
             </section>
         </div>

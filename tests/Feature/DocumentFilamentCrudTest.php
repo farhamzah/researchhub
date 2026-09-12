@@ -27,8 +27,8 @@ class DocumentFilamentCrudTest extends TestCase
             ->get('/admin/documents')
             ->assertOk()
             ->assertSee('Create Document Record')
-            ->assertSee('No research documents yet')
-            ->assertSee('Create your first research document record');
+            ->assertSee('Belum ada dokumen riset')
+            ->assertSee('Tambahkan metadata proposal, bab disertasi, instrumen, dataset, presentasi, poster, atau artikel agar riwayat dokumen rapi.');
 
         Livewire::actingAs($owner)
             ->test(ManageDocuments::class)
@@ -53,7 +53,7 @@ class DocumentFilamentCrudTest extends TestCase
         Livewire::actingAs($owner)
             ->test(ManageDocuments::class)
             ->assertSee('Proposal Metadata Record')
-            ->assertSee('Project Members')
+            ->assertSee('Anggota Proyek')
             ->assertTableActionVisible('edit', $document)
             ->assertTableActionVisible('delete', $document)
             ->assertTableActionVisible('reviewLinks', $document)

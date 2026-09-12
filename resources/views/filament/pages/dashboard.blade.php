@@ -1,3 +1,94 @@
+@php
+    use App\Filament\Resources\Projects\ResearchProjectResource;
+
+    $uiText = static fn (string $text): string => strtr($text, [
+        'Buka Project' => 'Buka Proyek',
+        'Project' => 'Proyek',
+        'project' => 'proyek',
+        'Survey' => 'Survei',
+        'survey' => 'survei',
+        'Link Riset' => 'Tautan Riset',
+        'link review' => 'tautan ulasan',
+        'Workspace' => 'Ruang Kerja',
+        'workspace' => 'ruang kerja',
+        'Feedback' => 'Umpan Balik',
+        'feedback' => 'umpan balik',
+        'Timeline' => 'Jadwal',
+        'timeline' => 'jadwal',
+        'Builder' => 'Penyusun',
+        'submit' => 'pengiriman',
+    ]);
+
+    $accessibleProjectCount = (int) (collect($stats)->firstWhere('label', 'Proyek Riset')['value'] ?? $activeProjects->count());
+    $primaryAction = $actionCenterItems->first();
+    $initialFollowUps = $actionCenterItems->skip(1)->take(3);
+
+    if ($activeProjects->isEmpty()) {
+        $onboardingItems = collect($onboardingChecklist);
+
+        if (ResearchProjectResource::canCreate() && $onboardingItems->isNotEmpty()) {
+            $firstOnboardingItem = $onboardingItems->first();
+            $primaryAction = [
+                'title' => $uiText($firstOnboardingItem['label']),
+                'context' => $uiText($firstOnboardingItem['description']),
+                'badge' => 'Mulai di sini',
+                'date_label' => null,
+                'is_risk' => false,
+                'url' => $firstOnboardingItem['url'],
+                'action_label' => 'Buat Proyek Riset',
+            ];
+            $initialFollowUps = $onboardingItems
+                ->skip(1)
+                ->take(3)
+                ->map(fn (array $item): array => [
+                    'title' => $uiText($item['label']),
+                    'context' => $uiText($item['description']),
+                    'badge' => null,
+                    'date_label' => null,
+                    'is_risk' => false,
+                    'url' => $item['url'],
+                    'action_label' => 'Buka',
+                ]);
+        } else {
+            $primaryAction = [
+                'title' => 'Belum ada proyek yang dapat diakses',
+                'context' => 'Hubungi pengelola bila Anda perlu ditambahkan ke proyek penelitian.',
+                'badge' => 'Belum tersedia',
+                'date_label' => null,
+                'is_risk' => false,
+                'url' => route('filament.admin.resources.projects.research-projects.index'),
+                'action_label' => 'Lihat Proyek',
+            ];
+            $initialFollowUps = collect();
+        }
+    } elseif ($primaryAction === null) {
+        if ($accessibleProjectCount === 1 && $journeyProjects->isNotEmpty()) {
+            $journeyProject = $journeyProjects->first();
+            $primaryAction = [
+                'title' => $journeyProject['next_step']['label'],
+                'context' => $journeyProject['title'].' - '.$uiText($journeyProject['next_step']['description']),
+                'badge' => $journeyProject['next_step']['status_label'] ?? 'Selesai',
+                'date_label' => null,
+                'is_risk' => false,
+                'url' => $journeyProject['next_step']['action_url'],
+                'action_label' => $journeyProject['next_step']['action_label'],
+            ];
+        } else {
+            $primaryAction = [
+                'title' => 'Pilih proyek yang akan dilanjutkan',
+                'context' => 'Buka daftar proyek agar pekerjaan dan progres tetap berada pada konteks yang benar.',
+                'badge' => $accessibleProjectCount.' proyek',
+                'date_label' => null,
+                'is_risk' => false,
+                'url' => route('filament.admin.resources.projects.research-projects.index'),
+                'action_label' => 'Pilih Proyek',
+            ];
+        }
+
+        $initialFollowUps = collect();
+    }
+@endphp
+
 <x-filament-panels::page>
     <style>
         .fi-body,
@@ -69,6 +160,30 @@
             line-height: 1.65;
         }
 
+        .rh-project-context {
+            margin-top: 1.2rem;
+            max-width: 48rem;
+            border-left: 3px solid #2563eb;
+            padding-left: 0.9rem;
+        }
+
+        .rh-project-context-list {
+            margin-top: 0.55rem;
+            display: grid;
+            gap: 0.45rem;
+            list-style: none;
+            padding: 0;
+        }
+
+        .rh-project-context-item {
+            display: flex;
+            min-width: 0;
+            flex-wrap: wrap;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 0.35rem 0.75rem;
+        }
+
         .rh-hero-actions,
         .rh-row-actions {
             display: flex;
@@ -103,6 +218,17 @@
             color: #1d4ed8;
             border: 1px solid #bfdbfe;
             background: #ffffff;
+        }
+
+        .rh-button:focus-visible,
+        .rh-button-ghost:focus-visible,
+        .rh-link:focus-visible,
+        .rh-action-tile:focus-visible,
+        .rh-onboarding-item:focus-visible,
+        .rh-details > summary:focus-visible,
+        .rh-journey-tile a:focus-visible {
+            outline: 3px solid #1d4ed8;
+            outline-offset: 3px;
         }
 
         .rh-drive-panel {
@@ -234,15 +360,18 @@
         }
 
         .rh-item-title {
+            min-width: 0;
             color: #0f172a;
             font-size: 0.92rem;
             font-weight: 850;
+            overflow-wrap: anywhere;
         }
 
         .rh-item-meta {
             margin-top: 0.25rem;
             color: #64748b;
             line-height: 1.45;
+            overflow-wrap: anywhere;
         }
 
         .rh-pill {
@@ -385,6 +514,70 @@
             padding: 1.15rem;
         }
 
+        .rh-task-focus {
+            padding: clamp(1.15rem, 2.5vw, 1.75rem);
+            border-color: #bfdbfe;
+        }
+
+        .rh-primary-action {
+            margin-top: 0.75rem;
+            display: grid;
+            gap: 0.65rem;
+            max-width: 52rem;
+        }
+
+        .rh-primary-title {
+            color: #0f172a;
+            font-size: clamp(1.35rem, 3vw, 1.9rem);
+            font-weight: 900;
+            line-height: 1.2;
+            overflow-wrap: anywhere;
+        }
+
+        .rh-follow-up-grid {
+            margin-top: 1rem;
+            display: grid;
+            gap: 0.75rem;
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+        }
+
+        .rh-details {
+            overflow: clip;
+        }
+
+        .rh-details > summary {
+            display: flex;
+            cursor: pointer;
+            list-style: none;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem 1rem;
+            padding: 1rem 1.15rem;
+            color: #1d4ed8;
+            font-weight: 850;
+        }
+
+        .rh-details > summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .rh-details > summary::after {
+            content: '+';
+            font-size: 1.2rem;
+        }
+
+        .rh-details[open] > summary::after {
+            content: '−';
+        }
+
+        .rh-details-content {
+            display: grid;
+            gap: 1.25rem;
+            border-top: 1px solid #e2e8f0;
+            padding: 1.15rem;
+        }
+
         .rh-action-center-grid {
             margin-top: 1rem;
             display: grid;
@@ -445,7 +638,7 @@
 
         @media (min-width: 64rem) {
             .rh-hero-grid {
-                grid-template-columns: minmax(0, 1fr) 19rem;
+                grid-template-columns: minmax(0, 1fr);
                 align-items: end;
             }
         }
@@ -454,6 +647,21 @@
             .rh-focus-grid {
                 grid-template-columns: 1fr;
             }
+
+            .rh-button,
+            .rh-button-ghost {
+                width: 100%;
+            }
+
+            .rh-item-top,
+            .rh-section-head {
+                min-width: 0;
+                flex-direction: column;
+            }
+
+            .rh-pill {
+                white-space: normal;
+            }
         }
     </style>
 
@@ -461,31 +669,97 @@
         <section class="rh-card rh-hero" data-dashboard-card="hero">
             <div class="rh-hero-grid">
                 <div>
-                    <span class="rh-badge">Pusat Kendali Riset Akademik</span>
+                    <span class="rh-badge">Beranda Penelitian</span>
                     <h1 class="rh-hero-title">Selamat datang di MyRiset</h1>
                     <p class="rh-hero-copy">
-                        Platform manajemen riset, validasi ahli, bimbingan, dan laporan akademik.
+                        Platform manajemen riset, validasi ahli, bimbingan, dan laporan akademik. Mulai dari satu pekerjaan terpenting, lalu buka rincian saat diperlukan.
                     </p>
-                    <div class="rh-hero-actions">
-                        <a href="{{ route('filament.admin.resources.projects.research-projects.index') }}" class="rh-button">Lihat Project</a>
-                        <a href="{{ route('filament.admin.resources.research-links.index') }}" class="rh-button-ghost">Buka Link Riset</a>
+
+                    <div class="rh-project-context" data-dashboard-project-context>
+                        @if ($accessibleProjectCount === 0)
+                            <p class="rh-section-kicker">Konteks penelitian</p>
+                            <p class="rh-item-copy">Belum ada proyek yang dapat diakses. Data contoh tidak ditampilkan sebagai data nyata.</p>
+                        @elseif ($accessibleProjectCount === 1)
+                            @php($currentProject = $activeProjects->first())
+                            <p class="rh-section-kicker">Proyek saat ini</p>
+                            <p class="rh-item-title">{{ $currentProject['title'] }}</p>
+                            <p class="rh-item-meta">{{ $currentProject['status'] }}</p>
+                        @else
+                            <p class="rh-section-kicker">{{ $accessibleProjectCount }} proyek dapat diakses</p>
+                            <p class="rh-item-copy">Setiap pekerjaan di bawah menyebutkan konteks proyek agar progres tidak tercampur.</p>
+                            <ul class="rh-project-context-list" aria-label="Proyek yang dapat diakses">
+                                @foreach ($activeProjects->take(3) as $project)
+                                    <li class="rh-project-context-item" data-project-context-item>
+                                        <span class="rh-item-title">{{ $project['title'] }}</span>
+                                        <span class="rh-item-meta">{{ $project['status'] }}</span>
+                                    </li>
+                                @endforeach
+                            </ul>
+                            @if ($accessibleProjectCount > 3)
+                                <p class="rh-item-meta">Dan {{ $accessibleProjectCount - 3 }} proyek lain tersedia pada daftar Proyek Riset.</p>
+                            @endif
+                        @endif
                     </div>
                 </div>
+            </div>
+        </section>
 
+        <section class="rh-card rh-task-focus" data-dashboard-card="task-focus">
+            <p class="rh-section-kicker">Langkah berikutnya</p>
+            <div class="rh-primary-action {{ $primaryAction['is_risk'] ? 'rh-item-risk' : '' }}">
+                <div class="rh-item-top">
+                    <div>
+                        <h2 class="rh-primary-title">{{ $primaryAction['title'] }}</h2>
+                        <p class="rh-item-meta">{{ $primaryAction['context'] }}</p>
+                        @if ($primaryAction['date_label'])
+                            <p class="rh-item-meta">{{ $primaryAction['date_label'] }}</p>
+                        @endif
+                    </div>
+                    @if ($primaryAction['badge'])
+                        <span class="rh-pill {{ $primaryAction['is_risk'] ? 'rh-pill-risk' : '' }}">{{ $primaryAction['badge'] }}</span>
+                    @endif
+                </div>
+                <div class="rh-hero-actions">
+                    <a href="{{ $primaryAction['url'] }}" class="rh-button" data-primary-action>
+                        {{ $uiText($primaryAction['action_label']) }}
+                    </a>
+                </div>
+            </div>
+
+            @if ($initialFollowUps->isNotEmpty())
+                <div aria-labelledby="initial-follow-ups-title">
+                    <h3 id="initial-follow-ups-title" class="rh-section-title" style="margin-top: 1.4rem;">Tindak lanjut setelahnya</h3>
+                    <div class="rh-follow-up-grid" data-initial-follow-ups>
+                        @foreach ($initialFollowUps as $item)
+                            <article class="rh-item {{ $item['is_risk'] ? 'rh-item-risk' : '' }}" data-initial-follow-up>
+                                <h4 class="rh-item-title">{{ $item['title'] }}</h4>
+                                <p class="rh-item-meta">{{ $item['context'] }}</p>
+                                <a href="{{ $item['url'] }}" class="rh-link">{{ $uiText($item['action_label']) }}</a>
+                            </article>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+        </section>
+
+        <details class="rh-card rh-details" data-dashboard-details>
+            <summary>
+                <span>Lihat semua rincian</span>
+                <span class="rh-item-meta">Ringkasan, status, dan pintasan lengkap</span>
+            </summary>
+            <div class="rh-details-content">
                 <aside class="rh-drive-panel" aria-label="Status Google Drive" data-dashboard-card="drive-status">
                     <p class="rh-drive-label">Status Google Drive</p>
                     <p class="rh-drive-value">{{ $driveStatus['label'] }}</p>
                     <p class="rh-drive-copy">{{ $driveStatus['description'] }}</p>
                 </aside>
-            </div>
-        </section>
 
-        <section class="rh-stat-grid" aria-label="MyRiset workspace statistics">
+        <section class="rh-stat-grid" aria-label="Statistik ruang kerja MyRiset">
             @foreach ($stats as $stat)
                 <article class="rh-card rh-stat-card" data-dashboard-card="stat" style="--rh-accent: {{ $stat['accent'] }};">
-                    <p class="rh-stat-label">{{ $stat['label'] }}</p>
+                    <p class="rh-stat-label">{{ $uiText($stat['label']) }}</p>
                     <p class="rh-stat-value">{{ $stat['value'] }}</p>
-                    <p class="rh-stat-description">{{ $stat['description'] }}</p>
+                    <p class="rh-stat-description">{{ $uiText($stat['description']) }}</p>
                 </article>
             @endforeach
         </section>
@@ -496,12 +770,12 @@
                     <p class="rh-section-kicker">Pusat Tindakan</p>
                     <h2 class="rh-section-title">Yang Perlu Dikerjakan Sekarang</h2>
                 </div>
-                <a href="{{ route('filament.admin.resources.projects.research-projects.index') }}" class="rh-link">Lihat Project</a>
+                <a href="{{ route('filament.admin.resources.projects.research-projects.index') }}" class="rh-link">Lihat semua pekerjaan</a>
             </div>
 
             @if ($actionCenterItems->isEmpty())
                 <p class="rh-empty">
-                    Belum ada tindak lanjut, validasi, feedback bimbingan, atau risiko timeline yang perlu ditangani.
+                    Belum ada tindak lanjut, validasi, umpan balik bimbingan, atau risiko jadwal yang perlu ditangani.
                 </p>
             @else
                 <div class="rh-action-center-grid">
@@ -517,7 +791,7 @@
                                 </div>
                                 <span class="rh-pill {{ $item['is_risk'] ? 'rh-pill-risk' : '' }}">{{ $item['badge'] }}</span>
                             </div>
-                            <a href="{{ $item['url'] }}" class="rh-link">{{ $item['action_label'] }}</a>
+                            <a href="{{ $item['url'] }}" class="rh-link">{{ $uiText($item['action_label']) }}</a>
                         </article>
                     @endforeach
                 </div>
@@ -530,24 +804,24 @@
                     <p class="rh-section-kicker">Alur Riset</p>
                     <h2 class="rh-section-title">Lanjutkan Alur Riset</h2>
                 </div>
-                <a href="{{ route('filament.admin.resources.projects.research-projects.index') }}" class="rh-link">Lihat Project</a>
+                <a href="{{ route('filament.admin.resources.projects.research-projects.index') }}" class="rh-link">Lihat semua proyek</a>
             </div>
 
             @if (! empty($onboardingChecklist))
                 <p class="rh-item-copy" style="margin-top: 0.75rem;">
-                    Mulai dari langkah kecil yang paling penting, lalu biarkan workspace riset terbentuk bertahap.
+                    Mulai dari langkah kecil yang paling penting, lalu biarkan ruang kerja riset terbentuk bertahap.
                 </p>
                 <div class="rh-onboarding-list">
                     @foreach ($onboardingChecklist as $item)
                         <a href="{{ $item['url'] }}" class="rh-onboarding-item">
-                            <span class="rh-item-title">{{ $loop->iteration }}. {{ $item['label'] }}</span>
-                            <span class="rh-item-copy">{{ $item['description'] }}</span>
+                            <span class="rh-item-title">{{ $loop->iteration }}. {{ $uiText($item['label']) }}</span>
+                            <span class="rh-item-copy">{{ $uiText($item['description']) }}</span>
                         </a>
                     @endforeach
                 </div>
             @elseif ($journeyProjects->isEmpty())
                 <p class="rh-empty">
-                    Belum ada project riset. Buat project pertama untuk mulai mengelola dokumen, survey, timeline, dan bimbingan.
+                    Belum ada proyek riset. Buat proyek pertama untuk mulai mengelola dokumen, survei, jadwal, dan bimbingan.
                 </p>
             @else
                 <div class="rh-journey-grid">
@@ -560,13 +834,13 @@
                                 </div>
                                 <span class="rh-pill">{{ $journeyProject['progress_percentage'] }}%</span>
                             </div>
-                            <div class="rh-journey-progress" aria-label="Research journey progress">
+                            <div class="rh-journey-progress" aria-label="Kelengkapan alur aplikasi">
                                 <span style="width: {{ $journeyProject['progress_percentage'] }}%;"></span>
                             </div>
                             <p class="rh-item-copy" style="margin-top: 0.8rem;">
-                                {{ $journeyProject['next_step']['description'] }}
+                                {{ $uiText($journeyProject['next_step']['description']) }}
                             </p>
-                            <a href="{{ $journeyProject['url'] }}" class="rh-link">Buka Alur Riset</a>
+                            <a href="{{ $journeyProject['url'] }}" class="rh-link">Lihat rincian Alur Riset</a>
                         </article>
                     @endforeach
                 </div>
@@ -609,7 +883,7 @@
                     @endif
                 @empty
                     <p class="rh-empty">
-                        Tidak ada follow-up revisi yang sedang berjalan.
+                        Tidak ada tindak lanjut revisi yang sedang berjalan.
                     </p>
                 @endforelse
             </section>
@@ -620,7 +894,7 @@
                         <p class="rh-section-kicker">Validasi Ahli</p>
                         <h2 class="rh-section-title">Validasi Ahli Menunggu</h2>
                     </div>
-                    <a href="{{ route('filament.admin.resources.surveys.index') }}" class="rh-link">Buka Survey</a>
+                    <a href="{{ route('filament.admin.resources.surveys.index') }}" class="rh-link">Buka Survei</a>
                 </div>
 
                 @forelse ($validationPending as $item)
@@ -643,7 +917,7 @@
                     @endif
                 @empty
                     <p class="rh-empty">
-                        Tidak ada validasi ahli yang sedang menunggu submit.
+                        Tidak ada validasi ahli yang sedang menunggu pengiriman.
                     </p>
                 @endforelse
             </section>
@@ -652,7 +926,7 @@
                 <div class="rh-section-head">
                     <div>
                         <p class="rh-section-kicker">Bimbingan</p>
-                        <h2 class="rh-section-title">Feedback Bimbingan</h2>
+                        <h2 class="rh-section-title">Umpan Balik Bimbingan</h2>
                     </div>
                 </div>
 
@@ -679,7 +953,7 @@
                     @endif
                 @empty
                     <p class="rh-empty">
-                        Belum ada feedback bimbingan yang perlu ditindaklanjuti.
+                        Belum ada umpan balik bimbingan yang perlu ditindaklanjuti.
                     </p>
                 @endforelse
             </section>
@@ -687,8 +961,8 @@
             <section class="rh-card rh-section" data-dashboard-card="timeline-risks">
                 <div class="rh-section-head">
                     <div>
-                        <p class="rh-section-kicker">Timeline Terlambat</p>
-                        <h2 class="rh-section-title">Risiko Timeline</h2>
+                        <p class="rh-section-kicker">Jadwal Terlambat</p>
+                        <h2 class="rh-section-title">Risiko Jadwal</h2>
                     </div>
                 </div>
 
@@ -707,14 +981,14 @@
                             </div>
                             <span class="rh-pill rh-pill-risk">{{ $item['status'] }}</span>
                         </div>
-                        <a href="{{ $item['url'] }}" class="rh-link">Buka Timeline</a>
+                        <a href="{{ $item['url'] }}" class="rh-link">Buka Jadwal</a>
                     </article>
                     @if ($loop->last)
                         </div>
                     @endif
                 @empty
                     <p class="rh-empty">
-                        Tidak ada timeline task yang terlambat.
+                        Tidak ada tugas jadwal yang terlambat.
                     </p>
                 @endforelse
             </section>
@@ -722,15 +996,15 @@
             <section class="rh-card rh-section" data-dashboard-card="active-projects">
                 <div class="rh-section-head">
                     <div>
-                        <p class="rh-section-kicker">Project</p>
-                        <h2 class="rh-section-title">Project Aktif</h2>
+                        <p class="rh-section-kicker">Penelitian</p>
+                        <h2 class="rh-section-title">Proyek Aktif</h2>
                     </div>
                     <a href="{{ route('filament.admin.resources.projects.research-projects.index') }}" class="rh-link">Lihat semua</a>
                 </div>
 
                 @if ($activeProjects->isEmpty())
                     <p class="rh-empty">
-                        Belum ada project. Buat project riset pertama untuk menyatukan dokumen, survey, timeline, dan bimbingan.
+                        Belum ada proyek. Buat proyek riset pertama untuk menyatukan dokumen, survei, jadwal, dan bimbingan.
                     </p>
                 @else
                     <div class="rh-list">
@@ -745,15 +1019,15 @@
                                     </div>
                                     <span class="rh-pill">{{ $project['progress_percentage'] }}%</span>
                                 </div>
-                                <div class="rh-progress" aria-label="Project timeline progress">
+                                <div class="rh-progress" aria-label="Progres jadwal proyek">
                                     <span style="width: {{ $project['progress_percentage'] }}%;"></span>
                                 </div>
                                 <p class="rh-item-meta">
-                                    {{ $project['completed_tasks'] }} dari {{ $project['total_tasks'] }} tugas timeline selesai.
+                                    {{ $project['completed_tasks'] }} dari {{ $project['total_tasks'] }} tugas jadwal selesai.
                                 </p>
                                 <div class="rh-row-actions">
-                                    <a href="{{ $project['project_url'] }}" class="rh-link">Buka Project</a>
-                                    <a href="{{ $project['timeline_url'] }}" class="rh-link">Buka Timeline</a>
+                                    <a href="{{ $project['project_url'] }}" class="rh-link">Buka Proyek</a>
+                                    <a href="{{ $project['timeline_url'] }}" class="rh-link">Buka Jadwal</a>
                                 </div>
                             </article>
                         @endforeach
@@ -764,8 +1038,8 @@
             <section class="rh-card rh-section" data-dashboard-card="timeline-focus">
                 <div class="rh-section-head">
                     <div>
-                        <p class="rh-section-kicker">Timeline</p>
-                        <h2 class="rh-section-title">Fokus Timeline</h2>
+                        <p class="rh-section-kicker">Jadwal</p>
+                        <h2 class="rh-section-title">Fokus Jadwal</h2>
                     </div>
                 </div>
 
@@ -790,11 +1064,11 @@
                         <p class="rh-item-meta">
                             {{ $timelineSummary['next_due_task']['project'] }} | Batas waktu {{ $timelineSummary['next_due_task']['planned_end_date'] }}
                         </p>
-                        <a href="{{ $timelineSummary['next_due_task']['url'] }}" class="rh-link">Buka Timeline</a>
+                        <a href="{{ $timelineSummary['next_due_task']['url'] }}" class="rh-link">Buka Jadwal</a>
                     </article>
                 @else
                     <p class="rh-empty">
-                        Belum ada tugas timeline terdekat. Tambahkan tugas di dalam project agar milestone dan tenggat disertasi mudah dipantau.
+                        Belum ada tugas jadwal terdekat. Tambahkan tugas di dalam proyek agar tonggak dan tenggat disertasi mudah dipantau.
                     </p>
                 @endif
             </section>
@@ -835,8 +1109,8 @@
             <section class="rh-card rh-section" data-dashboard-card="recent-surveys">
                 <div class="rh-section-head">
                     <div>
-                        <p class="rh-section-kicker">Survey</p>
-                        <h2 class="rh-section-title">Survey Terbaru</h2>
+                        <p class="rh-section-kicker">Survei</p>
+                        <h2 class="rh-section-title">Survei Terbaru</h2>
                     </div>
                     <a href="{{ route('filament.admin.resources.surveys.index') }}" class="rh-link">Lihat semua</a>
                 </div>
@@ -855,14 +1129,14 @@
                             </div>
                             <span class="rh-pill">{{ $survey['status'] }}</span>
                         </div>
-                        <a href="{{ $survey['url'] }}" class="rh-link">Buka Survey</a>
+                        <a href="{{ $survey['url'] }}" class="rh-link">Buka Survei</a>
                     </article>
                     @if ($loop->last)
                         </div>
                     @endif
                 @empty
                     <p class="rh-empty">
-                        Belum ada survey. Buat instrumen pertama saat pertanyaan, indikator, dan skoring mulai disiapkan.
+                        Belum ada survei. Buat instrumen pertama saat pertanyaan, indikator, dan skoring mulai disiapkan.
                     </p>
                 @endforelse
             </section>
@@ -871,7 +1145,7 @@
                 <div class="rh-section-head">
                     <div>
                         <p class="rh-section-kicker">Referensi</p>
-                        <h2 class="rh-section-title">Link Riset Tersemat</h2>
+                        <h2 class="rh-section-title">Tautan Riset Tersemat</h2>
                     </div>
                     <a href="{{ route('filament.admin.resources.research-links.index') }}" class="rh-link">Buka pustaka</a>
                 </div>
@@ -888,14 +1162,14 @@
                             </div>
                             <span class="rh-pill">{{ $link['category'] }}</span>
                         </div>
-                        <a href="{{ $link['url'] }}" target="_blank" rel="noopener noreferrer" class="rh-link">Buka Link</a>
+                        <a href="{{ $link['url'] }}" target="_blank" rel="noopener noreferrer" class="rh-link">Buka Tautan</a>
                     </article>
                     @if ($loop->last)
                         </div>
                     @endif
                 @empty
                     <p class="rh-empty">
-                        Belum ada link riset tersemat. Tambahkan jurnal, OJS, regulasi, repositori, atau dataset yang sering dipakai.
+                        Belum ada tautan riset tersemat. Tambahkan jurnal, OJS, regulasi, repositori, atau dataset yang sering dipakai.
                     </p>
                 @endforelse
             </section>
@@ -925,7 +1199,7 @@
                     @endif
                 @empty
                     <p class="rh-empty">
-                        Belum ada hasil analisis. Jalankan analisis deskriptif dari survey setelah data respons siap.
+                        Belum ada hasil analisis. Jalankan analisis deskriptif dari survei setelah data respons siap.
                     </p>
                 @endforelse
             </section>
@@ -934,7 +1208,7 @@
         <section class="rh-card rh-section" data-dashboard-card="quick-actions">
             <div class="rh-section-head">
                 <div>
-                    <p class="rh-section-kicker">Pintasan Workspace</p>
+                    <p class="rh-section-kicker">Pintasan Ruang Kerja</p>
                     <h2 class="rh-section-title">Aksi Cepat</h2>
                 </div>
             </div>
@@ -944,13 +1218,15 @@
                     <a href="{{ $action['url'] }}" class="rh-action-tile">
                         <span class="rh-action-head">
                             <span class="rh-action-initial">{{ $action['initial'] }}</span>
-                            <span class="rh-action-title">{{ $action['label'] }}</span>
+                            <span class="rh-action-title">{{ $uiText($action['label']) }}</span>
                         </span>
-                        <span class="rh-item-copy">{{ $action['description'] }}</span>
+                        <span class="rh-item-copy">{{ $uiText($action['description']) }}</span>
                         <span class="rh-link">Buka</span>
                     </a>
                 @endforeach
             </div>
         </section>
+            </div>
+        </details>
     </div>
 </x-filament-panels::page>

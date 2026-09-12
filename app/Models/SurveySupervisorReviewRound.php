@@ -45,11 +45,14 @@ class SurveySupervisorReviewRound extends Model
         'created_by',
         'title',
         'purpose',
+        'instrument_version',
+        'workflow_state_at_open',
         'status',
         'due_date',
         'opened_at',
         'closed_at',
         'snapshot_taken_at',
+        'finalized_at',
         'snapshot_hash',
         'snapshot_json',
     ];
@@ -61,8 +64,23 @@ class SurveySupervisorReviewRound extends Model
             'opened_at' => 'datetime',
             'closed_at' => 'datetime',
             'snapshot_taken_at' => 'datetime',
+            'finalized_at' => 'datetime',
             'snapshot_json' => 'array',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::updating(function (self $round): void {
+            if ($round->getOriginal('finalized_at') !== null) {
+                throw new \LogicException('Bukti review final tidak dapat diubah.');
+            }
+        });
+        static::deleting(function (self $round): void {
+            if ($round->finalized_at !== null) {
+                throw new \LogicException('Bukti review final tidak dapat dihapus.');
+            }
+        });
     }
 
     public function survey(): BelongsTo

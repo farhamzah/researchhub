@@ -27,8 +27,8 @@ class SupervisorInstrumentReviewTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.surveys.supervisor-review.index', ['survey' => $survey]))
             ->assertOk()
-            ->assertSeeText('Supervisor Instrument Review')
-            ->assertSeeText('Create Review Round');
+            ->assertSeeText('Review Pembimbing Instrumen')
+            ->assertSeeText('Buat Putaran Review');
 
         $this->actingAs($admin)
             ->post(route('admin.surveys.supervisor-review.rounds.store', ['survey' => $survey]), [
@@ -77,11 +77,11 @@ class SupervisorInstrumentReviewTest extends TestCase
 
         $this->get(route('supervisor-review.survey.show', ['token' => $token]))
             ->assertOk()
-            ->assertSeeText('Supervisor Instrument Review')
-            ->assertSeeText('Intro Narasi')
-            ->assertSeeText('Privacy Statement')
-            ->assertSeeText('Respondent Instruction')
-            ->assertSeeText('Consent Text')
+            ->assertSeeText('Review Pembimbing Instrumen')
+            ->assertSeeText('Pengantar kuesioner untuk mahasiswa.')
+            ->assertSeeText('Kerahasiaan')
+            ->assertSeeText('Instruksi responden')
+            ->assertSeeText('Persetujuan')
             ->assertSeeText('A. Identitas')
             ->assertSeeText('Q1')
             ->assertSeeText('Kebutuhan materi CPOB');
@@ -202,9 +202,9 @@ class SupervisorInstrumentReviewTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.surveys.supervisor-review.report', ['survey' => $survey, 'round' => $round]))
             ->assertOk()
-            ->assertSeeText('Supervisor Instrument Review Report')
-            ->assertSeeText('Question wording revised.')
-            ->assertSeeText('separate from expert validation scoring');
+            ->assertSeeText('Laporan Review Pembimbing Instrumen')
+            ->assertSeeText('Minor revision only.')
+            ->assertSeeText('Kode');
     }
 
     public function test_supervisor_review_is_not_counted_as_expert_validation_and_preflight_detects_status(): void

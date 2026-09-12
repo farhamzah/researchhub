@@ -97,7 +97,11 @@ class Survey extends Model
         'status',
         'identity_mode',
         'instrument_type',
+        'instrument_code',
+        'instrument_version',
+        'workflow_state',
         'parent_survey_id',
+        'supersedes_survey_id',
         'analysis_group_key',
         'is_public',
         'published_at',
@@ -150,6 +154,25 @@ class Survey extends Model
     public function relatedAnalysisInstruments(): HasMany
     {
         return $this->hasMany(Survey::class, 'parent_survey_id');
+    }
+
+    public function supersededSurvey(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'supersedes_survey_id');
+    }
+
+    public function workflowTransitions(): HasMany
+    {
+        return $this->hasMany(SurveyWorkflowTransition::class);
+    }
+
+    public function getInstrumentIdentifierAttribute(): ?string
+    {
+        if (blank($this->instrument_code) || blank($this->instrument_version)) {
+            return null;
+        }
+
+        return $this->instrument_code.'-v'.$this->instrument_version;
     }
 
     public function pages(): HasMany

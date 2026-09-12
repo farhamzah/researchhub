@@ -26,6 +26,10 @@ class SupervisorReviewSnapshotService
                 'title' => $survey->title,
                 'description' => $survey->description,
                 'instrument_type' => $survey->instrument_type,
+                'instrument_code' => $survey->instrument_code,
+                'instrument_version' => $survey->instrument_version,
+                'instrument_identifier' => $survey->instrument_identifier,
+                'workflow_state' => $survey->workflow_state,
                 'intro_title' => $survey->intro_title,
                 'intro_text' => $survey->intro_text,
                 'intro_image_path' => $survey->intro_image_path,
@@ -63,6 +67,8 @@ class SupervisorReviewSnapshotService
 
     public function hash(array $snapshot): string
     {
+        unset($snapshot['snapshot_taken_at']);
+
         return hash('sha256', json_encode($snapshot, JSON_THROW_ON_ERROR));
     }
 

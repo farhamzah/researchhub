@@ -135,7 +135,7 @@ class AnalysisInstrumentTemplateTest extends TestCase
         $this->actingAs($owner)
             ->get(route('admin.surveys.supervisor-review.index', ['survey' => $lecturer]))
             ->assertOk()
-            ->assertSeeText('Supervisor Instrument Review')
+            ->assertSeeText('Review Pembimbing Instrumen')
             ->assertSeeText('Kuesioner Analisis Kebutuhan Dosen terhadap Media Pembelajaran Virtual Reality');
 
         app(PublishSurveyAction::class)->handle($owner, $lecturer);

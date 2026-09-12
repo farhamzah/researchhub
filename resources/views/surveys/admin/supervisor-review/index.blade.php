@@ -9,11 +9,11 @@
 @endphp
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Supervisor Review - MyRiset</title>
+    <title>Review Pembimbing - MyRiset</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-slate-50 text-slate-950 antialiased">
@@ -21,16 +21,26 @@
         <section class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
             <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div>
-                    <p class="text-sm font-semibold uppercase tracking-wide text-indigo-700">Supervisor Instrument Review</p>
+                    <p class="text-sm font-semibold uppercase tracking-wide text-indigo-700">Review Pembimbing Instrumen</p>
                     <h1 class="mt-2 text-3xl font-semibold">{{ $survey->title }}</h1>
-                    <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600">Qualitative pre-validation review for supervisors/promotors. These comments are separate from expert validation scores, Aiken's V, CVI, and respondent analysis.</p>
+                    <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600">Review sebelum validasi ahli. Pembimbing menilai snapshot instrumen tanpa mengedit pertanyaan secara langsung.</p>
                 </div>
                 <div class="flex flex-wrap gap-2">
-                    <a href="{{ route('admin.surveys.builder.index', ['survey' => $survey]) }}" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">Builder</a>
-                    <a href="{{ route('admin.surveys.validation.index', ['survey' => $survey]) }}" class="rounded-md border border-emerald-300 bg-white px-4 py-2 text-sm font-semibold text-emerald-800 shadow-sm hover:bg-emerald-50">Expert Validation</a>
-                    <a href="{{ route('admin.surveys.preflight.index', ['survey' => $survey]) }}" class="rounded-md border border-amber-300 bg-white px-4 py-2 text-sm font-semibold text-amber-900 shadow-sm hover:bg-amber-50">Preflight QA</a>
+                    <a href="{{ route('admin.surveys.builder.index', ['survey' => $survey]) }}" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">Ruang kerja</a>
+                    <a href="{{ route('admin.surveys.validation.index', ['survey' => $survey]) }}" class="rounded-md border border-emerald-300 bg-white px-4 py-2 text-sm font-semibold text-emerald-800 shadow-sm hover:bg-emerald-50">Validasi ahli</a>
+                    <a href="{{ route('admin.surveys.preflight.index', ['survey' => $survey]) }}" class="rounded-md border border-amber-300 bg-white px-4 py-2 text-sm font-semibold text-amber-900 shadow-sm hover:bg-amber-50">Kesiapan</a>
                 </div>
             </div>
+
+            @if ($survey->instrument_identifier)
+                <div class="mt-6 grid gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 sm:grid-cols-2 lg:grid-cols-5">
+                    <div><p class="text-xs font-semibold uppercase text-emerald-700">Versi</p><p class="mt-1 font-semibold">{{ $survey->instrument_identifier }}</p></div>
+                    <div><p class="text-xs font-semibold uppercase text-emerald-700">Status</p><p class="mt-1 font-semibold">{{ $workflow['label'] }}</p></div>
+                    <div><p class="text-xs font-semibold uppercase text-emerald-700">Reviewer</p><p class="mt-1 font-semibold">{{ $rounds->flatMap->reviewers->sortByDesc('created_at')->first()?->supervisor_name ?: 'Belum ditugaskan' }}</p></div>
+                    <div class="sm:col-span-2"><p class="text-xs font-semibold uppercase text-emerald-700">Tindakan berikutnya</p><p class="mt-1 font-semibold">{{ $workflow['next_action'] }}</p></div>
+                    <div class="sm:col-span-2 lg:col-span-5"><div class="h-2 overflow-hidden rounded-full bg-white"><div class="h-full rounded-full bg-emerald-600" style="width: {{ $workflow['percent'] }}%"></div></div></div>
+                </div>
+            @endif
 
             @if (session('generated_supervisor_review_url'))
                 <div class="mt-6 rounded-lg border border-amber-300 bg-amber-50 p-4">
@@ -41,11 +51,11 @@
         </section>
 
         <section class="mt-6 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 class="text-xl font-semibold">Create Review Round</h2>
+            <h2 class="text-xl font-semibold">Buat Putaran Review</h2>
             <form method="POST" action="{{ route('admin.surveys.supervisor-review.rounds.store', ['survey' => $survey]) }}" class="mt-4 grid gap-4 md:grid-cols-2">
                 @csrf
                 <label class="block">
-                    <span class="text-sm font-medium text-slate-700">Round title</span>
+                    <span class="text-sm font-medium text-slate-700">Nama putaran</span>
                     <input name="title" required value="Supervisor Review - {{ $survey->title }}" class="mt-1 block w-full rounded-md border-slate-300">
                 </label>
                 <label class="block">
@@ -57,15 +67,15 @@
                     </select>
                 </label>
                 <label class="block">
-                    <span class="text-sm font-medium text-slate-700">Due date</span>
+                    <span class="text-sm font-medium text-slate-700">Batas waktu</span>
                     <input type="date" name="due_date" class="mt-1 block w-full rounded-md border-slate-300">
                 </label>
                 <label class="block md:col-span-2">
-                    <span class="text-sm font-medium text-slate-700">Review purpose</span>
+                    <span class="text-sm font-medium text-slate-700">Tujuan review</span>
                     <textarea name="purpose" rows="3" class="mt-1 block w-full rounded-md border-slate-300">Pre-validation supervisor review before expert validation.</textarea>
                 </label>
                 <div class="md:col-span-2">
-                    <button class="rounded-md bg-indigo-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-600">Create Round</button>
+                    <button class="rounded-md bg-indigo-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-600">Buat putaran</button>
                 </div>
             </form>
         </section>
@@ -86,7 +96,12 @@
                         </div>
                         <p class="mt-2 text-sm text-slate-600">{{ $round->purpose ?: 'No purpose provided.' }}</p>
                     </div>
-                    <a target="_blank" href="{{ route('admin.surveys.supervisor-review.report', ['survey' => $survey, 'round' => $round]) }}" class="rounded-md border border-blue-300 bg-white px-4 py-2 text-sm font-semibold text-blue-700 shadow-sm hover:bg-blue-50">Printable Report</a>
+                                        <div class="flex flex-wrap gap-2">
+                        <a target="_blank" href="{{ route('admin.surveys.supervisor-review.report', ['survey' => $survey, 'round' => $round]) }}" class="rounded-md border border-blue-300 bg-white px-4 py-2 text-sm font-semibold text-blue-700 shadow-sm hover:bg-blue-50">Preview laporan</a>
+                        @if ($round->finalized_at && $survey->workflow_state === \App\Modules\Surveys\Services\SurveyInstrumentWorkflowService::SUPERVISOR_REVISION_REQUIRED)
+                            <form method="POST" action="{{ route('admin.surveys.supervisor-review.revision.create', ['survey' => $survey, 'round' => $round]) }}">@csrf<button class="rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white">Buat versi revisi</button></form>
+                        @endif
+                    </div>
                 </div>
 
                 <form method="POST" action="{{ route('admin.surveys.supervisor-review.rounds.update', ['survey' => $survey, 'round' => $round]) }}" class="mt-5 grid gap-3 md:grid-cols-4">
@@ -105,20 +120,20 @@
 
                 <div class="mt-6 grid gap-6 lg:grid-cols-3">
                     <div class="lg:col-span-1">
-                        <h3 class="font-semibold">Add Supervisor</h3>
+                        <h3 class="font-semibold">Tambahkan pembimbing</h3>
                         <form method="POST" action="{{ route('admin.surveys.supervisor-review.reviewers.store', ['survey' => $survey, 'round' => $round]) }}" class="mt-3 space-y-3">
                             @csrf
-                            <input name="supervisor_name" placeholder="Supervisor name" required class="block w-full rounded-md border-slate-300">
-                            <input name="supervisor_email" placeholder="email optional" class="block w-full rounded-md border-slate-300">
+                            <input name="supervisor_name" placeholder="Nama pembimbing" required class="block w-full rounded-md border-slate-300">
+                            <input name="supervisor_email" placeholder="email (opsional)" class="block w-full rounded-md border-slate-300">
                             <input name="supervisor_code" placeholder="SPV-1" class="block w-full rounded-md border-slate-300">
                             <input name="role" placeholder="Promotor / Co-promotor" class="block w-full rounded-md border-slate-300">
                             <input type="datetime-local" name="expires_at" class="block w-full rounded-md border-slate-300">
-                            <button class="w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-semibold text-white">Add Supervisor</button>
+                            <button class="w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-semibold text-white">Tambahkan pembimbing</button>
                         </form>
                     </div>
 
                     <div class="lg:col-span-2">
-                        <h3 class="font-semibold">Review Progress</h3>
+                        <h3 class="font-semibold">Progress review</h3>
                         <div class="mt-3 divide-y divide-slate-200 rounded-lg border border-slate-200">
                             @forelse ($round->reviewers as $reviewer)
                                 <div class="p-4">
@@ -134,11 +149,11 @@
                                         <div class="flex flex-wrap gap-2">
                                             <form method="POST" action="{{ route('admin.surveys.supervisor-review.reviewers.generate-link', ['survey' => $survey, 'reviewer' => $reviewer]) }}">
                                                 @csrf
-                                                <button class="rounded-md border border-indigo-300 bg-white px-3 py-2 text-xs font-semibold text-indigo-800 shadow-sm hover:bg-indigo-50">Generate Link</button>
+                                                <button class="rounded-md border border-indigo-300 bg-white px-3 py-2 text-xs font-semibold text-indigo-800 shadow-sm hover:bg-indigo-50">Buat tautan</button>
                                             </form>
                                             <form method="POST" action="{{ route('admin.surveys.supervisor-review.reviewers.revoke-link', ['survey' => $survey, 'reviewer' => $reviewer]) }}">
                                                 @csrf
-                                                <button class="rounded-md border border-red-300 bg-white px-3 py-2 text-xs font-semibold text-red-700 shadow-sm hover:bg-red-50">Revoke</button>
+                                                <button class="rounded-md border border-red-300 bg-white px-3 py-2 text-xs font-semibold text-red-700 shadow-sm hover:bg-red-50">Cabut</button>
                                             </form>
                                         </div>
                                     </div>
@@ -157,7 +172,7 @@
                                     @endif
                                 </div>
                             @empty
-                                <p class="p-4 text-sm text-slate-600">No supervisors added yet.</p>
+                                <p class="p-4 text-sm text-slate-600">Belum ada pembimbing yang ditugaskan.</p>
                             @endforelse
                         </div>
                     </div>
@@ -209,7 +224,7 @@
                 </div>
             </section>
         @empty
-            <section class="mt-6 rounded-lg border border-dashed border-slate-300 bg-white p-8 text-center text-slate-600">No supervisor review rounds yet.</section>
+            <section class="mt-6 rounded-lg border border-dashed border-slate-300 bg-white p-8 text-center text-slate-600">Belum ada putaran review pembimbing.</section>
         @endforelse
     </main>
 </body>

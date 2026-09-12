@@ -50,6 +50,17 @@ class SurveySupervisorReviewer extends Model
 
     public const DECISION_NOT_APPROVED = 'not_approved_yet';
 
+    public const DECISION_REVISION_REQUIRED = 'revision_required';
+
+    public const DECISION_SUPERVISOR_APPROVED = 'supervisor_approved';
+
+    public const V2_DECISIONS = [self::DECISION_REVISION_REQUIRED, self::DECISION_SUPERVISOR_APPROVED];
+
+    public const V2_DECISION_LABELS = [
+        self::DECISION_REVISION_REQUIRED => 'Perlu Revisi',
+        self::DECISION_SUPERVISOR_APPROVED => 'Disetujui',
+    ];
+
     public const DECISIONS = [
         self::DECISION_APPROVED,
         self::DECISION_MINOR_REVISIONS,
@@ -99,6 +110,20 @@ class SurveySupervisorReviewer extends Model
             'revoked_at' => 'datetime',
             'expires_at' => 'datetime',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::updating(function (self $reviewer): void {
+            if ($reviewer->getOriginal('submitted_at') !== null) {
+                throw new \LogicException('Keputusan review final tidak dapat diubah.');
+            }
+        });
+        static::deleting(function (self $reviewer): void {
+            if ($reviewer->submitted_at !== null) {
+                throw new \LogicException('Keputusan review final tidak dapat dihapus.');
+            }
+        });
     }
 
     public static function hashToken(string $token): string
@@ -151,7 +176,7 @@ class SurveySupervisorReviewer extends Model
 
     public function markOpened(): void
     {
-        if ($this->opened_at !== null || $this->isRevoked() || $this->isExpired()) {
+        if ($this->opened_at !== null || $this->isSubmitted() || $this->isRevoked() || $this->isExpired()) {
             return;
         }
 

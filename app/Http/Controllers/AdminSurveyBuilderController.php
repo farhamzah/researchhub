@@ -21,6 +21,7 @@ use App\Modules\Surveys\Actions\UpdateSurveyQuestionAction;
 use App\Modules\Surveys\Services\PharmVrStudentNeedsSurveyTemplateService;
 use App\Modules\Surveys\Services\SurveyBuilderReadinessService;
 use App\Modules\Surveys\Services\SurveyBulkQuestionImportService;
+use App\Modules\Surveys\Services\SurveyInstrumentWorkflowService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -47,6 +48,7 @@ class AdminSurveyBuilderController extends Controller
             'indicators.questionScorings.question',
             'validationRounds.assignments.scores',
             'analysisResults',
+            'supervisorReviewRounds.reviewers',
             'responses:id,survey_id,status,submitted_at',
         ])->loadCount([
             'responses',
@@ -59,6 +61,8 @@ class AdminSurveyBuilderController extends Controller
 
         return view('surveys.admin.builder.index', [
             'survey' => $survey,
+            'instrumentWorkflow' => app(SurveyInstrumentWorkflowService::class)->progress($survey),
+            'latestSupervisorReviewer' => $survey->supervisorReviewRounds->sortByDesc('created_at')->first()?->reviewers->sortByDesc('created_at')->first(),
             'builderWizard' => $readiness->build($survey),
             'academicNarratives' => [
                 'surveyInstrument' => $academicNarratives->surveyInstrumentSummary($survey),

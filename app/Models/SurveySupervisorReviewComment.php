@@ -48,6 +48,19 @@ class SurveySupervisorReviewComment extends Model
 
     public const DECISION_CLARIFY = 'clarify';
 
+    public const DECISION_KEEP = 'keep';
+
+    public const DECISION_DISCUSS = 'discuss';
+
+    public const V2_DECISIONS = [self::DECISION_KEEP, self::DECISION_REVISE, self::DECISION_REMOVE, self::DECISION_DISCUSS];
+
+    public const V2_DECISION_LABELS = [
+        self::DECISION_KEEP => 'Pertahankan',
+        self::DECISION_REVISE => 'Revisi',
+        self::DECISION_REMOVE => 'Hapus',
+        self::DECISION_DISCUSS => 'Diskusikan',
+    ];
+
     public const DECISIONS = [
         self::DECISION_ACCEPT,
         self::DECISION_REVISE,
@@ -72,6 +85,17 @@ class SurveySupervisorReviewComment extends Model
         'severity',
         'decision',
     ];
+
+    protected static function booted(): void
+    {
+        $assertMutable = function (self $comment): void {
+            if ($comment->round()->whereNotNull('finalized_at')->exists()) {
+                throw new \LogicException('Komentar pada bukti review final tidak dapat diubah.');
+            }
+        };
+        static::updating($assertMutable);
+        static::deleting($assertMutable);
+    }
 
     public function reviewer(): BelongsTo
     {

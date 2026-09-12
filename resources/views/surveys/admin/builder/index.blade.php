@@ -81,14 +81,14 @@
 @endphp
 
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" class="overflow-x-hidden">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Ruang Kerja Instrumen - MyRiset</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="bg-slate-50 text-slate-950 antialiased">
+<body class="overflow-x-hidden bg-slate-50 text-slate-950 antialiased">
     <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <section data-ui="myriset-page-header" class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
             <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
@@ -123,6 +123,20 @@
                 </div>
             </dl>
         </section>
+
+        @if ($survey->instrument_identifier)
+            <section data-instrument-workflow class="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-5 shadow-sm sm:p-6">
+                <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+                    <div class="min-w-0"><p class="text-xs font-semibold uppercase text-emerald-700">Instrumen</p><p class="mt-1 break-words font-semibold">{{ $survey->title }}</p></div>
+                    <div><p class="text-xs font-semibold uppercase text-emerald-700">Versi</p><p class="mt-1 font-semibold">{{ $survey->instrument_identifier }}</p></div>
+                    <div><p class="text-xs font-semibold uppercase text-emerald-700">Status workflow</p><p class="mt-1 font-semibold">{{ $instrumentWorkflow['label'] }}</p></div>
+                    <div><p class="text-xs font-semibold uppercase text-emerald-700">Reviewer</p><p class="mt-1 font-semibold">{{ $latestSupervisorReviewer?->supervisor_name ?: 'Belum ditugaskan' }}</p></div>
+                    <div><p class="text-xs font-semibold uppercase text-emerald-700">Tindakan berikutnya</p><a href="{{ route('admin.surveys.supervisor-review.index', ['survey' => $survey]) }}" class="mt-1 inline-flex font-semibold text-emerald-800 underline underline-offset-4">{{ $instrumentWorkflow['next_action'] }}</a></div>
+                </div>
+                <div class="mt-4 h-2 overflow-hidden rounded-full bg-white" aria-label="Progress workflow {{ $instrumentWorkflow['percent'] }} persen"><div class="h-full rounded-full bg-emerald-600" style="width: {{ $instrumentWorkflow['percent'] }}%"></div></div>
+                <details class="mt-4 rounded-xl border border-emerald-200 bg-white"><summary class="cursor-pointer px-4 py-3 text-sm font-semibold text-emerald-900">Detail teknis</summary><dl class="grid gap-3 border-t border-emerald-100 p-4 text-sm sm:grid-cols-3"><div><dt class="text-slate-500">Kode</dt><dd class="font-mono">{{ $survey->instrument_code }}</dd></div><div><dt class="text-slate-500">State</dt><dd class="font-mono">{{ $survey->workflow_state }}</dd></div><div><dt class="text-slate-500">Publik</dt><dd>{{ $survey->is_public ? 'Ya' : 'Tidak (draf aman)' }}</dd></div></dl></details>
+            </section>
+        @endif
 
         <nav aria-label="Lima area kerja instrumen" class="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
             @foreach ([
@@ -895,7 +909,7 @@
             </div>
         </section>
 
-        <section id="skoring" class="mt-6 scroll-mt-6 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+        <section id="skoring" class="mt-6 min-w-0 scroll-mt-6 overflow-hidden rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
             <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Skoring</p>
@@ -932,8 +946,8 @@
                 </div>
             @endif
 
-            <div class="mt-5 overflow-x-auto rounded-lg border border-slate-200">
-                <table class="min-w-full divide-y divide-slate-200 text-sm">
+            <div class="mt-5 min-w-0 max-w-full overflow-x-auto rounded-lg border border-slate-200">
+                <table class="w-full table-fixed divide-y divide-slate-200 text-xs sm:text-sm">
                     <thead class="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                         <tr>
                             <th class="px-4 py-3">Question</th>
@@ -1113,7 +1127,7 @@
                                         @if (in_array($previewQuestion['type'], [SurveyQuestion::TYPE_SINGLE_CHOICE, SurveyQuestion::TYPE_MULTIPLE_CHOICE, SurveyQuestion::TYPE_LIKERT, SurveyQuestion::TYPE_LIKERT_MATRIX], true) && $previewQuestion['options'] !== [])
                                             <div class="mt-3 grid gap-2 sm:grid-cols-2">
                                                 @foreach ($previewQuestion['options'] as $option)
-                                                    <label class="flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+                                                    <label class="flex min-w-0 max-w-full items-center gap-2 break-words rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
                                                         <input type="{{ $previewQuestion['type'] === SurveyQuestion::TYPE_MULTIPLE_CHOICE ? 'checkbox' : 'radio' }}" disabled class="rounded border-slate-300 text-emerald-700">
                                                         {{ $option }}
                                                     </label>

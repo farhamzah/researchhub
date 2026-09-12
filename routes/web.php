@@ -20,6 +20,7 @@ use App\Http\Controllers\AdminSurveyResponseController;
 use App\Http\Controllers\AdminSurveyResponseExportController;
 use App\Http\Controllers\AdminSurveyScoringController;
 use App\Http\Controllers\AdminSurveySupervisorReviewController;
+use App\Http\Controllers\AdminSurveySupervisorReviewDocxController;
 use App\Http\Controllers\AdminSurveySupervisorReviewReportController;
 use App\Http\Controllers\AdminSurveyValidationController;
 use App\Http\Controllers\AdminSurveyValidationReportController;
@@ -270,6 +271,10 @@ Route::middleware('auth')->group(function (): void {
         ->name('admin.surveys.supervisor-review.rounds.update');
     Route::get('/admin/surveys/{survey}/supervisor-review/rounds/{round}/report', AdminSurveySupervisorReviewReportController::class)
         ->name('admin.surveys.supervisor-review.report');
+    Route::get('/admin/surveys/{survey}/supervisor-review/rounds/{round}/report.docx', AdminSurveySupervisorReviewDocxController::class)
+        ->name('admin.surveys.supervisor-review.report.docx');
+    Route::post('/admin/surveys/{survey}/supervisor-review/rounds/{round}/create-revision', [AdminSurveySupervisorReviewController::class, 'createRevision'])
+        ->name('admin.surveys.supervisor-review.revision.create');
     Route::post('/admin/surveys/{survey}/supervisor-review/rounds/{round}/reviewers', [AdminSurveySupervisorReviewController::class, 'storeReviewer'])
         ->name('admin.surveys.supervisor-review.reviewers.store');
     Route::post('/admin/surveys/{survey}/supervisor-review/reviewers/{reviewer}/generate-link', [AdminSurveySupervisorReviewController::class, 'generateLink'])

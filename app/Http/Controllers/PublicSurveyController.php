@@ -29,7 +29,7 @@ class PublicSurveyController extends Controller
         }
 
         if (! $survey->canReceiveResponses() && ! $pilotRun) {
-            return view('surveys.unavailable');
+            return response()->view('surveys.unavailable', status: 403);
         }
 
         $survey->load([

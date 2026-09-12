@@ -5,6 +5,8 @@
     $choiceValue = fn ($choice) => is_array($choice) ? (string) ($choice['value'] ?? $choice['label'] ?? '') : (string) $choice;
     $choiceLabel = fn ($choice) => is_array($choice) ? (string) ($choice['label'] ?? $choice['value'] ?? '') : (string) $choice;
     $scale = $question->settings['scale'] ?? $options['scale'] ?? config('researchhub_surveys.default_likert_scale', [1, 2, 3, 4, 5]);
+    $scaleLabels = $question->settings['scale_labels'] ?? [];
+    $scaleLabel = fn ($value): string => isset($scaleLabels[(string) $value]) ? $value.' — '.$scaleLabels[(string) $value] : (string) $value;
     $rows = $options['rows'] ?? [];
     $columns = $options['columns'] ?? $scale;
     $columnValue = fn ($column) => is_array($column) ? (string) ($column['value'] ?? $column['label'] ?? '') : (string) $column;
@@ -60,7 +62,7 @@
                         @foreach ($scale as $scaleValue)
                             <label class="flex items-center gap-2 text-sm text-gray-700">
                                 <input type="radio" name="answers[{{ $key }}]" value="{{ $scaleValue }}" @checked((string) old("answers.{$key}") === (string) $scaleValue) class="border-gray-300 text-emerald-700">
-                                {{ $scaleValue }}
+                                {{ $scaleLabel($scaleValue) }}
                             </label>
                         @endforeach
                     </div>

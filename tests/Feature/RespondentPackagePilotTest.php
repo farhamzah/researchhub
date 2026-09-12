@@ -88,7 +88,7 @@ class RespondentPackagePilotTest extends TestCase
         $this->closePublicAccess($survey);
 
         $this->get(route('survey.show', ['survey' => $survey->fresh()->slug]))
-            ->assertOk()
+            ->assertForbidden()
             ->assertSeeText('Survey tidak tersedia')
             ->assertDontSeeText($survey->title);
 

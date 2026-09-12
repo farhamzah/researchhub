@@ -75,7 +75,7 @@ class PublicSurveySubmissionTest extends TestCase
         $this->attachQuestions($survey);
 
         $this->get(route('survey.show', ['survey' => $survey->slug]))
-            ->assertOk()
+            ->assertForbidden()
             ->assertSee('Survey tidak tersedia')
             ->assertDontSee($survey->title)
             ->assertDontSee($project->title);

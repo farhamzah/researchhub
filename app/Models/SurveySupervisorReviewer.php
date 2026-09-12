@@ -81,6 +81,7 @@ class SurveySupervisorReviewer extends Model
 
     protected $fillable = [
         'survey_supervisor_review_round_id',
+        'reviewer_hub_id',
         'supervisor_name',
         'supervisor_email',
         'supervisor_code',
@@ -136,6 +137,11 @@ class SurveySupervisorReviewer extends Model
         return $this->belongsTo(SurveySupervisorReviewRound::class, 'survey_supervisor_review_round_id');
     }
 
+    public function hub(): BelongsTo
+    {
+        return $this->belongsTo(SurveySupervisorReviewerHub::class, 'reviewer_hub_id');
+    }
+
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
@@ -177,6 +183,23 @@ class SurveySupervisorReviewer extends Model
     public function markOpened(): void
     {
         if ($this->opened_at !== null || $this->isSubmitted() || $this->isRevoked() || $this->isExpired()) {
+            return;
+        }
+
+        $this->forceFill([
+            'opened_at' => now(),
+            'status' => self::STATUS_OPENED,
+        ])->save();
+    }
+
+    public function isReviewOpen(): bool
+    {
+        return ! $this->isSubmitted() && $this->round?->isOpen();
+    }
+
+    public function markOpenedFromHub(): void
+    {
+        if ($this->opened_at !== null || ! $this->isReviewOpen()) {
             return;
         }
 

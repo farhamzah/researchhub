@@ -154,7 +154,7 @@ class SupervisorInstrumentReviewTest extends TestCase
 
         $this->get(route('supervisor-review.survey.show', ['token' => $token]))
             ->assertOk()
-            ->assertSeeText('Supervisor Review Submitted');
+            ->assertSeeText('Review instrumen selesai');
     }
 
     public function test_admin_can_view_submitted_review_update_revision_matrix_and_print_report(): void

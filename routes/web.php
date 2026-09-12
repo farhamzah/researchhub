@@ -27,6 +27,7 @@ use App\Http\Controllers\AdminSurveyValidationReportController;
 use App\Http\Controllers\AdminSurveyValidationResultController;
 use App\Http\Controllers\PublicSupervisionReviewController;
 use App\Http\Controllers\PublicSupervisorInstrumentReviewController;
+use App\Http\Controllers\PublicSupervisorReviewerHubController;
 use App\Http\Controllers\PublicSurveyController;
 use App\Http\Controllers\PublicSurveyReadabilityController;
 use App\Http\Controllers\PublicSurveyValidationController;
@@ -387,4 +388,10 @@ Route::middleware('throttle:review-links')->group(function (): void {
         ->name('supervisor-review.survey.show');
     Route::post('/supervisor-review/survey/{token}', [PublicSupervisorInstrumentReviewController::class, 'store'])
         ->name('supervisor-review.survey.store');
+    Route::get('/supervisor-review/hub/{token}', [PublicSupervisorReviewerHubController::class, 'show'])
+        ->name('supervisor-review.hub.show');
+    Route::get('/supervisor-review/hub/{token}/instrument/{reviewer}', [PublicSupervisorReviewerHubController::class, 'instrument'])
+        ->name('supervisor-review.hub.instrument.show');
+    Route::post('/supervisor-review/hub/{token}/instrument/{reviewer}', [PublicSupervisorReviewerHubController::class, 'storeInstrument'])
+        ->name('supervisor-review.hub.instrument.store');
 });

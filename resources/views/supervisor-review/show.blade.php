@@ -29,6 +29,9 @@
 </head>
 <body class="bg-slate-50 text-slate-950 antialiased">
 <main class="mx-auto max-w-5xl px-3 py-5 sm:px-6 sm:py-8 lg:px-8">
+    @if (filled($hubUrl ?? null))
+        <a href="{{ $hubUrl }}" class="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-indigo-700 hover:text-indigo-900">← Kembali ke Reviewer Hub</a>
+    @endif
     <header class="overflow-hidden rounded-2xl border border-indigo-100 bg-white shadow-sm">
         <div class="bg-gradient-to-r from-indigo-950 via-indigo-900 to-blue-800 p-5 text-white sm:p-7">
             <p class="text-xs font-bold uppercase tracking-[0.18em] text-indigo-200">Review Pembimbing Instrumen</p>
@@ -53,15 +56,10 @@
         </div>
     </header>
 
-    <details class="mt-5 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <summary class="cursor-pointer font-semibold">Detail teknis versi yang direview</summary>
-        <dl class="mt-4 grid gap-3 text-sm sm:grid-cols-2">
-            <div><dt class="text-slate-500">Identifier</dt><dd class="break-all font-mono">{{ $surveySnapshot['instrument_identifier'] ?? '—' }}</dd></div>
-            <div><dt class="text-slate-500">Hash snapshot</dt><dd class="break-all font-mono text-xs">{{ $round->snapshot_hash }}</dd></div>
-            <div><dt class="text-slate-500">Putaran</dt><dd>{{ $round->title }}</dd></div>
-            <div><dt class="text-slate-500">Jenis instrumen</dt><dd>{{ str($surveySnapshot['instrument_type'] ?? '—')->replace('_', ' ') }}</dd></div>
-        </dl>
-    </details>
+    <section class="mt-5 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <h2 class="font-semibold">Info review</h2>
+        <p class="mt-2 text-sm leading-6 text-slate-600">Anda meninjau versi {{ $surveySnapshot['instrument_version'] ?? $survey->instrument_version ?? '—' }} yang telah dikunci saat ronde review dibuka. Isi pertanyaan tidak dapat diubah dari halaman ini.</p>
+    </section>
 
     @if ($errors->any())
         <div class="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-900" role="alert">
@@ -70,7 +68,7 @@
         </div>
     @endif
 
-    <form method="POST" action="{{ route('supervisor-review.survey.store', ['token' => $token]) }}" class="mt-5 space-y-5" data-review-form>
+    <form method="POST" action="{{ $formAction ?? route('supervisor-review.survey.store', ['token' => $token]) }}" class="mt-5 space-y-5" data-review-form>
         @csrf
 
         <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
@@ -107,7 +105,7 @@
             <h2 class="text-xl font-semibold">Keputusan akhir</h2>
             <label class="mt-4 block"><span class="text-sm font-semibold">Komentar umum</span><textarea name="final_notes" rows="4" class="mt-2 block w-full rounded-lg border-slate-300" placeholder="Ringkas pertimbangan dan arahan pembimbing">{{ old('final_notes') }}</textarea></label>
             <fieldset class="mt-5"><legend class="text-sm font-semibold">Keputusan final</legend><div class="mt-2 grid gap-3 sm:grid-cols-2">@foreach ($decisions as $value => $label)<label class="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 p-4 hover:border-indigo-300"><input type="radio" name="final_decision" value="{{ $value }}" required @checked(old('final_decision') === $value)><span class="font-semibold">{{ $label }}</span></label>@endforeach</div></fieldset>
-            <div class="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950">Pengiriman final bersifat eksplisit dan mengunci bukti review untuk versi ini. Tidak ada autosave pada halaman ini.</div>
+            <div class="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950">Pengiriman final bersifat eksplisit dan mengunci bukti review untuk versi ini.</div>
             <button type="submit" class="mt-5 w-full rounded-lg bg-indigo-700 px-5 py-3 text-sm font-bold text-white shadow-sm hover:bg-indigo-600 sm:w-auto">Kirim Review Final</button>
         </section>
     </form>

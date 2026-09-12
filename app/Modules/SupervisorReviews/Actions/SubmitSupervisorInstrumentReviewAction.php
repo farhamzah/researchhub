@@ -20,10 +20,10 @@ class SubmitSupervisorInstrumentReviewAction
         private readonly SurveyInstrumentWorkflowService $workflow,
     ) {}
 
-    public function handle(SurveySupervisorReviewer $reviewer, array $data, ?Request $request = null): SurveySupervisorReviewer
+    public function handle(SurveySupervisorReviewer $reviewer, array $data, ?Request $request = null, bool $viaHub = false): SurveySupervisorReviewer
     {
         $reviewer->loadMissing('round.survey.project', 'round.reviewers');
-        if (! $reviewer->isAccessible()) {
+        if ($viaHub ? ! $reviewer->isReviewOpen() : ! $reviewer->isAccessible()) {
             throw ValidationException::withMessages(['review' => 'Tautan review pembimbing tidak lagi tersedia.']);
         }
 

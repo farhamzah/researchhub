@@ -10,8 +10,11 @@
         <aside class="mt-2 rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm leading-6 text-blue-950"><span class="font-semibold">Probe pewawancara:</span> {{ data_get($question, 'settings.interviewer_probe') }}</aside>
     @endif
     <details class="mt-3 rounded-lg border border-slate-200 bg-white p-3">
-        <summary class="cursor-pointer text-sm font-semibold">Detail teknis item</summary>
-        <pre class="mt-3 max-w-full overflow-x-auto whitespace-pre-wrap break-words text-xs text-slate-600">{{ json_encode(['tipe' => $question['type'], 'settings' => $question['settings'] ?? [], 'scoring' => $question['scoring'] ?? null], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) }}</pre>
+        <summary class="cursor-pointer text-sm font-semibold">Info item</summary>
+        <dl class="mt-3 grid gap-2 text-sm text-slate-600 sm:grid-cols-2">
+            <div><dt class="font-semibold text-slate-800">Bentuk jawaban</dt><dd>{{ str($question['type'])->replace('_', ' ')->title() }}</dd></div>
+            <div><dt class="font-semibold text-slate-800">Kewajiban</dt><dd>{{ $question['is_required'] ? 'Wajib dijawab' : 'Opsional' }}</dd></div>
+        </dl>
     </details>
     <div class="mt-4 grid min-w-0 gap-3 md:grid-cols-2">
         <input type="hidden" name="comments[item_{{ $question['id'] }}][comment_type]" value="{{ \App\Models\SurveySupervisorReviewComment::TYPE_ITEM }}">

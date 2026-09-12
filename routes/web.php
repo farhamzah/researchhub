@@ -20,6 +20,7 @@ use App\Http\Controllers\AdminSurveyResponseController;
 use App\Http\Controllers\AdminSurveyResponseExportController;
 use App\Http\Controllers\AdminSurveyScoringController;
 use App\Http\Controllers\AdminSurveySupervisorReviewController;
+use App\Http\Controllers\AdminSupervisorReviewerHubController;
 use App\Http\Controllers\AdminSurveySupervisorReviewDocxController;
 use App\Http\Controllers\AdminSurveySupervisorReviewReportController;
 use App\Http\Controllers\AdminSurveyValidationController;
@@ -266,6 +267,12 @@ Route::middleware('auth')->group(function (): void {
 
     Route::get('/admin/surveys/{survey}/supervisor-review', [AdminSurveySupervisorReviewController::class, 'index'])
         ->name('admin.surveys.supervisor-review.index');
+    Route::get('/admin/surveys/{survey}/supervisor-reviewer-hubs', [AdminSupervisorReviewerHubController::class, 'index'])
+        ->name('admin.surveys.supervisor-review.hubs.index');
+    Route::post('/admin/surveys/{survey}/supervisor-reviewer-hubs/generate', [AdminSupervisorReviewerHubController::class, 'generate'])
+        ->name('admin.surveys.supervisor-review.hubs.generate');
+    Route::post('/admin/surveys/{survey}/supervisor-reviewer-hubs/{hub}/revoke', [AdminSupervisorReviewerHubController::class, 'revoke'])
+        ->name('admin.surveys.supervisor-review.hubs.revoke');
     Route::post('/admin/surveys/{survey}/supervisor-review/rounds', [AdminSurveySupervisorReviewController::class, 'storeRound'])
         ->name('admin.surveys.supervisor-review.rounds.store');
     Route::put('/admin/surveys/{survey}/supervisor-review/rounds/{round}', [AdminSurveySupervisorReviewController::class, 'updateRound'])

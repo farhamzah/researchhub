@@ -6,6 +6,7 @@ use App\Models\ResearchProject;
 use App\Models\Survey;
 use App\Models\SurveySupervisorReviewComment;
 use App\Models\SurveySupervisorReviewer;
+use App\Models\SurveySupervisorReviewerHub;
 use App\Models\SurveySupervisorReviewRound;
 use App\Models\User;
 use App\Modules\SupervisorReviews\Actions\CreateSupervisorReviewerHubAction;
@@ -101,6 +102,72 @@ class SupervisorReviewerHubTest extends TestCase
 
         $result->hub->forceFill(['expires_at' => now()->subMinute()])->save();
         $this->get(route('supervisor-review.hub.show', compact('token')))->assertForbidden();
+    }
+
+    public function test_admin_can_manage_one_secure_hub_link_per_supervisor(): void
+    {
+        [$owner, $surveys, $reviewers, $oldTokens] = $this->reviewSet();
+        $survey = $surveys->first();
+
+        $this->actingAs($owner)
+            ->get(route('admin.surveys.supervisor-review.hubs.index', compact('survey')))
+            ->assertOk()
+            ->assertSeeText('Tautan Reviewer Hub')
+            ->assertSeeText('Prof. Pembimbing Hub')
+            ->assertSeeText('Buat tautan');
+
+        $response = $this->actingAs($owner)->post(
+            route('admin.surveys.supervisor-review.hubs.generate', compact('survey')),
+            ['supervisor_code' => 'P1'],
+        );
+
+        $response
+            ->assertRedirect(route('admin.surveys.supervisor-review.hubs.index', compact('survey')))
+            ->assertSessionHas('generated_supervisor_reviewer_hub_url')
+            ->assertSessionHas('generated_supervisor_reviewer_hub_code', 'P1');
+
+        $hub = SurveySupervisorReviewerHub::sole();
+        $firstHash = $hub->token_hash;
+        $this->assertTrue($hub->isAccessible());
+        $this->assertSame(3, $hub->reviewers()->count());
+        $this->assertTrue($reviewers->every(fn (SurveySupervisorReviewer $reviewer): bool => $reviewer->fresh()->token_hash === null));
+
+        foreach ($oldTokens as $oldToken) {
+            $this->get(route('supervisor-review.survey.show', ['token' => $oldToken]))->assertNotFound();
+        }
+
+        $this->actingAs($owner)->post(
+            route('admin.surveys.supervisor-review.hubs.generate', compact('survey')),
+            ['supervisor_code' => 'P1'],
+        )->assertSessionHas('generated_supervisor_reviewer_hub_url');
+
+        $this->assertSame(1, SurveySupervisorReviewerHub::count());
+        $this->assertNotSame($firstHash, $hub->fresh()->token_hash);
+
+        $this->actingAs($owner)->post(
+            route('admin.surveys.supervisor-review.hubs.revoke', compact('survey', 'hub')),
+        )->assertSessionHas('status', 'supervisor-reviewer-hub-link-revoked');
+
+        $hub->refresh();
+        $this->assertNull($hub->token_hash);
+        $this->assertNotNull($hub->revoked_at);
+        $this->assertFalse($hub->isAccessible());
+    }
+
+    public function test_unauthorized_user_cannot_open_or_manage_admin_hub_links(): void
+    {
+        [, $surveys] = $this->reviewSet();
+        $survey = $surveys->first();
+        $outsider = User::factory()->create();
+
+        $this->actingAs($outsider)
+            ->get(route('admin.surveys.supervisor-review.hubs.index', compact('survey')))
+            ->assertForbidden();
+
+        $this->actingAs($outsider)->post(
+            route('admin.surveys.supervisor-review.hubs.generate', compact('survey')),
+            ['supervisor_code' => 'P1'],
+        )->assertForbidden();
     }
 
     /** @return array{0: User, 1: Collection<int, Survey>, 2: Collection<int, SurveySupervisorReviewer>, 3: array<int, string>, 4: array<string, string>} */

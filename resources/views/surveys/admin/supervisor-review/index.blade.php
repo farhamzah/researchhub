@@ -26,6 +26,9 @@
                     <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600">Review sebelum validasi ahli. Pembimbing menilai snapshot instrumen tanpa mengedit pertanyaan secara langsung.</p>
                 </div>
                 <div class="flex flex-wrap gap-2">
+                    @if ($survey->instrument_version === '2.0')
+                        <a href="{{ route('admin.surveys.supervisor-review.hubs.index', ['survey' => $survey]) }}" class="rounded-md bg-indigo-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-600">Tautan pembimbing</a>
+                    @endif
                     <a href="{{ route('admin.surveys.builder.index', ['survey' => $survey]) }}" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">Ruang kerja</a>
                     <a href="{{ route('admin.surveys.validation.index', ['survey' => $survey]) }}" class="rounded-md border border-emerald-300 bg-white px-4 py-2 text-sm font-semibold text-emerald-800 shadow-sm hover:bg-emerald-50">Validasi ahli</a>
                     <a href="{{ route('admin.surveys.preflight.index', ['survey' => $survey]) }}" class="rounded-md border border-amber-300 bg-white px-4 py-2 text-sm font-semibold text-amber-900 shadow-sm hover:bg-amber-50">Kesiapan</a>

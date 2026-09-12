@@ -10,6 +10,7 @@ use App\Modules\AuditLogs\Services\ActivityLogger;
 use App\Modules\Surveys\DTOs\SurveyResponseData;
 use App\Modules\Surveys\Services\RespondentIdentityService;
 use App\Modules\Surveys\Services\SurveyAnswerValidationService;
+use App\Modules\Surveys\Services\SurveyResponseTerminationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -19,11 +20,12 @@ class SubmitSurveyResponseAction
     public function __construct(
         private readonly ActivityLogger $activityLogger,
         private readonly SurveyAnswerValidationService $answerValidation,
+        private readonly SurveyResponseTerminationService $termination,
         private readonly RespondentIdentityService $identityService,
         private readonly AnalysisRespondentPackageService $respondentPackageService,
     ) {}
 
-    public function handle(Survey $survey, SurveyResponseData $data, ?Request $request = null, ?AnalysisPilotRun $pilotRun = null): SurveyResponse
+    public function handle(Survey $survey, SurveyResponseData $data, ?Request $request = null, ?AnalysisPilotRun $pilotRun = null): ?SurveyResponse
     {
         $survey->loadMissing(['project', 'questions', 'respondents']);
 
@@ -33,6 +35,12 @@ class SubmitSurveyResponseAction
             throw ValidationException::withMessages([
                 'survey' => 'This survey is not accepting responses.',
             ]);
+        }
+
+        if ($this->termination->shouldTerminate($survey, $data->answers)) {
+            $this->logRejected($survey, 'consent_declined', $request);
+
+            return null;
         }
 
         try {

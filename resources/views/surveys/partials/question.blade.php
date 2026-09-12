@@ -9,6 +9,7 @@
     $scaleLabel = fn ($value): string => isset($scaleLabels[(string) $value]) ? $value.' — '.$scaleLabels[(string) $value] : (string) $value;
     $rows = $options['rows'] ?? [];
     $columns = $options['columns'] ?? $scale;
+    $exclusiveValues = array_map('strval', $question->settings['exclusive_values'] ?? []);
     $columnValue = fn ($column) => is_array($column) ? (string) ($column['value'] ?? $column['label'] ?? '') : (string) $column;
     $columnLabel = fn ($column) => is_array($column)
         ? trim((string) ($column['value'] ?? '').(filled($column['label'] ?? null) ? ' — '.(string) $column['label'] : ''))
@@ -27,6 +28,11 @@
         </label>
         @if ($question->help_text)
             <p class="mt-1 text-sm text-gray-600">{{ $question->help_text }}</p>
+        @endif
+        @if (filled($question->settings['interviewer_probe'] ?? null))
+            <aside class="mt-2 rounded-md border border-blue-200 bg-blue-50 p-3 text-sm leading-6 text-blue-950">
+                <span class="font-semibold">Probe pewawancara:</span> {{ $question->settings['interviewer_probe'] }}
+            </aside>
         @endif
 
         <div class="mt-3">
@@ -47,10 +53,10 @@
                     @break
 
                 @case(\App\Models\SurveyQuestion::TYPE_MULTIPLE_CHOICE)
-                    <div class="space-y-2">
+                    <div class="space-y-2" @if ($exclusiveValues !== []) data-exclusive-choice data-exclusive-values="{{ json_encode($exclusiveValues) }}" @endif>
                         @foreach ($choices as $choice)
                             <label class="flex items-center gap-2 text-sm text-gray-700">
-                                <input type="checkbox" name="answers[{{ $key }}][]" value="{{ $choiceValue($choice) }}" @checked(in_array($choiceValue($choice), old("answers.{$key}", []), true)) class="rounded border-gray-300 text-emerald-700">
+                                <input type="checkbox" name="answers[{{ $key }}][]" value="{{ $choiceValue($choice) }}" data-choice-value="{{ $choiceValue($choice) }}" @checked(in_array($choiceValue($choice), old("answers.{$key}", []), true)) class="rounded border-gray-300 text-emerald-700">
                                 {{ $choiceLabel($choice) }}
                             </label>
                         @endforeach

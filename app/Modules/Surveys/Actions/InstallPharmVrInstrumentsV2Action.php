@@ -49,7 +49,11 @@ class InstallPharmVrInstrumentsV2Action
 
                 $sortOrder = 0;
                 foreach ($definition['pages'] as $pageIndex => $pageDefinition) {
-                    $page = $survey->pages()->create(['title' => $pageDefinition['title'], 'sort_order' => $pageIndex + 1]);
+                    $page = $survey->pages()->create([
+                        'title' => $pageDefinition['title'],
+                        'description' => $pageDefinition['description'] ?? null,
+                        'sort_order' => $pageIndex + 1,
+                    ]);
                     foreach ($pageDefinition['questions'] as $questionDefinition) {
                         $sortOrder++;
                         $survey->questions()->create([

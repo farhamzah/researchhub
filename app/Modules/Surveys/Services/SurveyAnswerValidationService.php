@@ -97,6 +97,11 @@ class SurveyAnswerValidationService
             $this->fail($question->question_key, "Choose at most {$maxSelections} options.");
         }
 
+        $exclusiveValues = array_map('strval', Arr::wrap(Arr::get($question->settings ?? [], 'exclusive_values', [])));
+        if (count($answers) > 1 && array_intersect($answers, $exclusiveValues) !== []) {
+            $this->fail($question->question_key, 'An exclusive option cannot be combined with other options.');
+        }
+
         foreach ($answers as $answer) {
             if (! in_array($answer, $allowed, true)) {
                 $this->fail($question->question_key, 'One or more selected options are invalid.');

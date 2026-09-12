@@ -164,7 +164,7 @@
                                                     <p class="font-semibold">{{ str($comment->comment_type)->title() }} · {{ $comment->target_key ?: $comment->target_label }}</p>
                                                     <p class="mt-1">{{ $comment->comment }}</p>
                                                     @if ($comment->suggested_revision)
-                                                        <p class="mt-1 text-slate-600">Suggested: {{ $comment->suggested_revision }}</p>
+                                                        <p class="mt-1 text-slate-600">Usulan redaksi reviewer: {{ $comment->suggested_revision }}</p>
                                                     @endif
                                                 </div>
                                             @endforeach

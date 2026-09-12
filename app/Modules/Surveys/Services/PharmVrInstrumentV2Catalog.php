@@ -41,31 +41,31 @@ class PharmVrInstrumentV2Catalog
             'intro' => $this->intro('Kuesioner ini bertujuan memetakan pengalaman belajar, kesulitan, kebutuhan bantuan pembelajaran, kesiapan VR, dan prioritas konten PharmVR.', '10–15 menit', $contact),
             'pages' => [
                 $this->page('A. Persetujuan dan Kelayakan', [
-                    $this->q('S01-A01', SurveyQuestion::TYPE_CONSENT, 'Saya telah membaca informasi penelitian, memahami bahwa partisipasi bersifat sukarela, dan bersedia berpartisipasi.', ['Bersedia', 'Tidak bersedia'], ['terminate_on' => 'Tidak bersedia']),
+                    $this->q('S01-A01', SurveyQuestion::TYPE_SINGLE_CHOICE, 'Apakah Anda bersedia berpartisipasi dalam penelitian ini?', ['Bersedia', 'Tidak bersedia'], ['terminate_on' => 'Tidak bersedia'], true),
                     $this->q('S01-A02', SurveyQuestion::TYPE_SINGLE_CHOICE, 'Program pendidikan yang sedang Anda tempuh:', ['S1 Farmasi', 'Lainnya']),
                     $this->q('S01-A03', SurveyQuestion::TYPE_SINGLE_CHOICE, 'Semester yang sedang Anda tempuh:', ['1', '2', '3', '4', '5', '6', '7', '8', '>8']),
                     $this->q('S01-A04', SurveyQuestion::TYPE_SINGLE_CHOICE, 'Status Anda terhadap mata kuliah/materi Farmasi Industri yang membahas CPOB:', ['Sedang menempuh', 'Sudah menempuh', 'Belum menempuh', 'Tidak yakin']),
-                    $this->q('S01-A05', SurveyQuestion::TYPE_MULTIPLE_CHOICE, 'Pengalaman apa yang pernah Anda miliki terkait lingkungan industri farmasi?', ['Belum pernah', 'Kunjungan industri', 'Praktikum atau simulasi fasilitas industri di kampus', 'Magang/PKPA/kerja praktik di industri', 'Video/virtual tour', 'Pengalaman lain']),
+                    $this->q('S01-A05', SurveyQuestion::TYPE_MULTIPLE_CHOICE, 'Pengalaman apa yang pernah Anda miliki terkait lingkungan industri farmasi?', ['Belum pernah', 'Kunjungan industri', 'Praktikum atau simulasi fasilitas industri di kampus', 'Magang/PKPA/kerja praktik di industri', 'Video/virtual tour', 'Pengalaman lain'], ['exclusive_values' => ['Belum pernah']]),
                 ]),
                 $this->page('B. Pengalaman Belajar Saat Ini', [
                     $this->q('S01-B01', SurveyQuestion::TYPE_MULTIPLE_CHOICE, 'Media/metode yang pernah digunakan:', ['Ceramah/diskusi', 'Buku/modul/regulasi', 'Slide', 'Video', 'Praktikum', 'Studi kasus', 'Simulasi komputer', 'VR/AR', 'Kunjungan industri', 'Lainnya']),
                     $this->q('S01-B02', SurveyQuestion::TYPE_SINGLE_CHOICE, 'Frekuensi pengalaman VR:', ['Belum pernah', 'Pernah 1–2 kali', 'Kadang-kadang', 'Sering']),
-                    $this->q('S01-B03', SurveyQuestion::TYPE_MULTIPLE_CHOICE, 'Perangkat yang dapat diakses:', ['Smartphone', 'Laptop/komputer', 'Tablet', 'Headset VR', 'Tidak ada akses rutin']),
+                    $this->q('S01-B03', SurveyQuestion::TYPE_MULTIPLE_CHOICE, 'Perangkat yang dapat diakses:', ['Smartphone', 'Laptop/komputer', 'Tablet', 'Headset VR', 'Tidak ada akses rutin'], ['exclusive_values' => ['Tidak ada akses rutin']]),
                     $this->q('S01-B04', SurveyQuestion::TYPE_SINGLE_CHOICE, 'Akses internet:', ['Sangat terbatas', 'Terbatas', 'Cukup', 'Baik', 'Sangat baik']),
                 ]),
                 $this->page('C. Kesulitan Belajar CPOB', $this->scaled('S01-C', [
                     '01' => 'Tata letak dan fungsi area produksi.', '02' => 'Alur personel.', '03' => 'Alur material/bahan.', '04' => 'Higiene personel, pakaian kerja, dan prosedur masuk area produksi.', '05' => 'Pencegahan kontaminasi/kontaminasi silang dan line clearance.', '06' => 'Urutan proses produksi tablet non-steril.', '07' => 'Hubungan fungsi Produksi, QA, dan QC.', '08' => 'Dokumentasi produksi, batch record, dan penanganan penyimpangan.',
-                ], $difficulty)),
+                ], $difficulty), 'Berdasarkan pembelajaran yang sudah Anda ikuti, seberapa sulit hal berikut dipahami? Pilih ‘Belum mempelajari’ bila Anda belum pernah mempelajarinya.'),
                 $this->page('D. Kebutuhan Bantuan Pembelajaran', array_merge($this->scaled('S01-D', [
                     '01' => 'Visualisasi tata letak fasilitas dan zona kerja.', '02' => 'Visualisasi alur personel dan material.', '03' => 'Demonstrasi langkah prosedural secara berurutan.', '04' => 'Latihan pengambilan keputusan pada situasi/penyimpangan CPOB.', '05' => 'Umpan balik langsung saat melakukan langkah yang kurang tepat.', '06' => 'Kesempatan mengulang latihan secara mandiri.',
                 ], $need), [
                     $this->q('S01-D07', SurveyQuestion::TYPE_MULTIPLE_CHOICE, 'Media yang membantu:', ['Penjelasan dosen tambahan', 'Buku/modul', 'Video', 'Praktikum', 'Kunjungan industri', 'Simulasi komputer', 'Simulasi VR', 'Studi kasus/diskusi', 'Lainnya']),
-                ])),
+                ]), 'Seberapa besar Anda membutuhkan bantuan pembelajaran tambahan untuk hal berikut?'),
                 $this->page('E. Penerimaan dan Kesiapan VR', array_merge($this->scaled('S01-E', [
                     '01' => 'Jika tersedia dan mendapat petunjuk penggunaan, saya bersedia mencoba simulasi VR untuk pembelajaran CPOB.', '02' => 'Saya bersedia mengikuti sesi VR sebagai bagian dari kegiatan pembelajaran terjadwal.', '03' => 'Saya memerlukan orientasi/pelatihan singkat sebelum menggunakan headset VR.', '04' => 'Saya khawatir mengalami ketidaknyamanan seperti pusing, mual, atau kelelahan saat menggunakan VR.',
                 ], $agreement), [
                     $this->q('S01-E05', SurveyQuestion::TYPE_SINGLE_CHOICE, 'Durasi sesi nyaman:', ['<10 menit', '10–20 menit', '21–30 menit', '31–45 menit', '>45 menit', 'Belum dapat memperkirakan']),
-                ])),
+                ]), 'Pernyataan berikut mengukur kesiapan dan harapan Anda terhadap penggunaan VR, bukan membuktikan efektivitas VR.'),
                 $this->page('F. Prioritas Konten', [
                     $this->q('S01-F01', SurveyQuestion::TYPE_MULTIPLE_CHOICE, 'Pilih maksimal 3 scene prioritas:', $this->scenes(), ['max_selections' => 3]),
                     $this->q('S01-F02', SurveyQuestion::TYPE_MULTIPLE_CHOICE, 'Pilih maksimal 3 fitur prioritas:', $this->features(), ['max_selections' => 3]),
@@ -93,7 +93,7 @@ class PharmVrInstrumentV2Catalog
             'intro' => $this->intro('Kuesioner ini bertujuan memetakan pandangan dosen tentang kesulitan mahasiswa, kebutuhan pengalaman belajar, asesmen, kelayakan implementasi, dan prioritas PharmVR.', '10–15 menit', $contact),
             'pages' => [
                 $this->page('A. Profil', [
-                    $this->q('S02-A01', SurveyQuestion::TYPE_CONSENT, 'Saya telah membaca informasi penelitian, memahami bahwa partisipasi bersifat sukarela, dan bersedia berpartisipasi.', ['Bersedia', 'Tidak bersedia'], ['terminate_on' => 'Tidak bersedia']),
+                    $this->q('S02-A01', SurveyQuestion::TYPE_SINGLE_CHOICE, 'Apakah Anda bersedia berpartisipasi dalam penelitian ini?', ['Bersedia', 'Tidak bersedia'], ['terminate_on' => 'Tidak bersedia'], true),
                     $this->q('S02-A02', SurveyQuestion::TYPE_SHORT_TEXT, 'Bidang keahlian utama.'),
                     $this->q('S02-A03', SurveyQuestion::TYPE_SINGLE_CHOICE, 'Lama mengajar:', ['<1 tahun', '1–3 tahun', '4–6 tahun', '7–10 tahun', '>10 tahun']),
                     $this->q('S02-A04', SurveyQuestion::TYPE_MULTIPLE_CHOICE, 'Metode pembelajaran yang digunakan saat ini:', ['Ceramah/diskusi', 'Regulasi/buku', 'Video', 'Studi kasus', 'Praktikum', 'Kunjungan industri', 'Simulasi digital', 'VR/AR', 'Lainnya']),
@@ -101,12 +101,12 @@ class PharmVrInstrumentV2Catalog
                 ]),
                 $this->page('B. Kesulitan Mahasiswa menurut Dosen', $this->scaled('S02-B', [
                     '01' => 'Tata letak dan fungsi area produksi.', '02' => 'Alur personel.', '03' => 'Alur material.', '04' => 'Higiene/gowning/masuk area.', '05' => 'Kontaminasi silang dan line clearance.', '06' => 'Urutan proses tablet non-steril.', '07' => 'Hubungan Produksi–QA–QC.', '08' => 'Dokumentasi batch dan penyimpangan.',
-                ], $frequency)),
+                ], $frequency), 'Berdasarkan pengalaman mengajar terbaru, seberapa sering mahasiswa menunjukkan kesulitan pada aspek berikut? Pilih ‘Tidak dapat menilai’ bila Anda tidak memiliki dasar penilaian.'),
                 $this->page('C. Kebutuhan Pengalaman Belajar', array_merge($this->scaled('S02-C', [
                     '01' => 'Visualisasi ruang dan alur fasilitas.', '02' => 'Demonstrasi prosedur langkah demi langkah.', '03' => 'Latihan berulang tanpa risiko nyata.', '04' => 'Latihan mengenali/merespons kesalahan atau penyimpangan.', '05' => 'Umpan balik langsung.', '06' => 'Refleksi/debrief setelah simulasi.',
                 ], $importance), [
                     $this->q('S02-C07', SurveyQuestion::TYPE_MULTIPLE_CHOICE, 'Media realistis:', ['Kelas', 'Video', 'Praktikum', 'Kunjungan', 'Simulasi desktop', 'VR', 'Studi kasus', 'Kombinasi', 'Lainnya']),
-                ])),
+                ]), 'Seberapa penting mahasiswa memperoleh pengalaman belajar tambahan berikut?'),
                 $this->page('D. Keselarasan Pembelajaran dan Asesmen', [
                     $this->q('S02-D01', SurveyQuestion::TYPE_LONG_TEXT, 'Kompetensi CPOB terpenting untuk mahasiswa.'),
                     $this->q('S02-D02', SurveyQuestion::TYPE_MULTIPLE_CHOICE, 'Bentuk asesmen yang digunakan saat ini:', ['Tes tertulis', 'Tugas/studi kasus', 'Observasi praktikum', 'Presentasi', 'OSCE/unjuk kerja', 'Proyek', 'Lainnya']),
@@ -120,7 +120,7 @@ class PharmVrInstrumentV2Catalog
                     $this->q('S02-E04', SurveyQuestion::TYPE_SINGLE_CHOICE, 'Waktu realistis:', ['<10 menit', '10–20 menit', '21–30 menit', '31–45 menit', '>45 menit']),
                     $this->q('S02-E05', SurveyQuestion::TYPE_MULTIPLE_CHOICE, 'Dukungan yang diperlukan:', ['Perangkat', 'Teknisi', 'Panduan dosen', 'Jadwal/lab', 'Pelatihan', 'LMS/database', 'SOP keselamatan', 'Lainnya']),
                     $this->q('S02-E06', SurveyQuestion::TYPE_LIKERT, 'Saya bersedia mencoba integrasi PharmVR bila konten, perangkat, waktu, dan dukungan memadai.', null, $agreement),
-                ]),
+                ], 'Jawab berdasarkan kondisi institusi yang Anda ketahui saat ini.'),
                 $this->page('F. Prioritas', [
                     $this->q('S02-F01', SurveyQuestion::TYPE_MULTIPLE_CHOICE, 'Pilih maksimal 3 scene prioritas:', $this->scenes(), ['max_selections' => 3]),
                     $this->q('S02-F02', SurveyQuestion::TYPE_MULTIPLE_CHOICE, 'Pilih maksimal 3 fitur prioritas:', $this->features(), ['max_selections' => 3]),
@@ -144,23 +144,32 @@ class PharmVrInstrumentV2Catalog
             'intro' => $this->intro('Pedoman wawancara semi-terstruktur, interviewer-administered, untuk memetakan kompetensi, kesenjangan, konten wajib, realisme, feedback, asesmen, prioritas, dan kelayakan PharmVR.', '20–30 menit', $contact),
             'pages' => [
                 $this->page('A. Profil', [
-                    $this->q('S03-A01', SurveyQuestion::TYPE_CONSENT, 'Saya telah membaca informasi penelitian, memahami bahwa partisipasi bersifat sukarela, dan bersedia berpartisipasi.', ['Bersedia', 'Tidak bersedia'], ['terminate_on' => 'Tidak bersedia']),
+                    $this->q('S03-A01', SurveyQuestion::TYPE_SINGLE_CHOICE, 'Apakah Anda bersedia berpartisipasi dalam penelitian ini?', ['Bersedia', 'Tidak bersedia'], ['terminate_on' => 'Tidak bersedia'], true),
                     $this->q('S03-A02', SurveyQuestion::TYPE_SHORT_TEXT, 'Bidang keahlian/jabatan.'),
                     $this->q('S03-A03', SurveyQuestion::TYPE_SHORT_TEXT, 'Lama pengalaman industri/CPOB.'),
                     $this->q('S03-A04', SurveyQuestion::TYPE_MULTIPLE_CHOICE, 'Area pengalaman:', ['Produksi', 'QA', 'QC', 'Engineering', 'Validation', 'Regulatory', 'Lainnya']),
-                ]),
+                ], $this->practitionerInstruction()),
                 $this->page('B. Kompetensi dan Kesenjangan', $this->open('S03-B', [
                     '01' => 'Kompetensi CPOB paling penting bagi mahasiswa/lulusan baru.', '02' => 'Kesenjangan paling sering antara pemahaman lulusan dan praktik industri.', '03' => 'Kesalahan/miskonsepsi paling sering pada pemula.', '04' => 'Aspek yang sulit dipahami tanpa melihat/mengalami industri langsung.',
-                ])),
+                ], [
+                    '01' => 'Gali aspek pengetahuan, prosedur, dokumentasi, dan perilaku profesional.',
+                    '02' => 'Minta contoh konkret dari pengalaman narasumber.',
+                    '03' => 'Gali dampak terhadap mutu, keselamatan, dan kepatuhan.',
+                ]), $this->practitionerInstruction()),
                 $this->page('C. Konten Wajib', $this->open('S03-C', [
                     '01' => 'Area, alur, fasilitas yang wajib direpresentasikan.', '02' => 'Tahapan produksi tablet yang paling penting dipraktikkan berurutan.', '03' => 'Hal penting terkait higiene, gowning, alur personel-material.', '04' => 'Hal penting terkait line clearance, kontaminasi silang, status area/peralatan.', '05' => 'Dokumentasi/keputusan mutu yang perlu masuk simulasi.',
-                ])),
+                ], [
+                    '02' => 'Bila relevan, gali penimbangan/dispensing, mixing/granulation, drying, compression, coating, dan packaging.',
+                    '05' => 'Gali batch record, label/status, deviation, dan QA release bila relevan.',
+                ]), $this->practitionerInstruction()),
                 $this->page('D. Realisme dan Penyederhanaan', $this->open('S03-D', [
                     '01' => 'Bagian yang boleh disederhanakan tanpa menimbulkan miskonsepsi.', '02' => 'Bagian yang tidak boleh disederhanakan karena kritis terhadap CPOB.', '03' => 'Risiko agar mahasiswa tidak menganggap simulasi identik dengan seluruh praktik industri.',
-                ])),
+                ]), $this->practitionerInstruction()),
                 $this->page('E. Aktivitas, Feedback, Asesmen', $this->open('S03-E', [
                     '01' => 'Kesalahan/penyimpangan yang aman dan bermanfaat dijadikan skenario.', '02' => 'Umpan balik yang tepat ketika tindakan mahasiswa salah.', '03' => 'Kinerja yang layak dinilai.', '04' => 'Indikator mahasiswa cukup memahami prosedur untuk lanjut.',
-                ])),
+                ], [
+                    '03' => 'Gali urutan tindakan, critical step, dokumentasi, dan pengambilan keputusan.',
+                ]), $this->practitionerInstruction()),
                 $this->page('F. Prioritas dan Kelayakan', [
                     $this->q('S03-F01', SurveyQuestion::TYPE_MULTIPLE_CHOICE, 'Pilih maksimal 5 scene prioritas:', $this->scenes(), ['max_selections' => 5]),
                     $this->q('S03-F02', SurveyQuestion::TYPE_MULTIPLE_CHOICE, 'Pilih maksimal 5 fitur prioritas:', $this->features(), ['max_selections' => 5]),
@@ -168,7 +177,7 @@ class PharmVrInstrumentV2Catalog
                     $this->q('S03-F04', SurveyQuestion::TYPE_LONG_TEXT, 'Kondisi ketika VR tidak cocok/harus dilengkapi metode lain.'),
                     $this->q('S03-F05', SurveyQuestion::TYPE_LONG_TEXT, 'Dukungan agar PharmVR relevan.'),
                     $this->q('S03-F06', SurveyQuestion::TYPE_LONG_TEXT, 'Rekomendasi lain.'),
-                ]),
+                ], $this->practitionerInstruction()),
             ],
         ];
     }
@@ -181,19 +190,19 @@ class PharmVrInstrumentV2Catalog
             'estimated_duration' => $duration,
             'privacy_statement' => 'Jawaban dijaga kerahasiaannya dan digunakan hanya untuk tujuan penelitian. Identitas tidak diwajibkan; gunakan kode responden/pseudonim bila linkage diperlukan.',
             'respondent_instruction' => 'Partisipasi bersifat sukarela. Anda dapat berhenti kapan saja tanpa konsekuensi. Pilih jawaban sesuai pengalaman atau pandangan Anda.',
-            'consent_text' => 'Saya telah membaca informasi penelitian, memahami tujuan, estimasi waktu, kerahasiaan, sifat sukarela, hak berhenti, dan kontak peneliti, serta bersedia berpartisipasi.',
+            'consent_text' => 'Saya telah membaca dan memahami informasi penelitian di atas.',
             'require_consent_before_start' => true,
         ];
     }
 
-    private function q(string $key, string $type, string $label, ?array $options = null, ?array $settings = null): array
+    private function q(string $key, string $type, string $label, ?array $options = null, ?array $settings = null, bool $required = false): array
     {
-        return ['key' => $key, 'type' => $type, 'label' => $label, 'options' => $options, 'settings' => $settings, 'required' => $type === SurveyQuestion::TYPE_CONSENT];
+        return ['key' => $key, 'type' => $type, 'label' => $label, 'options' => $options, 'settings' => $settings, 'required' => $required || $type === SurveyQuestion::TYPE_CONSENT];
     }
 
-    private function page(string $title, array $questions): array
+    private function page(string $title, array $questions, ?string $description = null): array
     {
-        return ['title' => $title, 'questions' => $questions];
+        return ['title' => $title, 'description' => $description, 'questions' => $questions];
     }
 
     private function scale(array $labels): array
@@ -206,9 +215,20 @@ class PharmVrInstrumentV2Catalog
         return collect($items)->map(fn (string $label, string $suffix): array => $this->q($prefix.$suffix, SurveyQuestion::TYPE_LIKERT, $label, null, $settings))->values()->all();
     }
 
-    private function open(string $prefix, array $items): array
+    private function open(string $prefix, array $items, array $probes = []): array
     {
-        return collect($items)->map(fn (string $label, string $suffix): array => $this->q($prefix.$suffix, SurveyQuestion::TYPE_LONG_TEXT, $label))->values()->all();
+        return collect($items)->map(fn (string $label, string $suffix): array => $this->q(
+            $prefix.$suffix,
+            SurveyQuestion::TYPE_LONG_TEXT,
+            $label,
+            null,
+            isset($probes[$suffix]) ? ['interviewer_probe' => $probes[$suffix]] : null,
+        ))->values()->all();
+    }
+
+    private function practitionerInstruction(): string
+    {
+        return 'Pertanyaan utama dapat diperdalam dengan probe; jawaban tetap dicatat sebagai data wawancara, bukan skor Likert.';
     }
 
     private function scenes(): array

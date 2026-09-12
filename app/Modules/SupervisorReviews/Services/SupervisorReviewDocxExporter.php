@@ -30,8 +30,8 @@ class SupervisorReviewDocxExporter
             $section->addTitle('Reviewer: '.$reviewer['name'], 2);
             $section->addText($reviewer['narrative'], [], $this->styles->bodyParagraph());
             $table = $section->addTable('ResearchHubAnalysisTable');
-            $headers = ['Kode', 'Redaksi saat direview', 'Opsi jawaban', 'Keputusan', 'Komentar', 'Redaksi revisi'];
-            $keys = ['code', 'reviewed_wording', 'answer_options', 'decision', 'comment', 'revised_wording'];
+            $headers = ['Kode', 'Redaksi saat direview', 'Opsi jawaban', 'Keputusan', 'Komentar', 'Usulan redaksi reviewer', 'Redaksi revisi peneliti'];
+            $keys = ['code', 'reviewed_wording', 'answer_options', 'decision', 'comment', 'reviewer_suggestion', 'researcher_revision'];
             $table->addRow();
             foreach ($headers as $header) {
                 $table->addCell(1500)->addText($header, $this->styles->tableHeaderText());

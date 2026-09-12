@@ -68,7 +68,7 @@ class PublicSurveyController extends Controller
         }
 
         try {
-            $submitSurveyResponse->handle($survey, new SurveyResponseData(
+            $response = $submitSurveyResponse->handle($survey, new SurveyResponseData(
                 answers: $request->input('answers', []),
                 identity: $request->input('identity', []),
             ), $request, $pilotRun);
@@ -79,6 +79,10 @@ class PublicSurveyController extends Controller
             }
 
             throw $exception;
+        }
+
+        if ($response === null) {
+            return view('surveys.declined');
         }
 
         return view('surveys.thank-you', [

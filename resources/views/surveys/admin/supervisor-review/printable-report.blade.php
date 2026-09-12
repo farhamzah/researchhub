@@ -46,7 +46,7 @@
                 <div class="mt-5 overflow-x-auto">
                     <table class="w-full min-w-[760px] border-collapse text-left text-xs">
                         <thead><tr class="bg-slate-100">
-                            @foreach (['Kode', 'Redaksi saat direview', 'Opsi jawaban', 'Keputusan', 'Komentar', 'Redaksi revisi'] as $heading)
+                            @foreach (['Kode', 'Redaksi saat direview', 'Opsi jawaban', 'Keputusan', 'Komentar', 'Usulan redaksi reviewer', 'Redaksi revisi peneliti'] as $heading)
                                 <th class="border border-slate-300 px-2 py-2 font-semibold">{{ $heading }}</th>
                             @endforeach
                         </tr></thead>
@@ -58,7 +58,8 @@
                                     <td class="border border-slate-300 px-2 py-2">{{ $row['answer_options'] }}</td>
                                     <td class="border border-slate-300 px-2 py-2">{{ $row['decision'] }}</td>
                                     <td class="border border-slate-300 px-2 py-2">{{ $row['comment'] }}</td>
-                                    <td class="border border-slate-300 px-2 py-2">{{ $row['revised_wording'] }}</td>
+                                    <td class="border border-slate-300 px-2 py-2">{{ $row['reviewer_suggestion'] }}</td>
+                                    <td class="border border-slate-300 px-2 py-2">{{ $row['researcher_revision'] }}</td>
                                 </tr>
                             @endforeach
                         </tbody>

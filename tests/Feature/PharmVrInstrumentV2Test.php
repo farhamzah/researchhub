@@ -23,7 +23,7 @@ class PharmVrInstrumentV2Test extends TestCase
     {
         $catalog = app(PharmVrInstrumentV2Catalog::class)->instruments('researcher@example.test');
 
-        $this->assertSame('d3f4c28b0b79bb4c1b501fba09e22ff06bcd81fe35d1375e84e024f8812851dd', hash('sha256', json_encode($catalog, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)));
+        $this->assertSame('183dcdf84604b251525634dd251412612ba837fdbe664ba3de390f2e4f90e2aa', hash('sha256', json_encode($catalog, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)));
         $this->assertSame(['S01-STUDENT-NEEDS-v2.0', 'S02-LECTURER-NEEDS-v2.0', 'S03-PRACTITIONER-INTERVIEW-v2.0'], array_column($catalog, 'identifier'));
         $this->assertSame([34, 35, 26], collect($catalog)->map(fn (array $instrument): int => collect($instrument['pages'])->sum(fn (array $page): int => count($page['questions'])))->all());
         $this->assertCount(95, collect($catalog)->flatMap(fn (array $instrument): array => collect($instrument['pages'])->flatMap(fn (array $page): array => $page['questions'])->all())->pluck('key')->unique());

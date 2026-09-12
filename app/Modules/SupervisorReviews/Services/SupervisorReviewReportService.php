@@ -2,6 +2,7 @@
 
 namespace App\Modules\SupervisorReviews\Services;
 
+use App\Models\Survey;
 use App\Models\SurveySupervisorReviewComment;
 use App\Models\SurveySupervisorReviewer;
 use App\Models\SurveySupervisorReviewRound;
@@ -15,13 +16,20 @@ class SupervisorReviewReportService
         $round->loadMissing(['survey.project', 'reviewers.comments']);
         $snapshot = $round->snapshot_json ?? [];
         $questions = $this->snapshotQuestions($snapshot);
-        $reviewers = $round->reviewers->map(function (SurveySupervisorReviewer $reviewer) use ($questions, $round): array {
+        $superseding = Survey::query()
+            ->where('supersedes_survey_id', $round->survey_id)
+            ->with('questions')
+            ->latest('created_at')
+            ->first();
+        $revisedQuestions = $superseding?->questions->keyBy('question_key') ?? collect();
+        $reviewers = $round->reviewers->map(function (SurveySupervisorReviewer $reviewer) use ($questions, $round, $revisedQuestions): array {
             $itemComments = $reviewer->comments->where('comment_type', SurveySupervisorReviewComment::TYPE_ITEM)->keyBy('survey_question_id');
             $counts = collect(SurveySupervisorReviewComment::V2_DECISIONS)
                 ->mapWithKeys(fn (string $decision): array => [$decision => $itemComments->where('decision', $decision)->count()])
                 ->all();
-            $rows = $questions->map(function (array $question) use ($itemComments): array {
+            $rows = $questions->map(function (array $question) use ($itemComments, $revisedQuestions): array {
                 $comment = $itemComments->get($question['id']);
+                $revisedQuestion = $revisedQuestions->get($question['question_key'] ?? null);
 
                 return [
                     'code' => $question['question_key'] ?? '—',
@@ -29,7 +37,8 @@ class SupervisorReviewReportService
                     'answer_options' => $this->answerOptions($question),
                     'decision' => SurveySupervisorReviewComment::V2_DECISION_LABELS[$comment?->decision] ?? '—',
                     'comment' => $comment && $comment->comment !== '—' ? $comment->comment : '—',
-                    'revised_wording' => $comment?->suggested_revision ?: '—',
+                    'reviewer_suggestion' => $comment?->suggested_revision ?: '—',
+                    'researcher_revision' => $revisedQuestion?->label ?: '—',
                 ];
             })->values()->all();
             $decision = SurveySupervisorReviewer::V2_DECISION_LABELS[$reviewer->final_decision] ?? 'Belum diputuskan';
@@ -101,7 +110,7 @@ class SupervisorReviewReportService
 
     private function tableTsv(array $rows): string
     {
-        $lines = [implode("\t", ['Kode', 'Redaksi saat direview', 'Opsi jawaban', 'Keputusan', 'Komentar', 'Redaksi revisi'])];
+        $lines = [implode("\t", ['Kode', 'Redaksi saat direview', 'Opsi jawaban', 'Keputusan', 'Komentar', 'Usulan redaksi reviewer', 'Redaksi revisi peneliti'])];
         foreach ($rows as $row) {
             $lines[] = implode("\t", array_map(fn (mixed $value): string => str_replace(["\t", "\r", "\n"], ' ', (string) $value), array_values($row)));
         }

@@ -10,6 +10,7 @@ use App\Models\SurveySupervisorReviewer;
 use App\Models\SurveySupervisorReviewRound;
 use App\Models\SurveyWorkflowTransition;
 use App\Models\User;
+use App\Modules\SupervisorReviews\Services\SupervisorReviewReportService;
 use App\Modules\Surveys\Actions\CreateSurveyInstrumentRevisionAction;
 use App\Modules\Surveys\Actions\InstallPharmVrInstrumentsV2Action;
 use App\Modules\Surveys\Services\SurveyInstrumentWorkflowService;
@@ -56,6 +57,11 @@ class PharmVrSupervisorWorkflowTest extends TestCase
             'survey_id' => $survey->id, 'response_token_hash' => hash('sha256', 'source-evidence'),
             'status' => SurveyResponse::STATUS_SUBMITTED, 'submitted_at' => now(), 'is_test_response' => true, 'excluded_from_analysis' => true,
         ]);
+        $beforeRevisionReport = app(SupervisorReviewReportService::class)->build($round->fresh());
+        $beforeRevisionRow = collect($beforeRevisionReport['reviewers'][0]['rows'])->firstWhere('code', 'S01-C01');
+        $this->assertSame('Redaksi revisi pembimbing.', $beforeRevisionRow['reviewer_suggestion']);
+        $this->assertSame('—', $beforeRevisionRow['researcher_revision']);
+
         $revision = app(CreateSurveyInstrumentRevisionAction::class)->handle($survey->fresh(), $owner);
 
         $this->assertSame('2.1', $revision->instrument_version);
@@ -67,6 +73,12 @@ class PharmVrSupervisorWorkflowTest extends TestCase
         $this->assertSame(0, $revision->responses()->count());
         $this->assertDatabaseHas('survey_responses', ['id' => $sourceResponse->id, 'survey_id' => $survey->id]);
         $this->assertSame($survey->questions()->orderBy('sort_order')->pluck('label')->all(), $revision->questions()->orderBy('sort_order')->pluck('label')->all());
+
+        $revision->questions()->where('question_key', 'S01-C01')->update(['label' => 'Redaksi aktual peneliti pada versi 2.1.']);
+        $afterRevisionReport = app(SupervisorReviewReportService::class)->build($round->fresh());
+        $afterRevisionRow = collect($afterRevisionReport['reviewers'][0]['rows'])->firstWhere('code', 'S01-C01');
+        $this->assertSame('Redaksi revisi pembimbing.', $afterRevisionRow['reviewer_suggestion']);
+        $this->assertSame('Redaksi aktual peneliti pada versi 2.1.', $afterRevisionRow['researcher_revision']);
     }
 
     public function test_final_evidence_is_immutable_and_report_is_data_driven_with_real_docx(): void
@@ -89,6 +101,19 @@ class PharmVrSupervisorWorkflowTest extends TestCase
         $docx = $this->actingAs($owner)->get(route('admin.surveys.supervisor-review.report.docx', compact('survey', 'round')));
         $docx->assertOk()->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
         $this->assertStringStartsWith('PK', $docx->getContent());
+        $report = app(SupervisorReviewReportService::class)->build($round);
+        $this->assertStringStartsWith("Kode\tRedaksi saat direview\tOpsi jawaban\tKeputusan\tKomentar\tUsulan redaksi reviewer\tRedaksi revisi peneliti", $report['reviewers'][0]['table_tsv']);
+
+        $docxPath = tempnam(storage_path('framework/cache'), 'qa-docx-');
+        file_put_contents($docxPath, $docx->getContent());
+        $zip = new \ZipArchive;
+        $this->assertTrue($zip->open($docxPath));
+        $documentXml = $zip->getFromName('word/document.xml');
+        $zip->close();
+        unlink($docxPath);
+        $this->assertIsString($documentXml);
+        $this->assertStringContainsString('Usulan redaksi reviewer', $documentXml);
+        $this->assertStringContainsString('Redaksi revisi peneliti', $documentXml);
 
         $comment = $reviewer->comments()->firstOrFail();
         $this->expectException(\LogicException::class);

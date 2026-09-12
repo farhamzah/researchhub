@@ -12,7 +12,7 @@
             $introImageUrl = $survey->intro_image_url;
             $hasIntro = filled($survey->intro_text) || filled($introImageUrl);
             $showQuestionsImmediately = ! $hasIntro || $errors->any() || old('intro_consent') === '1';
-            $introConsentText = $survey->consent_text ?: 'Saya telah membaca penjelasan di atas dan bersedia melanjutkan.';
+            $introConsentText = $survey->consent_text ?: 'Saya telah membaca dan memahami informasi penelitian di atas.';
         @endphp
 
         @if (($pilotRun ?? null) instanceof \App\Models\AnalysisPilotRun)
@@ -206,5 +206,29 @@
             })();
         </script>
     @endif
+    <script>
+        document.querySelectorAll('[data-exclusive-choice]').forEach((group) => {
+            let exclusiveValues = [];
+            try {
+                exclusiveValues = JSON.parse(group.dataset.exclusiveValues || '[]');
+            } catch (_) {
+                return;
+            }
+
+            const inputs = Array.from(group.querySelectorAll('input[type="checkbox"][data-choice-value]'));
+            inputs.forEach((input) => input.addEventListener('change', () => {
+                if (! input.checked) {
+                    return;
+                }
+
+                if (exclusiveValues.includes(input.dataset.choiceValue)) {
+                    inputs.filter((candidate) => candidate !== input).forEach((candidate) => { candidate.checked = false; });
+                    return;
+                }
+
+                inputs.filter((candidate) => exclusiveValues.includes(candidate.dataset.choiceValue)).forEach((candidate) => { candidate.checked = false; });
+            }));
+        });
+    </script>
 </body>
 </html>

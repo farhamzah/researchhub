@@ -41,6 +41,22 @@
         </div>
     </header>
 
+    <section class="mt-6 rounded-2xl border border-blue-200 bg-blue-50 p-5 shadow-sm sm:p-7">
+        <h2 class="text-lg font-semibold text-blue-950">Dasar Penyusunan Instrumen</h2>
+        <p class="mt-2 text-sm leading-6 text-blue-900">Instrumen ini dikembangkan berdasarkan tahap Analysis model ADDIE, proposal penelitian PharmVR, ketentuan CPOB yang berlaku, prinsip pembelajaran pendidikan tinggi berbasis capaian, serta literatur pembelajaran VR dan pengembangan instrumen penelitian.</p>
+        <details class="mt-4 rounded-xl border border-blue-200 bg-white p-4">
+            <summary class="cursor-pointer text-sm font-bold text-blue-800">Lihat Referensi Utama</summary>
+            <ul class="mt-3 list-disc space-y-2 pl-5 text-sm leading-6 text-slate-700">
+                <li>PerBPOM No. 7 Tahun 2024 jo. PerBPOM No. 7 Tahun 2025 tentang CPOB</li>
+                <li>Branch, 2009 — ADDIE</li>
+                <li>Makransky &amp; Petersen, 2021 — CAMIL</li>
+                <li>Mishra &amp; Koehler, 2006 — TPACK</li>
+                <li>Collins/Brown/Newman — Cognitive Apprenticeship</li>
+                <li>Artino et al., 2014 — questionnaire development</li>
+                <li>AAPOR Best Practices</li>
+            </ul>
+        </details>
+    </section>
     <section class="mt-6 rounded-2xl border border-indigo-100 bg-white p-5 shadow-sm sm:p-7">
         <h2 class="text-lg font-semibold">Cara menyelesaikan review</h2>
         <ol class="mt-4 grid gap-3 text-sm leading-6 text-slate-700 md:grid-cols-3">

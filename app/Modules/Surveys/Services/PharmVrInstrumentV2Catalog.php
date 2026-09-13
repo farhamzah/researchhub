@@ -67,7 +67,7 @@ class PharmVrInstrumentV2Catalog
                     $this->q('S01-E05', SurveyQuestion::TYPE_SINGLE_CHOICE, 'Durasi sesi nyaman:', ['<10 menit', '10–20 menit', '21–30 menit', '31–45 menit', '>45 menit', 'Belum dapat memperkirakan']),
                 ]), 'Pernyataan berikut mengukur kesiapan dan harapan Anda terhadap penggunaan VR, bukan membuktikan efektivitas VR.'),
                 $this->page('F. Prioritas Konten', [
-                    $this->q('S01-F01', SurveyQuestion::TYPE_MULTIPLE_CHOICE, 'Pilih maksimal 3 scene prioritas:', $this->scenes(), ['max_selections' => 3]),
+                    $this->q('S01-F01', SurveyQuestion::TYPE_MULTIPLE_CHOICE, 'Pilih maksimal 3 area/skenario pembelajaran prioritas:', $this->scenes(), ['max_selections' => 3]),
                     $this->q('S01-F02', SurveyQuestion::TYPE_MULTIPLE_CHOICE, 'Pilih maksimal 3 fitur prioritas:', $this->features(), ['max_selections' => 3]),
                 ]),
                 $this->page('G. Terbuka', [
@@ -105,7 +105,7 @@ class PharmVrInstrumentV2Catalog
                 $this->page('C. Kebutuhan Pengalaman Belajar', array_merge($this->scaled('S02-C', [
                     '01' => 'Visualisasi ruang dan alur fasilitas.', '02' => 'Demonstrasi prosedur langkah demi langkah.', '03' => 'Latihan berulang tanpa risiko nyata.', '04' => 'Latihan mengenali/merespons kesalahan atau penyimpangan.', '05' => 'Umpan balik langsung.', '06' => 'Refleksi/debrief setelah simulasi.',
                 ], $importance), [
-                    $this->q('S02-C07', SurveyQuestion::TYPE_MULTIPLE_CHOICE, 'Media realistis:', ['Kelas', 'Video', 'Praktikum', 'Kunjungan', 'Simulasi desktop', 'VR', 'Studi kasus', 'Kombinasi', 'Lainnya']),
+                    $this->q('S02-C07', SurveyQuestion::TYPE_MULTIPLE_CHOICE, 'Media atau metode pembelajaran apa yang menurut Bapak/Ibu paling realistis diterapkan di institusi untuk membantu mengatasi kesenjangan tersebut?', ['Kelas', 'Video', 'Praktikum', 'Kunjungan', 'Simulasi desktop', 'VR', 'Studi kasus', 'Kombinasi', 'Lainnya']),
                 ]), 'Seberapa penting mahasiswa memperoleh pengalaman belajar tambahan berikut?'),
                 $this->page('D. Keselarasan Pembelajaran dan Asesmen', [
                     $this->q('S02-D01', SurveyQuestion::TYPE_LONG_TEXT, 'Kompetensi CPOB terpenting untuk mahasiswa.'),
@@ -122,7 +122,7 @@ class PharmVrInstrumentV2Catalog
                     $this->q('S02-E06', SurveyQuestion::TYPE_LIKERT, 'Saya bersedia mencoba integrasi PharmVR bila konten, perangkat, waktu, dan dukungan memadai.', null, $agreement),
                 ], 'Jawab berdasarkan kondisi institusi yang Anda ketahui saat ini.'),
                 $this->page('F. Prioritas', [
-                    $this->q('S02-F01', SurveyQuestion::TYPE_MULTIPLE_CHOICE, 'Pilih maksimal 3 scene prioritas:', $this->scenes(), ['max_selections' => 3]),
+                    $this->q('S02-F01', SurveyQuestion::TYPE_MULTIPLE_CHOICE, 'Pilih maksimal 3 area/skenario pembelajaran prioritas:', $this->scenes(), ['max_selections' => 3]),
                     $this->q('S02-F02', SurveyQuestion::TYPE_MULTIPLE_CHOICE, 'Pilih maksimal 3 fitur prioritas:', $this->features(), ['max_selections' => 3]),
                 ]),
                 $this->page('G. Terbuka', [
@@ -145,38 +145,38 @@ class PharmVrInstrumentV2Catalog
             'pages' => [
                 $this->page('A. Profil', [
                     $this->q('S03-A01', SurveyQuestion::TYPE_SINGLE_CHOICE, 'Apakah Anda bersedia berpartisipasi dalam penelitian ini?', ['Bersedia', 'Tidak bersedia'], ['terminate_on' => 'Tidak bersedia'], true),
-                    $this->q('S03-A02', SurveyQuestion::TYPE_SHORT_TEXT, 'Bidang keahlian/jabatan.'),
-                    $this->q('S03-A03', SurveyQuestion::TYPE_SHORT_TEXT, 'Lama pengalaman industri/CPOB.'),
+                    $this->q('S03-A02', SurveyQuestion::TYPE_SHORT_TEXT, 'Apa bidang keahlian dan jabatan Bapak/Ibu saat ini?'),
+                    $this->q('S03-A03', SurveyQuestion::TYPE_SHORT_TEXT, 'Berapa lama pengalaman Bapak/Ibu di industri farmasi atau dalam bidang CPOB?'),
                     $this->q('S03-A04', SurveyQuestion::TYPE_MULTIPLE_CHOICE, 'Area pengalaman:', ['Produksi', 'QA', 'QC', 'Engineering', 'Validation', 'Regulatory', 'Lainnya']),
                 ], $this->practitionerInstruction()),
                 $this->page('B. Kompetensi dan Kesenjangan', $this->open('S03-B', [
-                    '01' => 'Kompetensi CPOB paling penting bagi mahasiswa/lulusan baru.', '02' => 'Kesenjangan paling sering antara pemahaman lulusan dan praktik industri.', '03' => 'Kesalahan/miskonsepsi paling sering pada pemula.', '04' => 'Aspek yang sulit dipahami tanpa melihat/mengalami industri langsung.',
+                    '01' => 'Menurut Bapak/Ibu, kompetensi CPOB apa yang paling penting dimiliki mahasiswa atau lulusan baru sebelum memasuki industri farmasi?', '02' => 'Menurut Bapak/Ibu, kesenjangan apa yang paling sering ditemukan antara pemahaman lulusan baru dan praktik di industri farmasi?', '03' => 'Menurut Bapak/Ibu, kesalahan atau miskonsepsi apa yang paling sering terjadi pada pemula dalam memahami atau menerapkan CPOB?', '04' => 'Menurut Bapak/Ibu, aspek CPOB apa yang sulit dipahami tanpa melihat atau mengalami lingkungan industri secara langsung?',
                 ], [
                     '01' => 'Gali aspek pengetahuan, prosedur, dokumentasi, dan perilaku profesional.',
                     '02' => 'Minta contoh konkret dari pengalaman narasumber.',
                     '03' => 'Gali dampak terhadap mutu, keselamatan, dan kepatuhan.',
                 ]), $this->practitionerInstruction()),
                 $this->page('C. Konten Wajib', $this->open('S03-C', [
-                    '01' => 'Area, alur, fasilitas yang wajib direpresentasikan.', '02' => 'Tahapan produksi tablet yang paling penting dipraktikkan berurutan.', '03' => 'Hal penting terkait higiene, gowning, alur personel-material.', '04' => 'Hal penting terkait line clearance, kontaminasi silang, status area/peralatan.', '05' => 'Dokumentasi/keputusan mutu yang perlu masuk simulasi.',
+                    '01' => 'Menurut Bapak/Ibu, area, alur, dan fasilitas apa yang wajib direpresentasikan dalam PharmVR?', '02' => 'Menurut Bapak/Ibu, tahapan produksi tablet apa yang paling penting dipraktikkan secara berurutan dalam PharmVR?', '03' => 'Hal apa saja terkait higiene, gowning, serta alur personel dan material yang perlu ditampilkan dalam PharmVR?', '04' => 'Hal apa saja terkait line clearance, pencegahan kontaminasi silang, serta status area dan peralatan yang perlu ditampilkan dalam PharmVR?', '05' => 'Menurut Bapak/Ibu, dokumentasi dan keputusan mutu apa yang perlu dimasukkan ke dalam simulasi PharmVR?',
                 ], [
                     '02' => 'Bila relevan, gali penimbangan/dispensing, mixing/granulation, drying, compression, coating, dan packaging.',
                     '05' => 'Gali batch record, label/status, deviation, dan QA release bila relevan.',
                 ]), $this->practitionerInstruction()),
                 $this->page('D. Realisme dan Penyederhanaan', $this->open('S03-D', [
-                    '01' => 'Bagian yang boleh disederhanakan tanpa menimbulkan miskonsepsi.', '02' => 'Bagian yang tidak boleh disederhanakan karena kritis terhadap CPOB.', '03' => 'Risiko agar mahasiswa tidak menganggap simulasi identik dengan seluruh praktik industri.',
+                    '01' => 'Menurut Bapak/Ibu, bagian apa yang boleh disederhanakan dalam PharmVR tanpa menimbulkan miskonsepsi?', '02' => 'Menurut Bapak/Ibu, bagian apa yang tidak boleh disederhanakan karena bersifat kritis terhadap CPOB?', '03' => 'Risiko apa yang perlu diantisipasi agar mahasiswa tidak menganggap simulasi PharmVR identik dengan seluruh praktik di industri?',
                 ]), $this->practitionerInstruction()),
                 $this->page('E. Aktivitas, Feedback, Asesmen', $this->open('S03-E', [
-                    '01' => 'Kesalahan/penyimpangan yang aman dan bermanfaat dijadikan skenario.', '02' => 'Umpan balik yang tepat ketika tindakan mahasiswa salah.', '03' => 'Kinerja yang layak dinilai.', '04' => 'Indikator mahasiswa cukup memahami prosedur untuk lanjut.',
+                    '01' => 'Menurut Bapak/Ibu, kesalahan atau penyimpangan apa yang aman dan bermanfaat untuk dijadikan skenario pembelajaran?', '02' => 'Umpan balik seperti apa yang tepat diberikan ketika mahasiswa melakukan tindakan yang salah?', '03' => 'Kinerja apa yang menurut Bapak/Ibu layak dinilai melalui PharmVR?', '04' => 'Indikator apa yang menunjukkan bahwa mahasiswa telah cukup memahami suatu prosedur untuk melanjutkan ke tahap berikutnya?',
                 ], [
                     '03' => 'Gali urutan tindakan, critical step, dokumentasi, dan pengambilan keputusan.',
                 ]), $this->practitionerInstruction()),
                 $this->page('F. Prioritas dan Kelayakan', [
                     $this->q('S03-F01', SurveyQuestion::TYPE_MULTIPLE_CHOICE, 'Pilih maksimal 5 scene prioritas:', $this->scenes(), ['max_selections' => 5]),
                     $this->q('S03-F02', SurveyQuestion::TYPE_MULTIPLE_CHOICE, 'Pilih maksimal 5 fitur prioritas:', $this->features(), ['max_selections' => 5]),
-                    $this->q('S03-F03', SurveyQuestion::TYPE_LONG_TEXT, 'Kondisi ketika VR cocok digunakan.'),
-                    $this->q('S03-F04', SurveyQuestion::TYPE_LONG_TEXT, 'Kondisi ketika VR tidak cocok/harus dilengkapi metode lain.'),
-                    $this->q('S03-F05', SurveyQuestion::TYPE_LONG_TEXT, 'Dukungan agar PharmVR relevan.'),
-                    $this->q('S03-F06', SurveyQuestion::TYPE_LONG_TEXT, 'Rekomendasi lain.'),
+                    $this->q('S03-F03', SurveyQuestion::TYPE_LONG_TEXT, 'Dalam kondisi seperti apa VR cocok digunakan untuk mendukung pembelajaran CPOB?'),
+                    $this->q('S03-F04', SurveyQuestion::TYPE_LONG_TEXT, 'Dalam kondisi seperti apa VR tidak cocok digunakan atau perlu dilengkapi dengan metode pembelajaran lain?'),
+                    $this->q('S03-F05', SurveyQuestion::TYPE_LONG_TEXT, 'Dukungan apa yang diperlukan agar PharmVR tetap relevan dan dapat diterapkan dalam pembelajaran?'),
+                    $this->q('S03-F06', SurveyQuestion::TYPE_LONG_TEXT, 'Apakah Bapak/Ibu memiliki rekomendasi lain untuk pengembangan PharmVR?'),
                 ], $this->practitionerInstruction()),
             ],
         ];

@@ -60,6 +60,12 @@
         <h2 class="font-semibold">Info review</h2>
         <p class="mt-2 text-sm leading-6 text-slate-600">Anda meninjau versi {{ $surveySnapshot['instrument_version'] ?? $survey->instrument_version ?? '—' }} yang telah dikunci saat ronde review dibuka. Isi pertanyaan tidak dapat diubah dari halaman ini.</p>
     </section>
+    @if (($surveySnapshot['instrument_code'] ?? $survey->instrument_code) === 'S01-STUDENT-NEEDS')
+        <section class="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950">
+            <h2 class="font-semibold">Catatan kelayakan populasi S01</h2>
+            <p class="mt-1">Populasi utama yang direncanakan adalah mahasiswa S1 Farmasi yang sedang atau sudah memperoleh materi Farmasi Industri/CPOB. Opsi “Belum menempuh” tetap tersedia sebagai screening, tetapi tidak otomatis dianggap eligible untuk analisis utama.</p>
+        </section>
+    @endif
 
     @if ($errors->any())
         <div class="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-900" role="alert">

@@ -23,7 +23,7 @@ class PharmVrInstrumentV2Test extends TestCase
     {
         $catalog = app(PharmVrInstrumentV2Catalog::class)->instruments('researcher@example.test');
 
-        $this->assertSame('183dcdf84604b251525634dd251412612ba837fdbe664ba3de390f2e4f90e2aa', hash('sha256', json_encode($catalog, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)));
+        $this->assertSame('b7e8ae000841371eb4aba8f6fe4364eaefa031e5bf565debba1d822d7c3fa737', hash('sha256', json_encode($catalog, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)));
         $this->assertSame(['S01-STUDENT-NEEDS-v2.0', 'S02-LECTURER-NEEDS-v2.0', 'S03-PRACTITIONER-INTERVIEW-v2.0'], array_column($catalog, 'identifier'));
         $this->assertSame([34, 35, 26], collect($catalog)->map(fn (array $instrument): int => collect($instrument['pages'])->sum(fn (array $page): int => count($page['questions'])))->all());
         $this->assertCount(95, collect($catalog)->flatMap(fn (array $instrument): array => collect($instrument['pages'])->flatMap(fn (array $page): array => $page['questions'])->all())->pluck('key')->unique());
@@ -37,8 +37,16 @@ class PharmVrInstrumentV2Test extends TestCase
 
         $lecturer = collect($catalog)->firstWhere('code', PharmVrInstrumentV2Catalog::LECTURER);
         $this->assertStringContainsString('Jangan menyebut TPACK scale', $lecturer['analysis']);
+        $lecturerQuestions = collect($lecturer['pages'])->flatMap(fn (array $page): array => $page['questions'])->keyBy('key');
+        $this->assertSame('Media atau metode pembelajaran apa yang menurut Bapak/Ibu paling realistis diterapkan di institusi untuk membantu mengatasi kesenjangan tersebut?', $lecturerQuestions['S02-C07']['label']);
+        $this->assertSame(['Kelas', 'Video', 'Praktikum', 'Kunjungan', 'Simulasi desktop', 'VR', 'Studi kasus', 'Kombinasi', 'Lainnya'], $lecturerQuestions['S02-C07']['options']);
+        $this->assertFalse(collect([$studentQuestions, $lecturerQuestions])->flatten(1)->contains(fn (array $question): bool => str_contains(strtolower($question['label']), 'scene')));
         $practitioner = collect($catalog)->firstWhere('code', PharmVrInstrumentV2Catalog::PRACTITIONER);
         $this->assertSame('20–30 menit', $practitioner['duration']);
+        $practitionerOpenQuestions = collect($practitioner['pages'])
+            ->flatMap(fn (array $page): array => $page['questions'])
+            ->whereIn('type', [SurveyQuestion::TYPE_SHORT_TEXT, SurveyQuestion::TYPE_LONG_TEXT]);
+        $this->assertTrue($practitionerOpenQuestions->every(fn (array $question): bool => str_ends_with($question['label'], '?')));
     }
 
     public function test_dry_run_and_install_are_safe_idempotent_and_leave_existing_response_unchanged(): void

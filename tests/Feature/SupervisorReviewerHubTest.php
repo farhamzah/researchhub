@@ -46,6 +46,9 @@ class SupervisorReviewerHubTest extends TestCase
         $this->get(route('supervisor-review.hub.show', compact('token')))
             ->assertOk()
             ->assertSeeText('Reviewer Hub PharmVR')
+            ->assertSeeText('Dasar Penyusunan Instrumen')
+            ->assertSeeText('Lihat Referensi Utama')
+            ->assertSeeText('AAPOR Best Practices')
             ->assertSeeText('S01')
             ->assertSeeText('S02')
             ->assertSeeText('S03')
@@ -55,6 +58,8 @@ class SupervisorReviewerHubTest extends TestCase
         $studentReviewer = $reviewers->first(fn (SurveySupervisorReviewer $reviewer): bool => $reviewer->round->survey->instrument_code === 'S01-STUDENT-NEEDS');
         $this->get(route('supervisor-review.hub.instrument.show', ['token' => $token, 'reviewer' => $studentReviewer]))
             ->assertOk()
+            ->assertSeeText('Catatan kelayakan populasi S01')
+            ->assertSeeText('tidak otomatis dianggap eligible untuk analisis utama')
             ->assertSeeText('Info item')
             ->assertDontSeeText('Detail teknis item')
             ->assertDontSee('snapshot_hash')

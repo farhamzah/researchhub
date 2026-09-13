@@ -13,6 +13,18 @@ class RhRel001ResponsivePresentationTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_survey_list_collapses_secondary_columns_and_groups_actions_on_small_screens(): void
+    {
+        $source = file_get_contents(app_path('Filament/Resources/Surveys/SurveyResource.php'));
+
+        $this->assertStringContainsString('->wrap()', $source);
+        $this->assertStringContainsString("->visibleFrom('md')", $source);
+        $this->assertStringContainsString("->visibleFrom('lg')", $source);
+        $this->assertStringContainsString("->visibleFrom('xl')", $source);
+        $this->assertStringContainsString('ActionGroup::make([', $source);
+        $this->assertStringContainsString("->label('Aksi')", $source);
+    }
+
     public function test_advanced_panel_contains_mobile_width_and_preserves_preview_and_error_states(): void
     {
         [$owner, $survey] = $this->surveyFixture();

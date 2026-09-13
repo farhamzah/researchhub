@@ -9,6 +9,7 @@ use App\Modules\Surveys\Actions\CloseSurveyAction;
 use App\Modules\Surveys\Actions\PublishSurveyAction;
 use BackedEnum;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
@@ -83,12 +84,16 @@ class SurveyResource extends Resource
             ->recordTitleAttribute('title')
             ->columns([
                 TextColumn::make('title')
+                    ->label('Judul')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->wrap()
+                    ->grow(),
                 TextColumn::make('project.title')
                     ->label('Proyek')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->visibleFrom('md'),
                 TextColumn::make('status')
                     ->badge()
                     ->formatStateUsing(fn (string $state): string => self::statusOptions()[$state] ?? ucfirst(str_replace('_', ' ', $state)))
@@ -103,16 +108,21 @@ class SurveyResource extends Resource
                     ->label('Identitas')
                     ->badge()
                     ->formatStateUsing(fn (string $state): string => self::identityModeOptions()[$state] ?? ucfirst(str_replace('_', ' ', $state)))
-                    ->sortable(),
+                    ->sortable()
+                    ->visibleFrom('lg'),
                 IconColumn::make('is_public')
                     ->label('Publik')
-                    ->boolean(),
+                    ->boolean()
+                    ->visibleFrom('lg'),
                 TextColumn::make('responses_count')
                     ->label('Respons')
-                    ->sortable(),
+                    ->sortable()
+                    ->visibleFrom('md'),
                 TextColumn::make('updated_at')
+                    ->label('Diperbarui')
                     ->dateTime()
-                    ->sortable(),
+                    ->sortable()
+                    ->visibleFrom('xl'),
             ])
             ->filters([
                 SelectFilter::make('project_id')
@@ -124,64 +134,69 @@ class SurveyResource extends Resource
                     ->options(self::identityModeOptions()),
             ])
             ->recordActions([
-                EditAction::make()
-                    ->mutateDataUsing(fn (array $data): array => self::validatedProjectScopedData($data))
-                    ->visible(fn (Survey $record): bool => auth()->user()?->can('update', $record) ?? false),
-                Action::make('publish')
-                    ->label('Terbitkan')
-                    ->icon('heroicon-o-paper-airplane')
-                    ->visible(fn (Survey $record): bool => $record->status === Survey::STATUS_DRAFT && (auth()->user()?->can('publish', $record) ?? false))
-                    ->requiresConfirmation()
-                    ->action(fn (Survey $record): Survey => app(PublishSurveyAction::class)->handle(auth()->user(), $record)),
-                Action::make('close')
-                    ->label('Tutup')
-                    ->icon('heroicon-o-lock-closed')
-                    ->visible(fn (Survey $record): bool => $record->status === Survey::STATUS_PUBLISHED && (auth()->user()?->can('close', $record) ?? false))
-                    ->requiresConfirmation()
-                    ->action(fn (Survey $record): Survey => app(CloseSurveyAction::class)->handle(auth()->user(), $record)),
-                Action::make('publicLink')
-                    ->label('Link Publik')
-                    ->icon('heroicon-o-link')
-                    ->visible(fn (Survey $record): bool => $record->canReceiveResponses())
-                    ->url(fn (Survey $record): string => route('survey.show', ['survey' => $record->slug]))
-                    ->openUrlInNewTab(),
-                Action::make('responses')
-                    ->label('Respons')
-                    ->icon('heroicon-o-clipboard-document-check')
-                    ->visible(fn (Survey $record): bool => auth()->user()?->can('view', $record) ?? false)
-                    ->url(fn (Survey $record): string => route('admin.surveys.responses.index', ['survey' => $record])),
-                Action::make('analysis')
-                    ->label('Dashboard Analisis')
-                    ->icon('heroicon-o-chart-bar')
-                    ->visible(fn (Survey $record): bool => auth()->user()?->can('runAnalysis', $record) ?? false)
-                    ->url(fn (Survey $record): string => route('admin.surveys.analysis.index', ['survey' => $record])),
-                Action::make('builder')
-                    ->label('Susun Pertanyaan')
-                    ->icon('heroicon-o-pencil-square')
-                    ->visible(fn (Survey $record): bool => auth()->user()?->can('update', $record) ?? false)
-                    ->url(fn (Survey $record): string => route('admin.surveys.builder.index', ['survey' => $record])),
-                Action::make('distribution')
-                    ->label('Distribusi')
-                    ->icon('heroicon-o-paper-airplane')
-                    ->visible(fn (Survey $record): bool => auth()->user()?->can('update', $record) ?? false)
-                    ->url(fn (Survey $record): string => route('admin.surveys.distribution.index', ['survey' => $record])),
-                Action::make('scoring')
-                    ->label('Skoring')
-                    ->icon('heroicon-o-adjustments-horizontal')
-                    ->visible(fn (Survey $record): bool => auth()->user()?->can('manageScoring', $record) ?? false)
-                    ->url(fn (Survey $record): string => route('admin.surveys.scoring.index', ['survey' => $record])),
-                Action::make('validation')
-                    ->label('Validasi Ahli')
-                    ->icon('heroicon-o-academic-cap')
-                    ->visible(fn (Survey $record): bool => auth()->user()?->can('manageValidation', $record) ?? false)
-                    ->url(fn (Survey $record): string => route('admin.surveys.validation.index', ['survey' => $record])),
-                Action::make('readability')
-                    ->label('Uji Keterbacaan')
-                    ->icon('heroicon-o-eye')
-                    ->visible(fn (Survey $record): bool => auth()->user()?->can('manageValidation', $record) ?? false)
-                    ->url(fn (Survey $record): string => route('admin.surveys.readability.index', ['survey' => $record])),
-                DeleteAction::make()
-                    ->visible(fn (Survey $record): bool => auth()->user()?->can('delete', $record) ?? false),
+                ActionGroup::make([
+                    EditAction::make()
+                        ->mutateDataUsing(fn (array $data): array => self::validatedProjectScopedData($data))
+                        ->visible(fn (Survey $record): bool => auth()->user()?->can('update', $record) ?? false),
+                    Action::make('publish')
+                        ->label('Terbitkan')
+                        ->icon('heroicon-o-paper-airplane')
+                        ->visible(fn (Survey $record): bool => $record->status === Survey::STATUS_DRAFT && (auth()->user()?->can('publish', $record) ?? false))
+                        ->requiresConfirmation()
+                        ->action(fn (Survey $record): Survey => app(PublishSurveyAction::class)->handle(auth()->user(), $record)),
+                    Action::make('close')
+                        ->label('Tutup')
+                        ->icon('heroicon-o-lock-closed')
+                        ->visible(fn (Survey $record): bool => $record->status === Survey::STATUS_PUBLISHED && (auth()->user()?->can('close', $record) ?? false))
+                        ->requiresConfirmation()
+                        ->action(fn (Survey $record): Survey => app(CloseSurveyAction::class)->handle(auth()->user(), $record)),
+                    Action::make('publicLink')
+                        ->label('Link Publik')
+                        ->icon('heroicon-o-link')
+                        ->visible(fn (Survey $record): bool => $record->canReceiveResponses())
+                        ->url(fn (Survey $record): string => route('survey.show', ['survey' => $record->slug]))
+                        ->openUrlInNewTab(),
+                    Action::make('responses')
+                        ->label('Respons')
+                        ->icon('heroicon-o-clipboard-document-check')
+                        ->visible(fn (Survey $record): bool => auth()->user()?->can('view', $record) ?? false)
+                        ->url(fn (Survey $record): string => route('admin.surveys.responses.index', ['survey' => $record])),
+                    Action::make('analysis')
+                        ->label('Dashboard Analisis')
+                        ->icon('heroicon-o-chart-bar')
+                        ->visible(fn (Survey $record): bool => auth()->user()?->can('runAnalysis', $record) ?? false)
+                        ->url(fn (Survey $record): string => route('admin.surveys.analysis.index', ['survey' => $record])),
+                    Action::make('builder')
+                        ->label('Susun Pertanyaan')
+                        ->icon('heroicon-o-pencil-square')
+                        ->visible(fn (Survey $record): bool => auth()->user()?->can('update', $record) ?? false)
+                        ->url(fn (Survey $record): string => route('admin.surveys.builder.index', ['survey' => $record])),
+                    Action::make('distribution')
+                        ->label('Distribusi')
+                        ->icon('heroicon-o-paper-airplane')
+                        ->visible(fn (Survey $record): bool => auth()->user()?->can('update', $record) ?? false)
+                        ->url(fn (Survey $record): string => route('admin.surveys.distribution.index', ['survey' => $record])),
+                    Action::make('scoring')
+                        ->label('Skoring')
+                        ->icon('heroicon-o-adjustments-horizontal')
+                        ->visible(fn (Survey $record): bool => auth()->user()?->can('manageScoring', $record) ?? false)
+                        ->url(fn (Survey $record): string => route('admin.surveys.scoring.index', ['survey' => $record])),
+                    Action::make('validation')
+                        ->label('Validasi Ahli')
+                        ->icon('heroicon-o-academic-cap')
+                        ->visible(fn (Survey $record): bool => auth()->user()?->can('manageValidation', $record) ?? false)
+                        ->url(fn (Survey $record): string => route('admin.surveys.validation.index', ['survey' => $record])),
+                    Action::make('readability')
+                        ->label('Uji Keterbacaan')
+                        ->icon('heroicon-o-eye')
+                        ->visible(fn (Survey $record): bool => auth()->user()?->can('manageValidation', $record) ?? false)
+                        ->url(fn (Survey $record): string => route('admin.surveys.readability.index', ['survey' => $record])),
+                    DeleteAction::make()
+                        ->visible(fn (Survey $record): bool => auth()->user()?->can('delete', $record) ?? false),
+                ])
+                    ->label('Aksi')
+                    ->icon('heroicon-o-ellipsis-vertical')
+                    ->button(),
             ]);
     }
 

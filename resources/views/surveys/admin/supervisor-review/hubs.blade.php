@@ -18,6 +18,18 @@
                 <a href="{{ route('admin.surveys.supervisor-review.index', ['survey' => $survey]) }}" class="inline-flex rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700">Kembali</a>
             </div>
 
+            <section class="mt-6 rounded-2xl border border-indigo-200 bg-indigo-50 p-5" aria-labelledby="hub-guide-title">
+                <h2 id="hub-guide-title" class="text-lg font-bold text-indigo-950">Cara menggunakan tautan pembimbing</h2>
+                <p class="mt-2 text-sm leading-6 text-indigo-900"><strong>Satu pembimbing = satu tautan pribadi.</strong> Setiap tautan sudah terhubung ke assignment P1, P2, atau P3 dan membuka S01, S02, serta S03 untuk pembimbing tersebut.</p>
+                <ol class="mt-4 grid gap-3 text-sm leading-6 text-slate-700 sm:grid-cols-2">
+                    <li class="rounded-xl bg-white p-4"><strong class="text-indigo-700">1. Buat atau perbarui.</strong> Klik tombol pada kartu pembimbing yang benar.</li>
+                    <li class="rounded-xl bg-white p-4"><strong class="text-indigo-700">2. Salin segera.</strong> Tautan lengkap hanya ditampilkan satu kali demi keamanan.</li>
+                    <li class="rounded-xl bg-white p-4"><strong class="text-indigo-700">3. Kirim secara pribadi.</strong> Jangan menukar atau meneruskan tautan milik pembimbing lain.</li>
+                    <li class="rounded-xl bg-white p-4"><strong class="text-indigo-700">4. Pantau hasil.</strong> Status dan kiriman final otomatis tercatat pada instrumen dan Laporan Review Pembimbing.</li>
+                </ol>
+                <p class="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900">Perbarui tautan hanya jika tautan lama hilang atau terekspos. Tautan lama langsung tidak berlaku setelah diperbarui.</p>
+            </section>
+
             @if (session('status') === 'supervisor-reviewer-hub-link-revoked')
                 <div class="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-900">Tautan Reviewer Hub telah dicabut.</div>
             @endif
@@ -72,6 +84,23 @@
                                     </form>
                                 @endif
                             </div>
+                        </div>
+                        <div class="mt-5 grid gap-2 border-t border-slate-100 pt-4">
+                            @foreach ($reviewers->sortBy('round.survey.instrument_code') as $reviewer)
+                                @php
+                                    $instrument = $reviewer->round->survey;
+                                    $instrumentStatus = $reviewer->isSubmitted()
+                                        ? 'Selesai'
+                                        : ($reviewer->status === \App\Models\SurveySupervisorReviewer::STATUS_NOT_OPENED ? 'Belum dimulai' : 'Dalam proses');
+                                @endphp
+                                <div class="flex flex-col gap-2 rounded-lg bg-slate-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <div class="min-w-0">
+                                        <p class="text-sm font-bold text-slate-900">{{ str($instrument->instrument_code)->before('-') }} · {{ $instrument->title }}</p>
+                                        <p class="mt-1 text-xs text-slate-600">Status: {{ $instrumentStatus }} · tersambung ke laporan instrumen</p>
+                                    </div>
+                                    <a href="{{ route('admin.surveys.supervisor-review.index', ['survey' => $instrument]) }}" class="shrink-0 text-sm font-bold text-indigo-700 hover:underline">Buka hasil & laporan</a>
+                                </div>
+                            @endforeach
                         </div>
                     </article>
                 @empty

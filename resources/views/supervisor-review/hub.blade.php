@@ -33,6 +33,7 @@
             <p class="text-xs font-bold uppercase tracking-[0.2em] text-indigo-200">Reviewer Hub PharmVR</p>
             <h1 class="mt-3 text-2xl font-semibold sm:text-4xl">Selamat datang, {{ $hub->supervisor_name }}</h1>
             <p class="mt-4 max-w-3xl text-sm leading-7 text-indigo-100 sm:text-base">Satu ruang untuk meninjau tiga instrumen PharmVR v2.0. Setiap instrumen dikirim final secara terpisah agar komentar, keputusan item, usulan redaksi, dan bukti review tetap tercatat dengan jelas.</p>
+            <p class="mt-3 max-w-3xl rounded-xl bg-white/10 px-4 py-3 text-sm leading-6 text-indigo-50">Tautan ini khusus untuk Anda. Jangan teruskan kepada orang lain. Hasil setiap instrumen otomatis tersambung ke Laporan Review Pembimbing di MyRiset.</p>
             <div class="mt-6 flex flex-wrap items-center gap-3">
                 <span class="rounded-full bg-white/15 px-4 py-2 text-sm font-semibold">Status keseluruhan: {{ $overallLabels[$overall] }}</span>
                 <span class="text-sm text-indigo-100">Berlaku sampai {{ $hub->expires_at->translatedFormat('d F Y') }}</span>
@@ -47,6 +48,7 @@
             <li class="rounded-xl bg-slate-50 p-4"><span class="font-bold text-indigo-700">2.</span> Beri keputusan dan komentar untuk setiap item.</li>
             <li class="rounded-xl bg-slate-50 p-4"><span class="font-bold text-indigo-700">3.</span> Kirim keputusan final pada tiap instrumen.</li>
         </ol>
+        <p class="mt-4 text-sm leading-6 text-slate-600">Anda dapat berhenti setelah menyelesaikan satu instrumen dan kembali melalui tautan yang sama. Status berubah menjadi <strong>Dalam proses</strong>, lalu <strong>Selesai</strong> setelah keputusan final dikirim.</p>
     </section>
 
     <section class="mt-6 grid gap-4">

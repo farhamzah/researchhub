@@ -113,7 +113,13 @@ class SupervisorReviewerHubTest extends TestCase
             ->get(route('admin.surveys.supervisor-review.hubs.index', compact('survey')))
             ->assertOk()
             ->assertSeeText('Tautan Reviewer Hub')
+            ->assertSeeText('Satu pembimbing = satu tautan pribadi.')
+            ->assertSeeText('Laporan Review Pembimbing')
             ->assertSeeText('Prof. Pembimbing Hub')
+            ->assertSeeText('S01')
+            ->assertSeeText('S02')
+            ->assertSeeText('S03')
+            ->assertSee('Buka hasil & laporan', false)
             ->assertSeeText('Buat tautan');
 
         $response = $this->actingAs($owner)->post(

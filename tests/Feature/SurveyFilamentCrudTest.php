@@ -43,6 +43,11 @@ class SurveyFilamentCrudTest extends TestCase
         $this->assertSame(Survey::STATUS_DRAFT, $survey->status);
         $this->assertFalse($survey->is_public);
 
+        $survey->forceFill([
+            'instrument_code' => 'S01-STUDENT-NEEDS',
+            'instrument_version' => '2.0',
+        ])->save();
+
         Livewire::actingAs($admin)
             ->test(ManageSurveys::class)
             ->assertSee('Manual Browser Survey')
@@ -51,10 +56,12 @@ class SurveyFilamentCrudTest extends TestCase
             ->assertTableActionVisible('responses', $survey)
             ->assertTableActionVisible('analysis', $survey)
             ->assertTableActionVisible('scoring', $survey)
+            ->assertTableActionVisible('supervisorReviewerHubs', $survey)
             ->assertTableActionHasUrl('builder', route('admin.surveys.builder.index', ['survey' => $survey]), $survey)
             ->assertTableActionHasUrl('responses', route('admin.surveys.responses.index', ['survey' => $survey]), $survey)
             ->assertTableActionHasUrl('analysis', route('admin.surveys.analysis.index', ['survey' => $survey]), $survey)
             ->assertTableActionHasUrl('scoring', route('admin.surveys.scoring.index', ['survey' => $survey]), $survey)
+            ->assertTableActionHasUrl('supervisorReviewerHubs', route('admin.surveys.supervisor-review.hubs.index', ['survey' => $survey]), $survey)
             ->callAction(TestAction::make('edit')->table($survey), [
                 'project_id' => $project->id,
                 'title' => 'Manual Browser Survey Updated',

@@ -11,7 +11,8 @@ class FinalizePharmVrInstrumentsV2ForSupervisorReviewCommand extends Command
     protected $signature = 'researchhub:finalize-pharmvr-instruments-v2-review
         {--project= : UUID atau slug proyek tujuan}
         {--contact= : Kontak peneliti; default email owner}
-        {--output= : Nama file JSON baru di storage/app/private}';
+        {--output= : Nama file JSON baru di storage/app/private}
+        {--reset-open-only : Konfirmasi jejak opened tanpa komentar/revisi/submission berasal dari pengujian Owner}';
 
     protected $description = 'Memperbarui redaksi final draft PharmVR, mengganti snapshot belum dibuka, dan membuat tiga tautan Hub private.';
 
@@ -44,6 +45,7 @@ class FinalizePharmVrInstrumentsV2ForSupervisorReviewCommand extends Command
             trim((string) $this->option('contact')) ?: (string) $project->owner->email,
             now()->addDays(30),
             storage_path('app/private/'.$filename),
+            (bool) $this->option('reset-open-only'),
         );
 
         $this->info('Pembaruan final instrumen dan Reviewer Hub selesai.');
@@ -52,6 +54,7 @@ class FinalizePharmVrInstrumentsV2ForSupervisorReviewCommand extends Command
         $this->line('item_counts='.implode('/', array_values($result['questions'])));
         $this->line('old_hubs_revoked='.$result['old_hubs_revoked']);
         $this->line('new_hubs_created='.$result['new_hubs_created']);
+        $this->line('open_only_reviewers_reset='.$result['open_only_reviewers_reset']);
 
         return self::SUCCESS;
     }

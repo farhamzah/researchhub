@@ -39,11 +39,12 @@ class FinalizePharmVrInstrumentsV2ForSupervisorReviewAction
         string $contact,
         CarbonInterface $expiresAt,
         string $outputPath,
+        bool $resetOpenOnly = false,
     ): array {
         $this->guardOutputPath($outputPath);
 
         try {
-            return DB::transaction(function () use ($actor, $project, $contact, $expiresAt, $outputPath): array {
+            return DB::transaction(function () use ($actor, $project, $contact, $expiresAt, $outputPath, $resetOpenOnly): array {
                 $definitions = collect($this->catalog->instruments($contact))->keyBy('code');
                 $surveys = Survey::query()
                     ->where('project_id', $project->getKey())
@@ -60,6 +61,7 @@ class FinalizePharmVrInstrumentsV2ForSupervisorReviewAction
                 }
                 $reviewers = collect();
                 $questionCounts = [];
+                $openOnlyReviewersReset = 0;
 
                 foreach ($surveys as $survey) {
                     $this->guardSurvey($survey);
@@ -87,7 +89,16 @@ class FinalizePharmVrInstrumentsV2ForSupervisorReviewAction
                     }
 
                     $round = $survey->supervisorReviewRounds->sole();
-                    $this->guardRound($round);
+                    $this->guardRound($round, $resetOpenOnly);
+                    foreach ($round->reviewers as $reviewer) {
+                        if ($reviewer->status === SurveySupervisorReviewer::STATUS_OPENED || $reviewer->opened_at !== null) {
+                            $reviewer->forceFill([
+                                'status' => SurveySupervisorReviewer::STATUS_NOT_OPENED,
+                                'opened_at' => null,
+                            ])->save();
+                            $openOnlyReviewersReset++;
+                        }
+                    }
                     $oldHash = $round->snapshot_hash;
                     $snapshot = $this->snapshots->snapshot($survey->fresh(['project', 'pages.questions.scoring.indicator', 'questions.scoring.indicator']));
                     $newHash = $this->snapshots->hash($snapshot);
@@ -116,12 +127,15 @@ class FinalizePharmVrInstrumentsV2ForSupervisorReviewAction
                     ->whereNotNull('token_hash')
                     ->lockForUpdate()
                     ->get();
-                if ($oldHubs->count() !== 3 || $oldHubs->contains(fn (SurveySupervisorReviewerHub $hub): bool => $hub->opened_at !== null)) {
-                    throw new RuntimeException('Tautan Hub aktif harus tepat tiga dan belum pernah dibuka.');
+                if ($oldHubs->count() !== 3) {
+                    throw new RuntimeException('Tautan Hub aktif harus tepat tiga.');
+                }
+                if (! $resetOpenOnly && $oldHubs->contains(fn (SurveySupervisorReviewerHub $hub): bool => $hub->opened_at !== null)) {
+                    throw new RuntimeException('Tautan Hub pernah dibuka; gunakan konfirmasi reset open-only bila itu hanya pengujian Owner.');
                 }
                 $links = [];
                 foreach ($oldHubs->sortBy('supervisor_code') as $hub) {
-                    $hub->forceFill(['revoked_at' => now()])->save();
+                    $hub->forceFill(['revoked_at' => now(), 'opened_at' => null])->save();
                     $result = $this->generateHub->handle(
                         $actor,
                         $hub->load('project', 'reviewers.round.survey'),
@@ -153,6 +167,7 @@ class FinalizePharmVrInstrumentsV2ForSupervisorReviewAction
                     'questions' => $questionCounts,
                     'old_hubs_revoked' => $oldHubs->count(),
                     'new_hubs_created' => count($links),
+                    'open_only_reviewers_reset' => $openOnlyReviewersReset,
                 ];
             });
         } catch (Throwable $exception) {
@@ -174,19 +189,27 @@ class FinalizePharmVrInstrumentsV2ForSupervisorReviewAction
         }
     }
 
-    private function guardRound(SurveySupervisorReviewRound $round): void
+    private function guardRound(SurveySupervisorReviewRound $round, bool $resetOpenOnly): void
     {
         if ($round->finalized_at !== null || ! $round->isOpen() || $round->reviewers->count() !== 3) {
             throw new RuntimeException('Ronde review tidak aman untuk diganti snapshot-nya.');
         }
 
         foreach ($round->reviewers as $reviewer) {
-            if ($reviewer->status !== SurveySupervisorReviewer::STATUS_NOT_OPENED
-                || $reviewer->opened_at !== null
+            $openOnly = in_array($reviewer->status, [
+                SurveySupervisorReviewer::STATUS_NOT_OPENED,
+                SurveySupervisorReviewer::STATUS_OPENED,
+            ], true);
+            if (! $openOnly
                 || $reviewer->submitted_at !== null
+                || filled($reviewer->final_decision)
+                || filled($reviewer->final_notes)
                 || $reviewer->comments()->exists()
                 || $reviewer->revisions()->exists()) {
-                throw new RuntimeException('Reviewer sudah memiliki aktivitas; pembaruan dihentikan.');
+                throw new RuntimeException('Reviewer sudah memiliki aktivitas substantif; pembaruan dihentikan.');
+            }
+            if (! $resetOpenOnly && ($reviewer->status === SurveySupervisorReviewer::STATUS_OPENED || $reviewer->opened_at !== null)) {
+                throw new RuntimeException('Reviewer pernah membuka instrumen; gunakan konfirmasi reset open-only bila itu hanya pengujian Owner.');
             }
         }
     }

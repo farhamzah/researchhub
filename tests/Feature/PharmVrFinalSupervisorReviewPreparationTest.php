@@ -82,6 +82,8 @@ class PharmVrFinalSupervisorReviewPreparationTest extends TestCase
         }
         $oldHubIds = SurveySupervisorReviewerHub::pluck('id');
         $oldTokenHashes = SurveySupervisorReviewerHub::pluck('token_hash')->all();
+        $reviewers->first()->forceFill(['status' => SurveySupervisorReviewer::STATUS_OPENED, 'opened_at' => now()])->save();
+        SurveySupervisorReviewerHub::where('supervisor_code', 'P3')->firstOrFail()->forceFill(['opened_at' => now()])->save();
         $outputPath = storage_path('app/private/test-pharmvr-final-'.Str::uuid().'.json');
 
         try {
@@ -91,18 +93,20 @@ class PharmVrFinalSupervisorReviewPreparationTest extends TestCase
                 $owner->email,
                 now()->addDays(30),
                 $outputPath,
+                true,
             );
 
             $this->assertSame([34, 35, 26], array_values($result['questions']));
             $this->assertSame(3, $result['old_hubs_revoked']);
             $this->assertSame(3, $result['new_hubs_created']);
+            $this->assertSame(1, $result['open_only_reviewers_reset']);
             $this->assertFileExists($outputPath);
             $this->assertSame(hash_file('sha256', $outputPath), $result['sha256']);
             $this->assertArrayNotHasKey('links', $result);
             $this->assertCount(3, json_decode(file_get_contents($outputPath), true, 512, JSON_THROW_ON_ERROR)['links']);
 
             $this->assertSame(3, SurveySupervisorReviewerHub::count());
-            $this->assertSame(3, SurveySupervisorReviewerHub::whereNull('revoked_at')->count());
+            $this->assertSame(3, SurveySupervisorReviewerHub::whereNull('revoked_at')->whereNull('opened_at')->count());
             $this->assertEqualsCanonicalizing($oldHubIds->all(), SurveySupervisorReviewerHub::pluck('id')->all());
             foreach ($oldTokenHashes as $oldHash) {
                 $this->assertFalse(SurveySupervisorReviewerHub::where('token_hash', $oldHash)->exists());

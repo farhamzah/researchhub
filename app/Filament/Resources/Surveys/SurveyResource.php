@@ -171,6 +171,11 @@ class SurveyResource extends Resource
                         ->icon('heroicon-o-pencil-square')
                         ->visible(fn (Survey $record): bool => auth()->user()?->can('update', $record) ?? false)
                         ->url(fn (Survey $record): string => route('admin.surveys.builder.index', ['survey' => $record])),
+                    Action::make('preview')
+                        ->label('Preview Instrumen')
+                        ->icon('heroicon-o-magnifying-glass')
+                        ->visible(fn (Survey $record): bool => auth()->user()?->can('update', $record) ?? false)
+                        ->url(fn (Survey $record): string => route('admin.surveys.builder.index', ['survey' => $record]).'#preview'),
                     Action::make('supervisorReviewerHubs')
                         ->label('Tautan Pembimbing')
                         ->icon('heroicon-o-users')

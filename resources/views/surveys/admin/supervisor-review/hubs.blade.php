@@ -28,21 +28,11 @@
                     <li class="rounded-xl bg-white p-4"><strong class="text-indigo-700">4. Pantau hasil.</strong> Status dan kiriman final otomatis tercatat pada instrumen dan Laporan Review Pembimbing.</li>
                 </ol>
                 <p class="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900">Perbarui tautan hanya jika tautan lama hilang atau terekspos. Tautan lama langsung tidak berlaku setelah diperbarui.</p>
+                <button type="button" data-clear-displayed-links class="mt-3 text-xs font-bold text-indigo-700 underline">Bersihkan tautan yang tampil di perangkat ini</button>
             </section>
 
             @if (session('status') === 'supervisor-reviewer-hub-link-revoked')
                 <div class="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-900">Tautan Reviewer Hub telah dicabut.</div>
-            @endif
-
-            @if (session('generated_supervisor_reviewer_hub_url'))
-                <div class="mt-6 rounded-xl border border-emerald-300 bg-emerald-50 p-4" data-generated-hub-link>
-                    <p class="text-sm font-bold text-emerald-950">Tautan baru untuk {{ session('generated_supervisor_reviewer_hub_code') }}</p>
-                    <p class="mt-1 text-xs text-emerald-800">Salin sekarang. Demi keamanan, tautan lengkap tidak dapat dilihat kembali setelah halaman ditutup.</p>
-                    <div class="mt-3 flex flex-col gap-2 sm:flex-row">
-                        <input id="generated-hub-url" readonly value="{{ session('generated_supervisor_reviewer_hub_url') }}" class="min-w-0 flex-1 rounded-lg border border-emerald-300 bg-white px-3 py-2 text-sm">
-                        <button type="button" data-copy-hub-link class="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-bold text-white">Salin tautan</button>
-                    </div>
-                </div>
             @endif
 
             @if ($errors->any())
@@ -61,6 +51,18 @@
                             default => 'Belum dimulai',
                         };
                     @endphp
+                    <div>
+                        @php
+                            $generatedUrl = data_get(session('generated_supervisor_reviewer_hub_urls', []), $code);
+                        @endphp
+                        <div @class(['mb-3 rounded-xl border border-emerald-300 bg-emerald-50 p-4', 'hidden' => blank($generatedUrl)]) data-generated-hub-link="{{ $code }}">
+                            <p class="text-sm font-bold text-emerald-950">Tautan baru untuk {{ $reviewers->first()->supervisor_name }} ({{ $code }})</p>
+                            <p class="mt-1 text-xs text-emerald-800">Salin sekarang. Demi keamanan, tautan lengkap tidak dapat dilihat kembali setelah halaman ditutup.</p>
+                            <div class="mt-3 flex flex-col gap-2 sm:flex-row">
+                                <input id="generated-hub-url-{{ $code }}" readonly value="{{ $generatedUrl }}" class="min-w-0 flex-1 rounded-lg border border-emerald-300 bg-white px-3 py-2 text-sm">
+                                <button type="button" data-copy-hub-link="{{ $code }}" class="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-bold text-white">Salin tautan {{ $code }}</button>
+                                </div>
+                            </div>
                     <article class="rounded-xl border border-slate-200 p-5">
                         <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                             <div>
@@ -103,6 +105,7 @@
                             @endforeach
                         </div>
                     </article>
+                    </div>
                 @empty
                     <div class="rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">Assignment lengkap S01, S02, dan S03 belum tersedia untuk pembimbing.</div>
                 @endforelse
@@ -110,10 +113,39 @@
         </section>
     </main>
     <script>
-        document.querySelector('[data-copy-hub-link]')?.addEventListener('click', async (event) => {
-            const input = document.querySelector('#generated-hub-url');
-            await navigator.clipboard.writeText(input.value);
-            event.currentTarget.textContent = 'Tersalin';
+        const storagePrefix = 'myriset:reviewer-hub:{{ $project->getKey() }}:';
+        const revokedCode = @json(session('revoked_supervisor_reviewer_hub_code'));
+        if (revokedCode) {
+            sessionStorage.removeItem(`${storagePrefix}${revokedCode}`);
+        }
+
+        document.querySelectorAll('[data-generated-hub-link]').forEach((panel) => {
+            const code = panel.dataset.generatedHubLink;
+            const input = document.querySelector(`#generated-hub-url-${code}`);
+            if (input.value) {
+                sessionStorage.setItem(`${storagePrefix}${code}`, input.value);
+            } else {
+                input.value = sessionStorage.getItem(`${storagePrefix}${code}`) || '';
+            }
+            panel.classList.toggle('hidden', !input.value);
+        });
+
+        document.querySelectorAll('[data-copy-hub-link]').forEach((button) => {
+            button.addEventListener('click', async (event) => {
+                const code = event.currentTarget.dataset.copyHubLink;
+                const input = document.querySelector(`#generated-hub-url-${code}`);
+                await navigator.clipboard.writeText(input.value);
+                event.currentTarget.textContent = `Tautan ${code} tersalin`;
+            });
+        });
+
+        document.querySelector('[data-clear-displayed-links]')?.addEventListener('click', () => {
+            document.querySelectorAll('[data-generated-hub-link]').forEach((panel) => {
+                const code = panel.dataset.generatedHubLink;
+                sessionStorage.removeItem(`${storagePrefix}${code}`);
+                panel.classList.add('hidden');
+                document.querySelector(`#generated-hub-url-${code}`).value = '';
+            });
         });
     </script>
 </body>

@@ -68,8 +68,7 @@ class AdminSupervisorReviewerHubController extends Controller
 
         return redirect()
             ->route('admin.surveys.supervisor-review.hubs.index', ['survey' => $survey])
-            ->with('generated_supervisor_reviewer_hub_url', $result->url)
-            ->with('generated_supervisor_reviewer_hub_code', $result->hub->supervisor_code)
+            ->with('generated_supervisor_reviewer_hub_urls', [$result->hub->supervisor_code => $result->url])
             ->with('status', 'supervisor-reviewer-hub-link-generated');
     }
 
@@ -85,6 +84,7 @@ class AdminSupervisorReviewerHubController extends Controller
 
         return redirect()
             ->route('admin.surveys.supervisor-review.hubs.index', ['survey' => $survey])
+            ->with('revoked_supervisor_reviewer_hub_code', $hub->supervisor_code)
             ->with('status', 'supervisor-reviewer-hub-link-revoked');
     }
 

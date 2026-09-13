@@ -120,6 +120,8 @@ class SupervisorReviewerHubTest extends TestCase
             ->assertSeeText('S02')
             ->assertSeeText('S03')
             ->assertSee('Buka hasil & laporan', false)
+            ->assertSee('data-generated-hub-link="P1"', false)
+            ->assertSeeText('Bersihkan tautan yang tampil di perangkat ini')
             ->assertSeeText('Buat tautan');
 
         $response = $this->actingAs($owner)->post(
@@ -129,8 +131,7 @@ class SupervisorReviewerHubTest extends TestCase
 
         $response
             ->assertRedirect(route('admin.surveys.supervisor-review.hubs.index', compact('survey')))
-            ->assertSessionHas('generated_supervisor_reviewer_hub_url')
-            ->assertSessionHas('generated_supervisor_reviewer_hub_code', 'P1');
+            ->assertSessionHas('generated_supervisor_reviewer_hub_urls.P1');
 
         $hub = SurveySupervisorReviewerHub::sole();
         $firstHash = $hub->token_hash;
@@ -145,7 +146,7 @@ class SupervisorReviewerHubTest extends TestCase
         $this->actingAs($owner)->post(
             route('admin.surveys.supervisor-review.hubs.generate', compact('survey')),
             ['supervisor_code' => 'P1'],
-        )->assertSessionHas('generated_supervisor_reviewer_hub_url');
+        )->assertSessionHas('generated_supervisor_reviewer_hub_urls.P1');
 
         $this->assertSame(1, SurveySupervisorReviewerHub::count());
         $this->assertNotSame($firstHash, $hub->fresh()->token_hash);
